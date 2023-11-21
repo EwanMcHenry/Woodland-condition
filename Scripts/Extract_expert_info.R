@@ -3,8 +3,8 @@
 # Ewan McHenry
 # will save ind matcher df and expert opinion responses from the Delphi forms as objects within the specified extraction.location
 
-forms.direct <- "Delphi round 1\\response sheets\\"
-extraction.location <- "Delphi round 1\\"
+# forms.direct <- "Delphi round 1\\response sheets\\"
+# extraction.location <- "Delphi round 1\\"
 
 #|---------------|---------------
 

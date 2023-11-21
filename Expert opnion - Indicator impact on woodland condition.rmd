@@ -121,9 +121,11 @@ which.scaled.wt <- paste(df$respondant_name)[df.scaled$weight != df$weight] %>%
 df$value <- df.scaled$value %>% round(0)
 df$weight <- df.scaled$weight %>% round(0)
 
-df <- df %>% arrange(respondant_name, weight) %>%
-    group_by(respondant_name, indicator_name) %>%
-    mutate(weight_rank = rank(-weight))
+weight.rank <-  df[!duplicated(paste0(df$indicator_name, df$respondant_name)),] %>% arrange(respondant_name, weight) %>%
+    group_by(respondant_name) %>%
+    mutate(weight_rank = rank(-weight)) %>% 
+  dplyr::select(c("indicator_name", "respondant_name", "weight_rank"))
+df <- df %>% right_join(weight.rank, by = c("indicator_name", "respondant_name"))
 
 
 df$value.dec = df$value/100 # a decimal version of value to work in the later binomial gams

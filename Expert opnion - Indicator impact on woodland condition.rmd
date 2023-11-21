@@ -121,6 +121,11 @@ which.scaled.wt <- paste(df$respondant_name)[df.scaled$weight != df$weight] %>%
 df$value <- df.scaled$value %>% round(0)
 df$weight <- df.scaled$weight %>% round(0)
 
+df <- df %>% arrange(respondant_name, weight) %>%
+    group_by(respondant_name, indicator_name) %>%
+    mutate(weight_rank = rank(-weight))
+
+
 df$value.dec = df$value/100 # a decimal version of value to work in the later binomial gams
 
 ## version with sinlge entry for each indicator:respondant ----
@@ -237,9 +242,8 @@ Indicator relative weightings were presented on a dot-plot, including the mean a
 Average value functions were modeled with a binomial GAM. The influence of points from each respondent weighted by the inverse of the number of points provided by that respondent, with the aim of ensuring that all respondents had the same influence on the result, regardless of how many points they provided.
 
 
-# Results
+# Results - Round 1  
 
-## Round 1
 ### Participants and survey completion
 
 `r has_completed$respondent_names %>% unique() %>% length()` expert practitioners from Woodland Trust and Plantlife staff were invited to provide their opinion the value and weight of indicators.  
@@ -353,10 +357,7 @@ participant_table %>%
 
 ```
 
-
-
-## Indicator value functions  
-
+## Value functions
 ```{r make value function plots, echo = F }
 
 # FUNCTION - PLOT RESPONDANTS' continuous INDICATOR VFs ----
@@ -421,8 +422,8 @@ participant_table %>%
   plot
   }
 
-# FUNCTION - PLOT RESPONDANTS' CATEGORICAL INDICATOR VFs 
-  ggplot_resp_cat_vf <- function(indicator_name, gam.col = "black", x.lab = ind.matcher.df$ind.axis.title[i], data = vf_cat_data){
+# FUNCTION - PLOT RESPONDANTS' CATEGORICAL INDICATOR VFs ----
+  ggplot_resp_cat_vf <- function(indicator_name, x.lab = ind.matcher.df$ind.axis.title[i], data = vf_cat_data){
     # vf_cat_data is filtered_data, formatted to include categories - cat_measure
     
   ## Color palette
@@ -432,7 +433,7 @@ participant_table %>%
   # PLOT SPEC, LINES AND TREND ----
   plot <- ggplot() +
     geom_boxplot(data = data, 
-              aes(x = cat_measure, y = value)) +
+              aes(x = cat_measure, y = value), text = NULL) +
       stat_summary(data = data, aes(x = cat_measure, y = value),
                geom = "point", fun = mean,
                color = "red", shape = 3, size = 5,
@@ -445,6 +446,7 @@ participant_table %>%
                aes(x = measure, y = value, color = respondant_name,
                    text = map(
                      paste0("<b>", `respondant_name`, "</b>",
+                            "<br><b>Value:</b>", value, "<br>",
                             "<br><b>Certainty:</b>", cert_val_funct, "<br>",
                             "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"),
                      HTML),
@@ -468,10 +470,58 @@ participant_table %>%
   plot
   }
 
+# FUNCTION - PLOT RESPONDANTS' WEIGHTS - FOR INDICATOR  ----
+  ggplot_resp_weight_ind <- function(indicator_name){
+    # plot weights by respondant for this indicator
+# Filter the data for the selected indicator
+  filtered_data <- df[df$indicator_name == indicator_name & !duplicated(paste0(df$respondant_name, df$indicator_name)), ] %>% 
+    mutate(respondant_name = as.factor(respondant_name))
+  ## Color palette
+  respondant_colours <- glasbey.colors(nlevels(as.factor(filtered_data$respondant_name))) %>% as.character()
+
+  # PLOT SPEC, LINES AND TREND ----
+  plot <- ggplot(filtered_data) +
+    geom_boxplot(aes(x = 0, y = weight)) +
+      stat_summary(data = filtered_data,
+                   aes(x = 0, y = weight),
+                   geom = "point", fun = mean,
+                   color = "red", shape = 3, size = 5) +
+    geom_jitter(aes(x = 0, y = weight, color = respondant_name,
+               text = map(
+                     paste0("<b>", `respondant_name`, "</b><br>",
+                            "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>",
+                            "<b>Weight rank: </b>", weight_rank),
+                     HTML),
+                   alpha = cert_weight), 
+               size = 2, shape = 16,
+               position=position_jitter(width=.1, height=0)) +
+    scale_colour_manual(values = respondant_colours) +
+    scale_y_continuous(limits = c(0,100)) +
+    labs(y = "Weight",
+         colour = "Respondant") +
+    guides(alpha = F) +
+    theme_pubr()+
+    theme(plot.title = element_text(size = 12),
+          plot.subtitle = element_text(size = 12),
+          legend.title = element_text(size = 12 , face = "bold"),
+          legend.text =  element_text(size = 12),
+          axis.text.y = element_text(size = 12),
+          axis.title =  element_text(size = 12),
+          axis.title.x=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank(),
+          legend.position = "right",
+          plot.margin = margin(0.5, 1, 0.5, 1, "cm")
+    ) 
+  
+  plot
+  }
+  
+  
 ```
 
-### Tree age/size distribution
-```{r vf Tree age size distribution, echo = F , results="asis"}
+## Tree age/size distribution {.tabset .tabset-fade .tabset-pills}
+```{r vf Tree age size distribution - init, echo = F , results="asis"}
 
 ind.num = 1
 indicator_name = ind.matcher.df$indicator_name[ind.num]
@@ -482,13 +532,11 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
   mutate(respondant_name = as.factor(respondant_name))
 
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
+```
 
-# filtered_data %>% 
-#   group_by(as.factor(measure)) %>% 
-#   length()
+### Categorised value function
+```{r vf Tree age size distribution - categorical, echo = F , results="asis"}
 
-# plot <- ggplot_gam_resp_vf(indicator_name = indicator_name,
-#                     x.lab = ind.axis.title)
 
 # categorical plot
 vf_cat_data = filtered_data %>% 
@@ -501,7 +549,6 @@ plot <- ggplot_resp_cat_vf(indicator_name = indicator_name,
 ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
     config(displayModeBar = F) %>% 
     layout(yaxis = list(range = c(-5, 105)))
-
 ## table
 filtered_data %>%
   group_by(measure) %>%
@@ -509,9 +556,45 @@ filtered_data %>%
             'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
 knitr::kable()
 
+
 ```
 
+### Continuous Value function
+```{r vf Tree age size distribution - continuous, echo = F , results="asis"}
+plot <- ggplot_gam_resp_vf(indicator_name = indicator_name,
+                           x.lab = ind.axis.title)
 
+ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
+    config(displayModeBar = F) %>% 
+    layout(yaxis = list(range = c(-5, 105)))
+
+
+```
+
+### Weights
+```{r vf Tree age size distribution - weights, fig.width= 4, echo = F , results="asis"}
+wt.plot <- ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+ggplotly(wt.plot, tooltip = "text", dynamicTicks = F) %>% 
+    config(displayModeBar = F) %>% 
+    layout(yaxis = list(range = c(-5, 105)))
+
+```
+
+## {-}
+
+### Comments
+
+Consensus on VF likely:  
+- All continuous relationships have same shape.  
+- Complete agreement on upper and lower value.  
+- Some put maximum value at 3 classes.  
+
+Disagreement on weight:  
+- Two camps, putting average weights at c. 60 and 90, respectively.  
+
+
+# plot all indicators sequentially
 
 ```{r vf plot vfs, echo = F , results="asis"}
 # CREATE VF PLOTS ----

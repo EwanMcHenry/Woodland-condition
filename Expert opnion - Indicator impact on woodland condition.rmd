@@ -21,7 +21,7 @@ output:
 </style>
 
 ```{r global-options, include=FALSE}
-knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+knitr::opts_chunk$set(fig.width=12, fig.height=5, fig.path='Figs/',
                       echo=FALSE, warning=FALSE, message=FALSE)
 forms.direct <- "Data\\Delphi round 1\\response sheets\\"
 extraction.location <- "Data\\Delphi round 1\\"
@@ -218,7 +218,6 @@ Values and weights are all measured relative to each other, so each participant 
 
 
 **Value functions** scaled for:  
-
 `r paste0("<br>- ", which.scaled.VF)`  
 
 **Weights** were scaled for:  
@@ -354,15 +353,15 @@ participant_table %>%
 
 ```
 
-</div>
-  <br/>
-  
+
 
 ## Indicator value functions  
 
 ```{r make value function plots, echo = F }
+
+
 # FUNCTION - PLOT RESPONDANTS' INDICATOR VFs ----
-  plot_gg_gam <- function(indicator_name, gam.col = "black"){
+  plot_gg_gam <- function(indicator_name, gam.col = "black", x.lab = ind.matcher.df$ind.axis.title[i]){
           # Filter the data for the selected indicator
   filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
     mutate(respondant_name = as.factor(respondant_name))
@@ -403,7 +402,7 @@ participant_table %>%
                            "<b>Sentance: </b>", vf.sentance),
                      HTML))) +
     scale_colour_manual(values = respondant_colours) +
-    labs(title = indicator_name, x = ind.matcher.df$ind.axis.title[i], y = "Value Score",
+    labs(title = indicator_name, x = x.lab, y = "Value Score",
          colour = "Respondant") +
     guides(alpha = F) +
     theme_pubr()+
@@ -421,10 +420,50 @@ participant_table %>%
   plot
   }
 
+
+
+```
+
+### Tree age/size distribution
+```{r vf Tree age size distribution, echo = F , results="asis"}
+
+ind.num = 1
+indicator_name = ind.matcher.df$indicator_name[ind.num]
+ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
+indicator_name  
+
+filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
+  mutate(respondant_name = as.factor(respondant_name))
+
+paste(length(unique(filtered_data$respondant_name)), "respondants.")
+
+# filtered_data %>% 
+#   group_by(as.factor(measure)) %>% 
+#   length()
+
+plot <- plot_gg_gam(indicator_name = indicator_name,
+                    x.lab = ind.axis.title)
+
+ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
+    config(displayModeBar = F) %>% 
+    layout(yaxis = list(range = c(-5, 105)))
+
+filtered_data %>%
+  group_by(measure) %>%
+  summarise(Mean = mean(value, na.rm = TRUE) %>% round(digits = 1),
+            'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
+knitr::kable()
+
+
+
+
+```
+
+
+
+```{r vf plot vfs, echo = F , results="asis"}
 # CREATE VF PLOTS ----
 each.plotly <- list(NA)
-each.plotly.no.model <- list(NA)
-should.model <- list(NA)
 
 for(i in 1: length(ind.matcher.df$indicator_name)){
   
@@ -438,11 +477,6 @@ for(i in 1: length(ind.matcher.df$indicator_name)){
   
   }
 
-```
-
-
-
-```{r vf plot vfs, echo = F , results="asis"}
 # print some set text (a title) and the vf figure
 for (i in 1:length(ind.matcher.df$indicator_name)) {
   cat("###", ind.matcher.df$sheet_name[i], "\n\n")

@@ -359,9 +359,8 @@ participant_table %>%
 
 ```{r make value function plots, echo = F }
 
-
-# FUNCTION - PLOT RESPONDANTS' INDICATOR VFs ----
-  plot_gg_gam <- function(indicator_name, gam.col = "black", x.lab = ind.matcher.df$ind.axis.title[i]){
+# FUNCTION - PLOT RESPONDANTS' continuous INDICATOR VFs ----
+  ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.matcher.df$ind.axis.title[i]){
           # Filter the data for the selected indicator
   filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
     mutate(respondant_name = as.factor(respondant_name))
@@ -387,8 +386,9 @@ participant_table %>%
                   text = map(
                     paste0("<b>", `respondant_name`, "</b>",
                            "<br><b>Certainty:</b>", cert_val_funct, "<br>",
-                           "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>",
-                           "<b>Sentance: </b>", vf.sentance),
+                           "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"#,
+                           #"<b>Sentance: </b>", vf.sentance
+                           ),
                     HTML),
                   alpha = cert_val_funct),
               size = 0.5) +
@@ -400,7 +400,8 @@ participant_table %>%
                             "<br><b>Certainty:</b>", cert_val_funct, "<br>",
                             "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>",
                            "<b>Sentance: </b>", vf.sentance),
-                     HTML))) +
+                     HTML),
+                   alpha = cert_val_funct)) +
     scale_colour_manual(values = respondant_colours) +
     labs(title = indicator_name, x = x.lab, y = "Value Score",
          colour = "Respondant") +
@@ -420,7 +421,52 @@ participant_table %>%
   plot
   }
 
+# FUNCTION - PLOT RESPONDANTS' CATEGORICAL INDICATOR VFs 
+  ggplot_resp_cat_vf <- function(indicator_name, gam.col = "black", x.lab = ind.matcher.df$ind.axis.title[i], data = vf_cat_data){
+    # vf_cat_data is filtered_data, formatted to include categories - cat_measure
+    
+  ## Color palette
+  respondant_colours <- glasbey.colors(nlevels(as.factor(filtered_data$respondant_name))) %>% as.character()
+  # respondant_colours <- brewer.pal(nlevels(as.factor(filtered_data$respondant_name)),  "Paired")
 
+  # PLOT SPEC, LINES AND TREND ----
+  plot <- ggplot() +
+    geom_boxplot(data = data, 
+              aes(x = cat_measure, y = value)) +
+      stat_summary(data = data, aes(x = cat_measure, y = value),
+               geom = "point", fun = mean,
+               color = "red", shape = 3, size = 5,
+               position = position_nudge(x = 0.05, y = 0)
+               ) +
+    stat_summary(fun=mean, geom='point', shape=20, size=8) +
+    geom_jitter(data = data, 
+               size = 2, shape = 16,
+               position=position_jitter(width=.1, height=0),
+               aes(x = measure, y = value, color = respondant_name,
+                   text = map(
+                     paste0("<b>", `respondant_name`, "</b>",
+                            "<br><b>Certainty:</b>", cert_val_funct, "<br>",
+                            "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"),
+                     HTML),
+                   alpha = cert_val_funct)) +
+    scale_colour_manual(values = respondant_colours) +
+    labs(title = indicator_name, x = x.lab, y = "Value Score",
+         colour = "Respondant") +
+    guides(alpha = F) +
+    theme_pubr()+
+    theme(plot.title = element_text(size = 12),
+          plot.subtitle = element_text(size = 12),
+          legend.title = element_text(size = 12 , face = "bold"),
+          legend.text =  element_text(size = 12),
+          axis.text.x = element_text(size = 12),
+          axis.text.y = element_text(size = 12),
+          axis.title =  element_text(size = 12),
+          legend.position = "right",
+          plot.margin = margin(0.5, 1, 0.5, 1, "cm")
+    ) 
+  
+  plot
+  }
 
 ```
 
@@ -441,21 +487,27 @@ paste(length(unique(filtered_data$respondant_name)), "respondants.")
 #   group_by(as.factor(measure)) %>% 
 #   length()
 
-plot <- plot_gg_gam(indicator_name = indicator_name,
-                    x.lab = ind.axis.title)
+# plot <- ggplot_gam_resp_vf(indicator_name = indicator_name,
+#                     x.lab = ind.axis.title)
 
+# categorical plot
+vf_cat_data = filtered_data %>% 
+                     mutate(cat_measure = as.factor(measure))
+plot <- ggplot_resp_cat_vf(indicator_name = indicator_name,
+                    x.lab = ind.axis.title,
+                   data = vf_cat_data )
+
+##ggplotly
 ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
     config(displayModeBar = F) %>% 
     layout(yaxis = list(range = c(-5, 105)))
 
+## table
 filtered_data %>%
   group_by(measure) %>%
   summarise(Mean = mean(value, na.rm = TRUE) %>% round(digits = 1),
             'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
 knitr::kable()
-
-
-
 
 ```
 
@@ -467,7 +519,7 @@ each.plotly <- list(NA)
 
 for(i in 1: length(ind.matcher.df$indicator_name)){
   
-  plot <- plot_gg_gam(indicator_name = ind.matcher.df$indicator_name[i])
+  plot <- ggplot_gam_resp_vf(indicator_name = ind.matcher.df$indicator_name[i])
   
   plotly <- ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
     config(displayModeBar = F) %>% 

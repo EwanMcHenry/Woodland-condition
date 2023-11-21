@@ -127,7 +127,6 @@ weight.rank <-  df[!duplicated(paste0(df$indicator_name, df$respondant_name)),] 
   dplyr::select(c("indicator_name", "respondant_name", "weight_rank"))
 df <- df %>% right_join(weight.rank, by = c("indicator_name", "respondant_name"))
 
-
 df$value.dec = df$value/100 # a decimal version of value to work in the later binomial gams
 
 ## version with sinlge entry for each indicator:respondant ----
@@ -593,7 +592,7 @@ Consensus on VF likely:
 - Some put maximum value at 3 classes.  
 
 Disagreement on weight:  
-- Two camps, putting average weights at c. 60 and 90, respectively.  
+- Two camps, giving relatively low and high weights (compared to other indicators) at c. 60 and 90, respectively.  
 
 
 # plot all indicators sequentially

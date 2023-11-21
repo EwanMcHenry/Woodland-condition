@@ -299,9 +299,9 @@ Figure 1. Completion of expert opinion survey components by each panelist (colou
 <button class="btn btn-primary" data-toggle="collapse" data-target="#BlockName"> Show/Hide table of detailed completion info </button>  
 <div id="BlockName" class="collapse">  
 
-Details of incomplete sections
+Warning - table that should be printed here is written, just not printing
 
-```{r what needs done by participants details}
+```{r what needs done by participants details, eval = F}
 
 # Create a data frame with participant names and the four columns
 participant_table <- data.frame(respondent_names = completed_summary$respondent_names,
@@ -361,124 +361,89 @@ participant_table %>%
 ## Indicator value functions  
 
 ```{r make value function plots, echo = F }
-gam_model <- list(NA)
-dummy_data <- list(NA)
+# FUNCTION - PLOT RESPONDANTS' INDICATOR VFs ----
+  plot_gg_gam <- function(indicator_name, gam.col = "black"){
+          # Filter the data for the selected indicator
+  filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
+    mutate(respondant_name = as.factor(respondant_name))
+  ## Color palette
+  respondant_colours <- glasbey.colors(nlevels(as.factor(filtered_data$respondant_name))) %>% as.character()
+  # respondant_colours <- brewer.pal(nlevels(as.factor(filtered_data$respondant_name)),  "Paired")
+
+  # PREDICT TREND ----
+  filtered_data$point.influence <- 1/(table(filtered_data$respondant_name)[as.factor(filtered_data$respondant_name)]) %>% 
+    as.numeric()
+  gam_model <- gam(value.dec ~ s(measure, k = 4),
+                        data = filtered_data, family = binomial(), weights = point.influence)
+  # Create dummy data for prediction
+  dummy_data <- data.frame(measure = seq(min(filtered_data$measure), max(filtered_data$measure), length.out = 50))
+  # Predict using the GAM model
+  dummy_data$predicted_value <- predict(gam_model, newdata = dummy_data, type = "response")*100
+
+  # PLOT SPEC, LINES AND TREND ----
+  plot <- ggplot() +
+    geom_line(data = dummy_data, size = 2, aes(y = predicted_value, x = measure), colour = gam.col) + # gam prediction
+    geom_line(data = filtered_data, 
+              aes(x = measure, y = value, color = respondant_name,
+                  text = map(
+                    paste0("<b>", `respondant_name`, "</b>",
+                           "<br><b>Certainty:</b>", cert_val_funct, "<br>",
+                           "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>",
+                           "<b>Sentance: </b>", vf.sentance),
+                    HTML),
+                  alpha = cert_val_funct),
+              size = 0.5) +
+    geom_point(data = filtered_data, 
+               size = 2, shape = 16,
+               aes(x = measure, y = value, color = respondant_name,
+                   text = map(
+                     paste0("<b>", `respondant_name`, "</b>",
+                            "<br><b>Certainty:</b>", cert_val_funct, "<br>",
+                            "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>",
+                           "<b>Sentance: </b>", vf.sentance),
+                     HTML))) +
+    scale_colour_manual(values = respondant_colours) +
+    labs(title = indicator_name, x = ind.matcher.df$ind.axis.title[i], y = "Value Score",
+         colour = "Respondant") +
+    guides(alpha = F) +
+    theme_pubr()+
+    theme(plot.title = element_text(size = 12),
+          plot.subtitle = element_text(size = 12),
+          legend.title = element_text(size = 12 , face = "bold"),
+          legend.text =  element_text(size = 12),
+          axis.text.x = element_text(size = 12),
+          axis.text.y = element_text(size = 12),
+          axis.title =  element_text(size = 12),
+          legend.position = "right",
+          plot.margin = margin(0.5, 1, 0.5, 1, "cm")
+    ) 
+  
+  plot
+  }
+
+# CREATE VF PLOTS ----
 each.plotly <- list(NA)
 each.plotly.no.model <- list(NA)
 should.model <- list(NA)
 
 for(i in 1: length(ind.matcher.df$indicator_name)){
-  # Choose an indicator name
-  indicator_name <- ind.matcher.df$indicator_name[i]
-  # Filter the data for the selected indicator
-  filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
-    mutate(respondant_name = as.factor(respondant_name))
-  # Color palette
-  respondant_colours <- glasbey.colors(nlevels(as.factor(filtered_data$respondant_name))) %>% as.character()
-  # respondant_colours <- brewer.pal(nlevels(as.factor(filtered_data$respondant_name)),  "Paired")
-
-  # prediction of mean trend ----
-  filtered_data$point.influence <- 1/(table(filtered_data$respondant_name)[as.factor(filtered_data$respondant_name)]) %>% 
-    as.numeric()
-  gam_model[[i]] <- gam(value.dec ~ s(measure, k = 4),
-                        data = filtered_data, family = binomial(), weights = point.influence)
-  # Create dummy data for prediction
-  dummy_data[[i]] <- data.frame(measure = seq(min(filtered_data$measure), max(filtered_data$measure), length.out = 50))
-  # Predict using the GAM model
-  dummy_data[[i]]$predicted_value <- predict(gam_model[[i]], newdata = dummy_data[[i]], type = "response")*100
   
-  # Plot of lines and mean predictions
-  plot <- ggplot() +
-    geom_line(data = dummy_data[[i]], size = 2, aes(y = predicted_value, x = measure), colour = "black") +
-    geom_line(data = filtered_data, 
-              aes(x = measure, y = value, color = respondant_name,
-                  text = map(
-                    paste0("<b>", `respondant_name`, "</b>",
-                           "<br><b>Certainty:</b>", cert_val_funct, "<br>",
-                           "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>",
-                           "<b>Sentance: </b>", vf.sentance),
-                    HTML),
-                  alpha = cert_val_funct),
-              size = 0.5) +
-    geom_point(data = filtered_data, 
-               size = 2, shape = 16,
-               aes(x = measure, y = value, color = respondant_name,
-                   text = map(
-                     paste0("<b>", `respondant_name`, "</b>",
-                            "<br><b>Certainty:</b>", cert_val_funct, "<br>",
-                            "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>",
-                           "<b>Sentance: </b>", vf.sentance),
-                     HTML))) +
-    scale_colour_manual(values = respondant_colours) +
-    labs(title = indicator_name, x = ind.matcher.df$ind.axis.title[i], y = "Value Score",
-         colour = "Respondant") +
-    guides(alpha = F) +
-    theme_pubr()+
-    theme(plot.title = element_text(size = 12),
-          plot.subtitle = element_text(size = 12),
-          legend.title = element_text(size = 12 , face = "bold"),
-          legend.text =  element_text(size = 12),
-          axis.text.x = element_text(size = 12),
-          axis.text.y = element_text(size = 12),
-          axis.title =  element_text(size = 12),
-          legend.position = "right",
-          plot.margin = margin(0.5, 1, 0.5, 1, "cm")
-    ) 
-  each.plotly[[i]] <- ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
+  plot <- plot_gg_gam(indicator_name = ind.matcher.df$indicator_name[i])
+  
+  plotly <- ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
     config(displayModeBar = F) %>% 
     layout(yaxis = list(range = c(-5, 105)))
-  
-  # Plot of lines and mean predictions
-  plot <- ggplot() +
-    # geom_line(data = dummy_data[[i]], size = 2, aes(y = predicted_value, x = measure), colour = "black") +
-    geom_line(data = filtered_data, 
-              aes(x = measure, y = value, color = respondant_name,
-                  text = map(
-                    paste0("<b>", `respondant_name`, "</b>",
-                           "<br><b>Certainty:</b>", cert_val_funct, "<br>",
-                           "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>",
-                           "<b>Sentance: </b>", vf.sentance),
-                    HTML),
-                  alpha = cert_val_funct),
-              size = 0.5) +
-    geom_point(data = filtered_data, 
-               size = 2, shape = 16,
-               aes(x = measure, y = value, color = respondant_name,
-                   text = map(
-                     paste0("<b>", `respondant_name`, "</b>",
-                            "<br><b>Certainty:</b>", cert_val_funct, "<br>",
-                            "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>",
-                           "<b>Sentance: </b>", vf.sentance),
-                     HTML))) +
-    scale_colour_manual(values = respondant_colours) +
-    labs(title = indicator_name, x = ind.matcher.df$ind.axis.title[i], y = "Value Score",
-         colour = "Respondant") +
-    guides(alpha = F) +
-    theme_pubr()+
-    theme(plot.title = element_text(size = 12),
-          plot.subtitle = element_text(size = 12),
-          legend.title = element_text(size = 12 , face = "bold"),
-          legend.text =  element_text(size = 12),
-          axis.text.x = element_text(size = 12),
-          axis.text.y = element_text(size = 12),
-          axis.title =  element_text(size = 12),
-          legend.position = "right",
-          plot.margin = margin(0.5, 1, 0.5, 1, "cm")
-    ) 
-  each.plotly.no.model[[i]] <- ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
-    config(displayModeBar = F) %>% 
-    layout(yaxis = list(range = c(-5, 105)))
-  
-  should.model[[i]] <- T
 
-}
+  each.plotly[[i]] <- plotly
+  
+  }
 
 ```
 
 
 
 ```{r vf plot vfs, echo = F , results="asis"}
-
+# print some set text (a title) and the vf figure
 for (i in 1:length(ind.matcher.df$indicator_name)) {
   cat("###", ind.matcher.df$sheet_name[i], "\n\n")
    print(htmltools::tagList(each.plotly[[i]] ))

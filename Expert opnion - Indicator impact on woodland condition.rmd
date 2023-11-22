@@ -28,6 +28,8 @@ extraction.location <- "Data\\Delphi round 1\\"
 
 ```
 
+# Introduction  
+
 ```{r data_extraction_from_excelsheets - preliminary work, echo = F, include = F, eval = F }
 
 # ---------------------------------------------------------------
@@ -147,6 +149,8 @@ just.one.df$mean_repond_cert_wt <- ave(just.one.df$cert_weight, just.one.df$resp
 
 ```
 ```{r participation_data_curation, echo = F, include = F, eval = T }
+
+
 # completed df
 has_completed <- data.frame(respondent_names = respondent_names,
                             indicator_name = indicator_names,
@@ -165,209 +169,7 @@ completed_summary <- has_completed %>%
             wt = sum(wt),
             wt_cert = sum(wt_cert))
 ```
-
-
-This document explores the results of expert opinion gathered from staff at the Woodland Trust, related to the measurement of woodland ecological condition by a set of `r has_completed$indicator_name %>% unique() %>% length()` indicators. 
-
-# Methods
-## Expert opinion elicitation using the Delphi method.  
-
-Here, we estimate the value function and weight for each indicator using a method of expert opinion elicitation called the Delphi method. The Delphi method is designed to collect and distill expert knowledge, using iterative or repetitive surveys to increase robustness 
-<!-- (Edwards et al., 2011) -->
-. 
-The method is also useful for identifying where agreements and disagreements occur.
-<!-- (Buckley, 1995; Kangas, Alho, Kolehmainen, & Mononen, 1998; Landeta, 2006). --> 
-  
-The method relies on repetitive surveying in at least two to three‘rounds’ where participants are asked the same questions, to which they provide quantitative answers. After each round participants review and consider the answers given by all panel-members, and are then given the opportunity to revise their answers. Results are considered relatively robust when they change little between rounds. The Delphi method has a history of successful use in supporting conservation action where empirical evidence is insufficient and information is needed rapidly to inform decisions. It's transparency and repeatability also add to its apeal.
-
-## Survey questions
-
-Each participant either attended an introductory workshop to the process, or was taken through individually. A sub-section of participants were also involved in development the proposed methods to measure each indicator in the field. Following this participants were supplied with an Excel spread sheet in which to submit their answers to questions relating to:  
-
-- Value functions describing how each indicator typically related to WEC
-- Weightings decreeing the relative important of each indicator for WEC, typically
-- Qualitative comments relating to: situations where these "typical" responses might be inappropriate (exceptions), concerns with the proposed method to measure the indicator, and any other information though relevant.
-
-Participants were encouraged to keep a clear distinction between:  
-
-- The quantitative responses they provided regarding the relationship between indicators and WEC in a typical woodland
-- The exceptions to those typical relationships that they highlighted.
-
-It was also stated that noted exceptions would be analysed and, where appropriate, used to inform future development of the WEC measure to account for important nuance.
-
-
-## Indicators considered  
-
-A set of `r has_completed$indicator_name %>% unique() %>% length()` structural indicators were proposed to measure WEC.
-
-```{r  indicators table, echo = F }
-ind.table <- ind.matcher.df [,1:2]
-names(ind.table) <- c("Indicator", "Description")
-ind.table %>% 
-   datatable(extensions = c('FixedColumns',"FixedHeader"),
-              options = list(scrollX = T, 
-                             paging = F,
-                             fixedHeader=F,
-                             dom = 't',
-                             fixedColumns = list(leftColumns = 1) #,
-                             # fixedColumns = list(leftColumns = 1) ,
-                             # buttons = c('copy', 'csv')
-                             ),
-              rownames = F#,
-              #container = sketch.lcm.areas
-              ) %>% 
-    formatStyle( columns = c("Indicator"), fontWeight = 'bold', `text-align` = 'left', "white-space" = "nowrap")# %>% 
-
-
-```
-
-
-## Analysis
-### Scaling
-
-Values and weights are all measured relative to each other, so each participant must be using the same scale. Some respondents did not use 100 and 0 as the highest and lowest scores for all indicator value functions and weights. To make their relative values comparable to other indicators all value functions provided where scaled to 0-100. Likewise, weightings were scaled so that the highest indicator weighting for each panelist was 100.
-
-<button class="btn btn-primary" data-toggle="collapse" data-target="#BlockName"> Show/Hide details of responses requiring scalling </button>  
-<div id="BlockName" class="collapse">  
-
-
-**Value functions** scaled for:  
-`r paste0("<br>- ", which.scaled.VF)`  
-
-**Weights** were scaled for:  
-
-`r paste0("<br>- ", which.scaled.wt)`  
-
-### Displaying of results
-
-Between rounds, expert-opinion estimates were presented on interactive plots to allow respondents to investigate estimates provided by others, and their certainties.
-
-Value functions where plotted with lines connecting each of the points provided, and a model (details below) was fitted to present the average trend, where a consensus was deemed to be emerging. Hover-text displayed respondent name, their certainty in their estimate, and a sentence provided that describes the trend.
-
-Indicator relative weightings were presented on a dot-plot, including the mean and median results for each indicator's weight.  
-
-#### Model details
-
-Average value functions were modeled with a binomial GAM. The influence of points from each respondent weighted by the inverse of the number of points provided by that respondent, with the aim of ensuring that all respondents had the same influence on the result, regardless of how many points they provided.
-
-
-# Results - Round 1  
-
-### Participants and survey completion
-
-`r has_completed$respondent_names %>% unique() %>% length()` expert practitioners from Woodland Trust and Plantlife staff were invited to provide their opinion the value and weight of indicators.  
-`r sum(completed_summary[,2:5] %>% rowSums() >0)` have provided a response as of `r date()`.   
-Of these, `r sum((completed_summary[,2:5] %>% rowSums() >0) & (completed_summary[,2:5] %>% rowSums() < (4* has_completed$indicator_name %>% unique() %>% length() ) ))` remain partially incomplete.  
-The chart below summarises participant completion of different elements of the survey. For more detail see table (button below chart).
-
-``` {r  participation_chart, echo = F }
-
-# use df to ggplot
-# The first legitimate use of a pie chart in my carer!
-
-max_count = max(completed_summary$vf)
-
-create_gg_pie_chart <- function(count, max_count) {
-  percentage <- count / max_count * 100
-  pie_chart <- ggplot(data.frame(x = c("Done", "Remaining"), y = c(count, max_count - count)),
-                      aes(x = "", y = y, fill = x)) +
-    geom_bar(width = 1, stat = "identity") +
-    scale_fill_manual(values = c("steelblue", "lightgray")) +  # Specify custom colors
-    coord_polar(theta = "y") +
-    theme_void() +
-    theme(legend.position = "none")
-  
-  return(pie_chart)
-  
-}
-
-gg_pie_charts <- list(NA)
-bk = 1
-for (i in 1:(length(completed_summary$respondent_names))){
-  for (ii in 1:(dim(completed_summary)[2]-1)){
-    count <- completed_summary[i,1+ii] %>% as.numeric()
-    gg_pie_charts[[bk]] <-  create_gg_pie_chart(count, length(unique(df$indicator_name)))
-  bk = bk+1
-    }}
-  
-
-# Convert the list of pie charts to a grid using grid.arrange
-pie_matrix <- arrangeGrob(grobs = gg_pie_charts, nrow = length(completed_summary$respondent_names), ncol = length(colnames(completed_summary[, c("wt", "wt_cert", "vf", "vf_cert")])))
-# Add row names (respondent names)
-row_names <- completed_summary$respondent_names
-
-# Add column names
-col_names <- c("Value func", "VF cert", "Weights", "wt cert")
-
-combine <- rbind(tableGrob(t(c(col_names)), theme = ttheme_minimal(), rows = ""), 
-                 cbind(tableGrob(row_names, theme = ttheme_minimal()), 
-                       arrangeGrob(grobs = gg_pie_charts, nrow = length(row_names), ncol = length(col_names)),  size = "last"), size = "last")
-grid.newpage()
-grid.draw(combine)
-
-```
-Figure 1. Completion of expert opinion survey components by each panelist (coloured portion of pies) for value functions ("Value func"), value function certainties ("VF cert"), indicator weightings ("Weights") and weighting certainties ("wt certs").  
-
-<button class="btn btn-primary" data-toggle="collapse" data-target="#BlockName"> Show/Hide table of detailed completion info </button>  
-<div id="BlockName" class="collapse">  
-
-Warning - table that should be printed here is written, just not printing
-
-```{r what needs done by participants details, eval = F}
-
-# Create a data frame with participant names and the four columns
-participant_table <- data.frame(respondent_names = completed_summary$respondent_names,
-                                vf = "",
-                                vf_cert = "",wt = "",
-                                wt_cert = "",
- stringsAsFactors = FALSE)
-
-# Iterate over each participant and update the table with the indicators not completed
-for (i in 1:nrow(completed_summary)) {
-  n.indicators <- has_completed$indicator_name %>% unique() %>% length()
-  participant <- completed_summary[i, "respondent_names"] %>% as.character()
-  not_completed_wt <- has_completed$sheet_name[has_completed$respondent_names == participant & has_completed$wt == FALSE]
-  not_completed_wt_cert <- has_completed$sheet_name[has_completed$respondent_names == participant & has_completed$wt_cert == FALSE]
-  not_completed_vf <- has_completed$sheet_name[has_completed$respondent_names == participant & has_completed$vf == FALSE]
-  not_completed_vf_cert <- has_completed$sheet_name[has_completed$respondent_names == participant & has_completed$vf_cert == FALSE]
-  
-  if (length(not_completed_wt) == n.indicators) not_completed_wt <- "all"
-  if (length(not_completed_wt_cert) == n.indicators) not_completed_wt_cert <- "all"
-  if (length(not_completed_vf) == n.indicators) not_completed_vf <- "all"
-  if (length(not_completed_vf_cert) == n.indicators) not_completed_vf_cert <- "all"
-
-  participant_table[participant_table$respondent_names == participant, "wt"] <- paste(not_completed_wt, collapse = ", ")
-  participant_table[participant_table$respondent_names == participant, "wt_cert"] <- paste(not_completed_wt_cert, collapse = ", ")
-  participant_table[participant_table$respondent_names == participant, "vf"] <- paste(not_completed_vf, collapse = ", ")
-  participant_table[participant_table$respondent_names == participant, "vf_cert"] <- paste(not_completed_vf_cert, collapse = ", ")
-}
-
-# Print the participant table
-
-names(participant_table) <- c("Respondent", "Value Functions", "vf certs", "Weights", "wt certs")
-
-participant_table %>%  
-    datatable(extensions = c('FixedColumns',"FixedHeader"),
-              options = list(scrollX = T, 
-                             scrollY = '400px',  # Set the desired height for the table
-                             scrollCollapse = TRUE,
-
-                             paging = F,
-                             fixedHeader=F,
-                             dom = 't',
-                             autoWidth = TRUE, fixedColumns = list(leftColumns = 1) #,
-                             # fixedColumns = list(leftColumns = 1) ,
-                             # buttons = c('copy', 'csv')
-                             ),
-              rownames = F#,
-              #container = sketch.lcm.areas
-              ) %>% 
-    formatStyle( columns = c("Respondent"), fontWeight = 'bold', `text-align` = 'left', "white-space" = "nowrap")# %>% 
-
-```
-
-## Value functions
-```{r make value function plots, echo = F }
+```{r functions to make value function plots, echo = F }
 
 # FUNCTION - PLOT RESPONDANTS' continuous INDICATOR VFs ----
   ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.matcher.df$ind.axis.title[i]){
@@ -408,8 +210,9 @@ participant_table %>%
                    text = map(
                      paste0("<b>", `respondant_name`, "</b>",
                             "<br><b>Certainty:</b>", cert_val_funct, "<br>",
-                            "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>",
-                           "<b>Sentance: </b>", vf.sentance),
+                            "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"#,
+                   #        "<b>Sentance: </b>", vf.sentance
+                   ),
                      HTML),
                    alpha = cert_val_funct)) +
     scale_colour_manual(values = respondant_colours) +
@@ -526,8 +329,205 @@ participant_table %>%
   plot
   }
   
-  
 ```
+
+
+This document explores the expert opinion gathered from staff at the Woodland Trust, related to the measurement of `r has_completed$indicator_name %>% unique() %>% length()` indicators of woodland ecological condition, and the relationship between these indicators' and a wood's potential to promote flourishing wildlife species communities (by estimating "value functions" and importance weightings for each indicator). 
+
+Expert opinion on the value function and weight for each indicator was elicitated using the Delphi method. The Delphi method is designed to collect and distill expert knowledge, using repeated surveys to refine estimates, increasing their reliability 
+<!-- (Edwards et al., 2011) -->
+and identifying where agreements and disagreements in understanding occur.   
+<!-- (Buckley, 1995; Kangas, Alho, Kolehmainen, & Mononen, 1998; Landeta, 2006). --> 
+  
+The method relies on repetitive surveying in at least two to three ‘rounds’ where participants are asked the same questions. After each round participants review and consider the answers given by all panel-members, and are then given the opportunity to revise their answers. The Delphi method has a history of successful use in supporting conservation action where empirical evidence is insufficient and information is needed rapidly to inform decisions. It's transparency and repeatability also add to its appeal.  
+
+Each participant either attended an introductory workshop to the process, or was taken through individually. A sub-section of participants were also involved in development the proposed methods to measure each indicator in the field. Answers were submitted into individual Excel spread sheets, with questions relating to:  
+
+- Value functions describing how each indicator related to WEC, in typical conditions
+- Weightings decreeing the relative important of each indicator to WEC, in typical conditions
+- Certainty around value function and weighting estimates (subjective score 0-5)
+- Comments or concerns relating to: situations where these "typical" responses might be inappropriate, the proposed method to measure indicators, and any other relevant information.  
+
+Participants were encouraged to keep a clear distinction between the quantitative responses provided (i.e. value functions and weightings under typical conditions) and exceptions to those typical relationships (that they highlighted in their comments).  
+
+It was also stated that noted exceptions would be analysed and, where appropriate, used to inform future development of the WEC measure to account for important nuance.
+
+
+# Indicators considered  
+
+```{r  indicators table, echo = F }
+ind.table <- ind.matcher.df [,1:2]
+names(ind.table) <- c("Indicator", "Description")
+ind.table %>% 
+   datatable(extensions = c('FixedColumns',"FixedHeader"),
+              options = list(scrollX = T, 
+                             paging = F,
+                             fixedHeader=F,
+                             dom = 't',
+                             fixedColumns = list(leftColumns = 1) #,
+                             # fixedColumns = list(leftColumns = 1) ,
+                             # buttons = c('copy', 'csv')
+                             ),
+              rownames = F#,
+              #container = sketch.lcm.areas
+              ) %>% 
+    formatStyle( columns = c("Indicator"), fontWeight = 'bold', `text-align` = 'left', "white-space" = "nowrap")# %>% 
+
+
+```
+
+
+# Analysis Method
+### Scaling
+
+Values and weights are all measured relative to each other. Some respondents did not use the full 0 to 100 range for all value functions and weights. Comparison between participants requires that they all use the same scale, and so all value functions where scaled from 0 to 100 and weightings were scaled so that the highest indicator weighting for each panelist was 100.
+
+<button class="btn btn-primary" data-toggle="collapse" data-target="#BlockName"> Show/Hide details of responses requiring scalling </button>  
+<div id="BlockName" class="collapse">  
+
+
+**Value functions** scaled for:  
+`r paste0("<br>- ", which.scaled.VF)`  
+
+**Weights** were scaled for:  
+
+`r paste0("<br>- ", which.scaled.wt)`  
+
+### Edits to responses
+
+In some cases - where appropriate to allow categorisation - points were added to value functions by visual interpolation. Some points where also added by extrapolation where a maximum/minimum value was clearly implied.  
+
+
+### Displaying of results
+
+A copy of this report was circulated to respondents between rounds to allow respondents to investigate estimates provided by others, and their certainties.
+
+Where appropriate value functions where plotted categorically (with box plots summarising the estimated value at each category), and continuously (with lines connecting points and an indication of the general trend - see model details below). Indicator relative weightings were presented on boxplots, including the mean and median estimates. Interactive hover-text displayed respondent name and their certainty in their estimate.
+
+#### Model details
+
+Value functions were modeled with a binomial GAM. The influence of points from each respondent weighted by the inverse of the number of points provided by that respondent, with the aim of ensuring that all respondents had the same influence on the result, regardless of how many points they provided.
+
+
+# Participants and survey completion{.tabset .tabset-fade .tabset-pills}
+
+`r has_completed$respondent_names %>% unique() %>% length()` expert practitioners from Woodland Trust and Plantlife staff were invited to provide their opinion the value and weight of indicators.  
+`r sum(completed_summary[,2:5] %>% rowSums() >0)` have provided a response as of `r date()`.   
+Of these, `r sum((completed_summary[,2:5] %>% rowSums() >0) & (completed_summary[,2:5] %>% rowSums() < (4* has_completed$indicator_name %>% unique() %>% length() ) ))` remain partially incomplete.  
+
+## Survey completion summary  
+The chart below summarises participant completion of different elements of the survey. For more detail see table (button below chart).
+
+``` {r  participation_chart - make, echo = F, eval = F }
+
+# use df to ggplot
+# The first legitimate use of a pie chart in my carer!
+
+max_count = max(completed_summary$vf)
+
+create_gg_pie_chart <- function(count, max_count) {
+  percentage <- count / max_count * 100
+  pie_chart <- ggplot(data.frame(x = c("Done", "Remaining"), y = c(count, max_count - count)),
+                      aes(x = "", y = y, fill = x)) +
+    geom_bar(width = 1, stat = "identity") +
+    scale_fill_manual(values = c("steelblue", "lightgray")) +  # Specify custom colors
+    coord_polar(theta = "y") +
+    theme_void() +
+    theme(legend.position = "none")
+  
+  return(pie_chart)
+  
+  pie_matrix <- arrangeGrob(grobs = gg_pie_charts, nrow = length(completed_summary$respondent_names), ncol = length(colnames(completed_summary[, c("wt", "wt_cert", "vf", "vf_cert")])))
+# Add row names (respondent names)
+row_names <- completed_summary$respondent_names
+
+# Add column names
+col_names <- c("Value func", "VF cert", "Weights", "wt cert")
+
+combine <- rbind(tableGrob(t(c(col_names)), theme = ttheme_minimal(), rows = ""), 
+                 cbind(tableGrob(row_names, theme = ttheme_minimal()), 
+                       arrangeGrob(grobs = gg_pie_charts, nrow = length(row_names), ncol = length(col_names)),  size = "last"), size = "last")
+}
+
+gg_pie_charts <- list(NA)
+bk = 1
+for (i in 1:(length(completed_summary$respondent_names))){
+  for (ii in 1:(dim(completed_summary)[2]-1)){
+    count <- completed_summary[i,1+ii] %>% as.numeric()
+    gg_pie_charts[[bk]] <-  create_gg_pie_chart(count, length(unique(df$indicator_name)))
+  bk = bk+1
+    }}
+  
+save(combine, file = "Figs//gg_pie_charts.RData")
+
+```
+``` {r  participation_chart - plot, echo = F }
+load(file = "Figs//gg_pie_charts.RData")
+
+# Convert the list of pie charts to a grid using grid.arrange
+
+grid.newpage()
+grid.draw(combine)
+
+```
+Figure 1. Completion of expert opinion survey components by each panelist (coloured portion of pies) for value functions ("Value func"), value function certainties ("VF cert"), indicator weightings ("Weights") and weighting certainties ("wt certs").  
+
+## Survey completion details  
+
+```{r what needs done by participants details, eval = F}
+
+# Create a data frame with participant names and the four columns
+participant_table <- data.frame(respondent_names = completed_summary$respondent_names,
+                                vf = "",
+                                vf_cert = "",wt = "",
+                                wt_cert = "",
+ stringsAsFactors = FALSE)
+
+# Iterate over each participant and update the table with the indicators not completed
+for (i in 1:nrow(completed_summary)) {
+  n.indicators <- has_completed$indicator_name %>% unique() %>% length()
+  participant <- completed_summary[i, "respondent_names"] %>% as.character()
+  not_completed_wt <- has_completed$sheet_name[has_completed$respondent_names == participant & has_completed$wt == FALSE]
+  not_completed_wt_cert <- has_completed$sheet_name[has_completed$respondent_names == participant & has_completed$wt_cert == FALSE]
+  not_completed_vf <- has_completed$sheet_name[has_completed$respondent_names == participant & has_completed$vf == FALSE]
+  not_completed_vf_cert <- has_completed$sheet_name[has_completed$respondent_names == participant & has_completed$vf_cert == FALSE]
+  
+  if (length(not_completed_wt) == n.indicators) not_completed_wt <- "all"
+  if (length(not_completed_wt_cert) == n.indicators) not_completed_wt_cert <- "all"
+  if (length(not_completed_vf) == n.indicators) not_completed_vf <- "all"
+  if (length(not_completed_vf_cert) == n.indicators) not_completed_vf_cert <- "all"
+
+  participant_table[participant_table$respondent_names == participant, "wt"] <- paste(not_completed_wt, collapse = ", ")
+  participant_table[participant_table$respondent_names == participant, "wt_cert"] <- paste(not_completed_wt_cert, collapse = ", ")
+  participant_table[participant_table$respondent_names == participant, "vf"] <- paste(not_completed_vf, collapse = ", ")
+  participant_table[participant_table$respondent_names == participant, "vf_cert"] <- paste(not_completed_vf_cert, collapse = ", ")
+}
+
+# Print the participant table
+
+names(participant_table) <- c("Respondent", "Value Functions", "vf certs", "Weights", "wt certs")
+
+participant_table %>%  
+    datatable(extensions = c('FixedColumns',"FixedHeader"),
+              options = list(scrollX = T, 
+                             scrollY = '400px',  # Set the desired height for the table
+                             scrollCollapse = TRUE,
+
+                             paging = F,
+                             fixedHeader=F,
+                             dom = 't',
+                             autoWidth = TRUE, fixedColumns = list(leftColumns = 1) #,
+                             # fixedColumns = list(leftColumns = 1) ,
+                             # buttons = c('copy', 'csv')
+                             ),
+              rownames = F#,
+              #container = sketch.lcm.areas
+              ) %>% 
+    formatStyle( columns = c("Respondent"), fontWeight = 'bold', `text-align` = 'left', "white-space" = "nowrap")# %>% 
+
+```
+
+# Reponses by indicator  
 
 ## Tree age/size distribution {.tabset .tabset-fade .tabset-pills}
 ```{r vf Tree age size distribution - init, echo = F , results="asis"}
@@ -580,9 +580,9 @@ knitr::kable()
 ```{r vf Tree age size distribution - continuous, echo = F , results="asis"}
 
 
-continuous_vf_fig <- function(){
+continuous_vf_fig <- function(line.col = NA){
   plot <- ggplot_gam_resp_vf(indicator_name = indicator_name,
-                           x.lab = ind.axis.title)
+                           x.lab = ind.axis.title, gam.col = line.col)
 
 ggsave(filename = paste0("Figs//ind_",
                          formatC(ind.num, width = 2, format = "d", flag = "0"),
@@ -661,9 +661,18 @@ weights_fig()
 
 ## {-}
 
-### Comments
+### Comments  
+
+VF:  
+- Similar trends. Some prefer linear, some S-shaped, some exponential, some logarithmic
+- Bit of disagreement RE requirement for max value
+
+Weightings: fairly wide spread
+ 
 
 ## Vertical Structure {.tabset .tabset-fade .tabset-pills}
+
+Of four possible categories: >15m; 5-15m; 2-5m; 0.5-2m; measured at plot level
 
 ```{r vf Vertical Structure - init, echo = F , results="asis"}
 
@@ -796,7 +805,7 @@ weights_fig()
 
 ```{r vf Deadwood - init, echo = F , results="asis"}
 
-ind.num = 2
+ind.num = 6
 indicator_name = ind.matcher.df$indicator_name[ind.num]
 ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
 indicator_name  
@@ -839,7 +848,7 @@ weights_fig()
 
 ```{r vf AVTs - init, echo = F , results="asis"}
 
-ind.num = 2
+ind.num = 7
 indicator_name = ind.matcher.df$indicator_name[ind.num]
 ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
 indicator_name  
@@ -882,7 +891,7 @@ weights_fig()
 
 ```{r vf Woodland Extent - init, echo = F , results="asis"}
 
-ind.num = 2
+ind.num = 8
 indicator_name = ind.matcher.df$indicator_name[ind.num]
 ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
 indicator_name  
@@ -925,7 +934,7 @@ weights_fig()
 
 ```{r vf Regeneration - init, echo = F , results="asis"}
 
-ind.num = 2
+ind.num = 9
 indicator_name = ind.matcher.df$indicator_name[ind.num]
 ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
 indicator_name  
@@ -968,7 +977,7 @@ weights_fig()
 
 ```{r vf Herbivore Impact - init, echo = F , results="asis"}
 
-ind.num = 2
+ind.num = 10
 indicator_name = ind.matcher.df$indicator_name[ind.num]
 ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
 indicator_name  
@@ -1011,7 +1020,7 @@ weights_fig()
 
 ```{r vf Tree Health - init, echo = F , results="asis"}
 
-ind.num = 2
+ind.num = 11
 indicator_name = ind.matcher.df$indicator_name[ind.num]
 ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
 indicator_name  
@@ -1054,7 +1063,7 @@ weights_fig()
 
 ```{r vf Ground Flora - init, echo = F , results="asis"}
 
-ind.num = 2
+ind.num = 12
 indicator_name = ind.matcher.df$indicator_name[ind.num]
 ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
 indicator_name  
@@ -1097,7 +1106,7 @@ weights_fig()
 
 ```{r vf Horizontal complexity - init, echo = F , results="asis"}
 
-ind.num = 2
+ind.num = 13
 indicator_name = ind.matcher.df$indicator_name[ind.num]
 ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
 indicator_name  
@@ -1140,7 +1149,7 @@ weights_fig()
 
 ```{r vf Human Damage - init, echo = F , results="asis"}
 
-ind.num = 2
+ind.num = 14
 indicator_name = ind.matcher.df$indicator_name[ind.num]
 ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
 indicator_name  

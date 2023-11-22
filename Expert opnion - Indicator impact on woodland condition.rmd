@@ -538,18 +538,27 @@ paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ### Categorised value function
 ```{r vf Tree age size distribution - categorical, echo = F , results="asis"}
 
-
-# categorical plot
+categorised_vf_fig <- function(){
+  # categorical plot
 vf_cat_data = filtered_data %>% 
                      mutate(cat_measure = as.factor(measure))
 plot <- ggplot_resp_cat_vf(indicator_name = indicator_name,
                     x.lab = ind.axis.title,
                    data = vf_cat_data )
 
+ggsave(filename = paste0("Figs//ind_",
+                         formatC(ind.num, width = 2, format = "d", flag = "0"),
+                         "_", indicator_name, "vf_boxplot.png"),
+       plot = plot,
+       width = 300, height = 150, units = "mm")
 ##ggplotly
 ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
     config(displayModeBar = F) %>% 
     layout(yaxis = list(range = c(-5, 105)))
+}
+
+categorised_vf_fig()
+
 ## table
 filtered_data %>%
   group_by(measure) %>%
@@ -557,13 +566,15 @@ filtered_data %>%
             'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
 knitr::kable()
 
-
 ```
 
 ### Continuous Value function
 ```{r vf Tree age size distribution - continuous, echo = F , results="asis"}
+
 plot <- ggplot_gam_resp_vf(indicator_name = indicator_name,
                            x.lab = ind.axis.title)
+
+ggsave(plot, filename)
 
 ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
     config(displayModeBar = F) %>% 

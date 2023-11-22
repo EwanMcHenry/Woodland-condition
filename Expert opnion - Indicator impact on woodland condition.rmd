@@ -129,6 +129,14 @@ df <- df %>% right_join(weight.rank, by = c("indicator_name", "respondant_name")
 
 df$value.dec = df$value/100 # a decimal version of value to work in the later binomial gams
 
+  respondant_colours <- glasbey.colors(nlevels(as.factor(df$respondant_name))+1)[-1] %>% # a colour for each respondant, but not white
+    as.character()
+
+df$respondant_colour <- respondant_colours[df$respondant_name %>% 
+                                             as.factor() %>% unclass() %>%
+                                             as.numeric()] # number each respondant
+
+
 ## version with sinlge entry for each indicator:respondant ----
 just.one.df <- df[!duplicated(paste0(df$sheet_name, df$respondant_name)),
 c("indicator_name", "respondant_name", "cert_val_funct", "cert_weight", "sheet_name", "weight")]
@@ -367,7 +375,7 @@ participant_table %>%
   filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
     mutate(respondant_name = as.factor(respondant_name))
   ## Color palette
-  respondant_colours <- glasbey.colors(nlevels(as.factor(filtered_data$respondant_name))) %>% as.character()
+  respondant_colours <- glasbey.colors(nlevels(as.factor(filtered_data$respondant_name))+1)[-1] %>% as.character()
   # respondant_colours <- brewer.pal(nlevels(as.factor(filtered_data$respondant_name)),  "Paired")
 
   # PREDICT TREND ----
@@ -428,7 +436,7 @@ participant_table %>%
     # vf_cat_data is filtered_data, formatted to include categories - cat_measure
     
   ## Color palette
-  respondant_colours <- glasbey.colors(nlevels(as.factor(filtered_data$respondant_name))) %>% as.character()
+  respondant_colours <- glasbey.colors(nlevels(as.factor(filtered_data$respondant_name))+1)[-1] %>% as.character()
   # respondant_colours <- brewer.pal(nlevels(as.factor(filtered_data$respondant_name)),  "Paired")
 
   # PLOT SPEC, LINES AND TREND ----
@@ -478,7 +486,7 @@ participant_table %>%
   filtered_data <- df[df$indicator_name == indicator_name & !duplicated(paste0(df$respondant_name, df$indicator_name)), ] %>% 
     mutate(respondant_name = as.factor(respondant_name))
   ## Color palette
-  respondant_colours <- glasbey.colors(nlevels(as.factor(filtered_data$respondant_name))) %>% as.character()
+  respondant_colours <- glasbey.colors(nlevels(as.factor(filtered_data$respondant_name))+1)[-1] %>% as.character()
 
   # PLOT SPEC, LINES AND TREND ----
   plot <- ggplot(filtered_data) +
@@ -573,8 +581,6 @@ knitr::kable()
 
 plot <- ggplot_gam_resp_vf(indicator_name = indicator_name,
                            x.lab = ind.axis.title)
-
-ggsave(plot, filename)
 
 ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
     config(displayModeBar = F) %>% 

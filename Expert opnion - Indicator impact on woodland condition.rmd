@@ -245,17 +245,16 @@ completed_summary <- has_completed %>%
   # PLOT SPEC, LINES AND TREND ----
   plot <- ggplot() +
     geom_boxplot(data = data, 
-              aes(x = cat_measure, y = value), text = NULL) +
+              aes(x = cat_measure, y = value), text = NULL, outlier.shape = NA) +
     stat_summary(data = data, aes(x = cat_measure, y = value),
              geom = "point", fun = mean,
              color = "red", shape = 3, size = 5,
              position = position_nudge(x = 0.05, y = 0)
              ) +
-    stat_summary(fun=mean, geom='point', shape=20, size=8) +
     geom_jitter(data = data,
                size = 2, shape = 16,
                position=position_jitter(width=.1, height=0),
-               aes(x = measure, y = value, color = respondant_name,
+               aes(x = cat_measure, y = value, color = respondant_name,
                    text = map(
                      paste0("<b>", `respondant_name`, "</b>",
                             "<br><b>Value:</b>", value, "<br>",
@@ -348,8 +347,6 @@ ggplotly(plot, tooltip = "text", dynamicTicks = F) %>%
     config(displayModeBar = F) %>% 
     layout(yaxis = list(range = c(-5, 105)))
 }
-
-
 ```
 
 

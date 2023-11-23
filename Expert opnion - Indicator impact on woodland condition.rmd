@@ -342,10 +342,18 @@ ggsave(filename = paste0("Figs//ind_",
                          "_", indicator_name, "vf_boxplot.png"),
        plot = plot,
        width = 300, height = 150, units = "mm")
+
 ##ggplotly
-ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
+plotly_p <- ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
     config(displayModeBar = F) %>% 
     layout(yaxis = list(range = c(-5, 105)))
+
+# remove outliers from plotly
+# for(i in 1:length(plotly_p)){
+# plotly_p$x$data[[i]]$marker$opacity = 0 
+# }
+
+plotly_p
 }
 ```
 
@@ -612,9 +620,17 @@ ggsave(filename = paste0("Figs//ind_",
        width = 300, height = 150, units = "mm")
 
 
-ggplotly(wt.plot, tooltip = "text", dynamicTicks = F) %>% 
+plotly_p <- ggplotly(wt.plot, tooltip = "text", dynamicTicks = F) %>% 
     config(displayModeBar = F) %>% 
     layout(yaxis = list(range = c(-5, 105)))
+
+# remove outliers from plotly
+# for(i in 1:length(plotly_p)){
+# plotly_p$x$data[[i]]$marker$opacity = 0 
+# }
+
+plotly_p
+
 }
 
 weights_fig()

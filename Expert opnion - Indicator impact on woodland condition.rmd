@@ -58,7 +58,9 @@ library(gridExtra)
 library(grid)
 library(DT)
 library(Polychrome)
-
+library(ggiraph)
+library(cowplot)
+library(ggnewscale)
 
 #-----------------------------------------------------
 #  LOAD DATA ----------------------------------------------
@@ -282,13 +284,22 @@ completed_summary <- has_completed %>%
   }
 
 # FUNCTION - PLOT RESPONDANTS' WEIGHTS - FOR INDICATOR  ----
-  ggplot_resp_weight_ind <- function(indicator_name){
+  ggplot_resp_weight_ind <- function(indicator_name, this.ind.num = ind.num){
     # plot weights by respondant for this indicator
+    
+    #filter data of one weight for each respondant:indicator
+      weights_filtered_data <- df[ !duplicated(paste0(df$respondant_name, df$indicator_name)), ] %>% 
+    mutate(respondant_name = as.factor(respondant_name),
+           this.ind = indicator_num == this.ind.num)
+  
+## Color palette
+  respondant_colours <- glasbey.colors(nlevels(as.factor(weights_filtered_data$respondant_name))+1)[-1] %>% as.character()
+  
+weights_filtered_data$respondant_colour.indf = respondant_colours[as.numeric(weights_filtered_data$respondant_name)]
+    
 # Filter the data for the selected indicator
-  filtered_data <- df[df$indicator_name == indicator_name & !duplicated(paste0(df$respondant_name, df$indicator_name)), ] %>% 
-    mutate(respondant_name = as.factor(respondant_name))
-  ## Color palette
-  respondant_colours <- glasbey.colors(nlevels(as.factor(filtered_data$respondant_name))+1)[-1] %>% as.character()
+  filtered_data <- weights_filtered_data[weights_filtered_data$indicator_name == indicator_name, ]
+
 
   # PLOT SPEC, LINES AND TREND ----
   plot <- ggplot(filtered_data) +
@@ -297,7 +308,10 @@ completed_summary <- has_completed %>%
                    aes(x = 0, y = weight),
                    geom = "point", fun = mean,
                    color = "red", shape = 3, size = 5) +
-    geom_jitter(aes(x = 0, y = weight, color = respondant_name,
+    geom_jitter_interactive(aes(x = 0, y = weight, 
+                                color = respondant_name,
+                                tooltip = respondant_name,
+                                data_id = respondant_name,
                text = map(
                      paste0("<b>", `respondant_name`, "</b><br>",
                             "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>",
@@ -326,6 +340,101 @@ completed_summary <- has_completed %>%
     ) 
   
   plot
+  
+  # add interactivity for hover to show that respondants weights, with this one highlighted
+  
+
+# plot of all indicator weights for all respondants, by indicator, interactive  
+this.indicator.lines = data.frame(
+  y = rep(c(0,100), each = length(weights_filtered_data$sheet_name %>% unique())),
+  sheet_name = rep(weights_filtered_data$sheet_name %>% unique(), times = 2) %>% 
+    as.factor(),
+    ind.num = rep(weights_filtered_data$indicator_num %>% unique(), times = 2) 
+          )  
+this.indicator.lines$this.ind <- this.ind.num == this.indicator.lines$ind.num 
+  
+indiv.weights <- ggplot() +
+  geom_line(data = this.indicator.lines,
+            aes(x = sheet_name, y = y,
+                col = this.ind,
+                data_id = sheet_name))+
+  scale_colour_manual(values = c("gray89","steelblue")) +
+  new_scale_colour()+
+  geom_point_interactive(data = weights_filtered_data, 
+    position = position_jitter(width = 0.2, height = 0),
+             size = 1, shape = 16,
+             aes(x = sheet_name, y = weight,
+                 col = weights_filtered_data$respondant_name,
+                 tooltip = respondant_name,
+                 data_id = respondant_name #,
+                 # text = map(
+                 #   paste0("<b>", respondant_name, "</b><br>",
+                 #          "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"),
+                   # HTML)
+                 ),
+             alpha = 0.4,
+            show.legend = FALSE) +
+  scale_colour_manual(values = respondant_colours) +
+  scale_y_continuous(limits = c(0,100)) +
+  xlab(NULL) +
+  ylab("Weight") + 
+  theme_pubr()+
+  theme(plot.title = element_text(size = 12),
+        plot.subtitle = element_text(size = 12),
+        legend.title = element_text(size = 12 , face = "bold"),
+        legend.text =  element_text(size = 12),
+        axis.text.x = element_text(angle = -60, hjust = 0, size = 10),
+        axis.text.y = element_text(size = 12),
+        axis.title =  element_text(size = 12),
+        legend.position = "right",
+        plot.margin = margin(0.5, 1, 0.5, 1, "cm")
+  ) 
+
+plot <- ggplot() +
+  geom_point(data = just.one.df, 
+             position = position_jitter(width = 0.2, height = 0),
+             size = 1, shape = 16,
+             aes(x = sheet_name, y = weight, color = respondant_name,
+                 text = map(
+                   paste0("<b>", `respondant_name`, "</b><br>",
+                          "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"),
+                   HTML))) +
+  stat_summary(data = just.one.df, aes(x = sheet_name, y = weight,
+                                       text = map(
+                                         paste0("Mean weight"),
+                                         HTML)),
+               geom = "point", fun = mean,
+               color = "red", shape = 3, size = 2,
+               position = position_nudge(x = 0.05, y = 0)
+               ) +
+  labs(x = NULL, y = "Relative importance (weight)", 
+       title = "Indicator weights",
+       color = "Respondant") +
+  theme_pubr()+
+  theme(plot.title = element_text(size = 12),
+        plot.subtitle = element_text(size = 12),
+        legend.title = element_text(size = 12 , face = "bold"),
+        legend.text =  element_text(size = 12),
+        axis.text.x = element_text(angle = -60, hjust = 0, size = 10),
+        axis.text.y = element_text(size = 12),
+        axis.title =  element_text(size = 12),
+        legend.position = "right",
+        plot.margin = margin(0.5, 1, 0.5, 1, "cm")
+  ) 
+
+
+
+
+
+girafe(
+  ggobj = plot_grid(plot, indiv.weights),
+  width_svg = 15,
+  height_svg = 6, 
+  options = list(
+    opts_hover_inv(css = "stroke-opacity:0.01;"),
+    opts_hover(css = "stroke:orange;stroke-width:5;fill-opacity:1")
+  ) ) 
+  
   }
   
 # FUNCTION - RUN PLOTTING OF CATEGORISED VF ----

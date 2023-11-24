@@ -58,7 +58,9 @@ library(gridExtra)
 library(grid)
 library(DT)
 library(Polychrome)
-
+library(ggiraph)
+library(cowplot)
+library(ggnewscale)
 
 #-----------------------------------------------------
 #  LOAD DATA ----------------------------------------------
@@ -67,6 +69,10 @@ load(paste0(extraction.location,"sheets_data.RData"))
 
 # ---------------------------------------------------------------
 # ok, that was "fun", lets get to woooork!
+
+# functions
+
+source("Scripts\\functions_delphi_analysis.R")
 
 ```
 ```{r data_curation, echo = F, include = F, eval = T }
@@ -103,6 +109,9 @@ df <- data.frame(
   stringsAsFactors = FALSE
 ) %>% merge(., ind.matcher.df, by.x = "indicator_name", by.y = "indicator_name", all.x = T) # this is wrong -- its sheet name.. but its fine
 
+# working here - need to get sheet name formatted right for the weights plots
+df <- df %>% 
+  mutate(sheet_name = factor(sheet_name, levels = unique(sheet_name)[ order(unique(indicator_num ))] ))
 
 ## scale and augment ----
 
@@ -148,8 +157,15 @@ just.one.df$mean_repond_cert_wt <- ave(just.one.df$cert_weight, just.one.df$resp
 #-----------------------------------------------------
 
 ```
-```{r participation_data_curation, echo = F, include = F, eval = T }
 
+```{r tests, echo = F}
+
+if (length(unique(paste0(df$sheet_name,df$indicator_num )))!=length(unique(df$sheet_name)) ){
+  print("Warning, someones response sheet has slipped into the wrong orger! -- this WILL cause issues")
+}
+```
+
+```{r participation_data_curation, echo = F, include = F, eval = T }
 
 # completed df
 has_completed <- data.frame(respondent_names = respondent_names,
@@ -160,7 +176,9 @@ has_completed <- data.frame(respondent_names = respondent_names,
                             vf_cert = !is.na(as.numeric(cert_val_funct))
                             ) %>% 
   left_join(., ind.matcher.df[, c("sheet_name", "indicator_name")], by = "indicator_name")
+```
 
+```{r respondant colours, echo = F, include = F, eval = T }
 # create df of group by(indicator, respondant) %>% sum(completed) for each
 completed_summary <- has_completed %>% 
   group_by(respondent_names) %>% 
@@ -168,193 +186,20 @@ completed_summary <- has_completed %>%
             vf_cert = sum(vf_cert),
             wt = sum(wt),
             wt_cert = sum(wt_cert))
+
+respondants_with_something <- completed_summary$respondent_names[
+  completed_summary %>%
+    select_if(is.numeric) %>%
+    rowSums()>0] %>% 
+  as.factor()
+
+respondant_colours <- glasbey.colors(nlevels(respondants_with_something)+1)[-1] %>% as.character() %>% 
+    setNames(., respondants_with_something)
+
 ```
+
 ```{r functions to make value function plots, echo = F }
 
-# FUNCTION - PLOT RESPONDANTS' continuous INDICATOR VFs ----
-  ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.matcher.df$ind.axis.title[i]){
-          # Filter the data for the selected indicator
-  filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
-    mutate(respondant_name = as.factor(respondant_name))
-  ## Color palette
-  respondant_colours <- glasbey.colors(nlevels(as.factor(filtered_data$respondant_name))+1)[-1] %>% as.character()
-  # respondant_colours <- brewer.pal(nlevels(as.factor(filtered_data$respondant_name)),  "Paired")
-
-  # PREDICT TREND ----
-  filtered_data$point.influence <- 1/(table(filtered_data$respondant_name)[as.factor(filtered_data$respondant_name)]) %>% 
-    as.numeric()
-  gam_model <- gam(value.dec ~ s(measure, k = 4),
-                        data = filtered_data, family = binomial(), weights = point.influence)
-  # Create dummy data for prediction
-  dummy_data <- data.frame(measure = seq(min(filtered_data$measure), max(filtered_data$measure), length.out = 50))
-  # Predict using the GAM model
-  dummy_data$predicted_value <- predict(gam_model, newdata = dummy_data, type = "response")*100
-
-  # PLOT SPEC, LINES AND TREND ----
-  plot <- ggplot() +
-    geom_line(data = dummy_data, size = 2, aes(y = predicted_value, x = measure), colour = gam.col) + # gam prediction
-    geom_line(data = filtered_data, 
-              aes(x = measure, y = value, color = respondant_name,
-                  text = map(
-                    paste0("<b>", `respondant_name`, "</b>",
-                           "<br><b>Certainty:</b>", cert_val_funct, "<br>",
-                           "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"#,
-                           #"<b>Sentance: </b>", vf.sentance
-                           ),
-                    HTML),
-                  alpha = cert_val_funct),
-              size = 0.5) +
-    geom_point(data = filtered_data, 
-               size = 2, shape = 16,
-               aes(x = measure, y = value, color = respondant_name,
-                   text = map(
-                     paste0("<b>", `respondant_name`, "</b>",
-                            "<br><b>Certainty:</b>", cert_val_funct, "<br>",
-                            "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"#,
-                   #        "<b>Sentance: </b>", vf.sentance
-                   ),
-                     HTML),
-                   alpha = cert_val_funct)) +
-    scale_colour_manual(values = respondant_colours) +
-    labs(title = indicator_name, x = x.lab, y = "Value Score",
-         colour = "Respondant") +
-    guides(alpha = F) +
-    theme_pubr()+
-    theme(plot.title = element_text(size = 12),
-          plot.subtitle = element_text(size = 12),
-          legend.title = element_text(size = 12 , face = "bold"),
-          legend.text =  element_text(size = 12),
-          axis.text.x = element_text(size = 12),
-          axis.text.y = element_text(size = 12),
-          axis.title =  element_text(size = 12),
-          legend.position = "right",
-          plot.margin = margin(0.5, 1, 0.5, 1, "cm")
-    ) 
-  
-  plot
-  }
-
-# FUNCTION - PLOT RESPONDANTS' CATEGORICAL INDICATOR VFs ----
-  ggplot_resp_cat_vf <- function(indicator_name, x.lab = ind.matcher.df$ind.axis.title[i], data = vf_cat_data){
-    # vf_cat_data is filtered_data, formatted to include categories - cat_measure
-    
-  ## Color palette
-  respondant_colours <- glasbey.colors(nlevels(as.factor(filtered_data$respondant_name))+1)[-1] %>% as.character()
-  # respondant_colours <- brewer.pal(nlevels(as.factor(filtered_data$respondant_name)),  "Paired")
-
-  # PLOT SPEC, LINES AND TREND ----
-  plot <- ggplot() +
-    geom_boxplot(data = data, 
-              aes(x = cat_measure, y = value), text = NULL, outlier.shape = NA) +
-    stat_summary(data = data, aes(x = cat_measure, y = value),
-             geom = "point", fun = mean,
-             color = "red", shape = 3, size = 5,
-             position = position_nudge(x = 0.05, y = 0)
-             ) +
-    geom_jitter(data = data,
-               size = 2, shape = 16,
-               position=position_jitter(width=.1, height=0),
-               aes(x = cat_measure, y = value, color = respondant_name,
-                   text = map(
-                     paste0("<b>", `respondant_name`, "</b>",
-                            "<br><b>Value:</b>", value, "<br>",
-                            "<br><b>Certainty:</b>", cert_val_funct, "<br>",
-                            "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"),
-                     HTML),
-                   alpha = cert_val_funct)) +
-    scale_colour_manual(values = respondant_colours) +
-    labs(title = indicator_name, x = x.lab, y = "Value Score",
-         colour = "Respondant") +
-    guides(alpha = F) +
-    theme_pubr()+
-    theme(plot.title = element_text(size = 12),
-          plot.subtitle = element_text(size = 12),
-          legend.title = element_text(size = 12 , face = "bold"),
-          legend.text =  element_text(size = 12),
-          axis.text.x = element_text(size = 12),
-          axis.text.y = element_text(size = 12),
-          axis.title =  element_text(size = 12),
-          legend.position = "right",
-          plot.margin = margin(0.5, 1, 0.5, 1, "cm")
-    ) 
-  
-  plot
-  }
-
-# FUNCTION - PLOT RESPONDANTS' WEIGHTS - FOR INDICATOR  ----
-  ggplot_resp_weight_ind <- function(indicator_name){
-    # plot weights by respondant for this indicator
-# Filter the data for the selected indicator
-  filtered_data <- df[df$indicator_name == indicator_name & !duplicated(paste0(df$respondant_name, df$indicator_name)), ] %>% 
-    mutate(respondant_name = as.factor(respondant_name))
-  ## Color palette
-  respondant_colours <- glasbey.colors(nlevels(as.factor(filtered_data$respondant_name))+1)[-1] %>% as.character()
-
-  # PLOT SPEC, LINES AND TREND ----
-  plot <- ggplot(filtered_data) +
-    geom_boxplot(aes(x = 0, y = weight)) +
-      stat_summary(data = filtered_data,
-                   aes(x = 0, y = weight),
-                   geom = "point", fun = mean,
-                   color = "red", shape = 3, size = 5) +
-    geom_jitter(aes(x = 0, y = weight, color = respondant_name,
-               text = map(
-                     paste0("<b>", `respondant_name`, "</b><br>",
-                            "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>",
-                            "<b>Weight rank: </b>", weight_rank),
-                     HTML),
-                   alpha = cert_weight), 
-               size = 2, shape = 16,
-               position=position_jitter(width=.1, height=0)) +
-    scale_colour_manual(values = respondant_colours) +
-    scale_y_continuous(limits = c(0,100)) +
-    labs(y = "Weight",
-         colour = "Respondant") +
-    guides(alpha = F) +
-    theme_pubr()+
-    theme(plot.title = element_text(size = 12),
-          plot.subtitle = element_text(size = 12),
-          legend.title = element_text(size = 12 , face = "bold"),
-          legend.text =  element_text(size = 12),
-          axis.text.y = element_text(size = 12),
-          axis.title =  element_text(size = 12),
-          axis.title.x=element_blank(),
-          axis.text.x=element_blank(),
-          axis.ticks.x=element_blank(),
-          legend.position = "right",
-          plot.margin = margin(0.5, 1, 0.5, 1, "cm")
-    ) 
-  
-  plot
-  }
-  
-# FUNCTION - RUN PLOTTING OF CATEGORISED VF ----
-categorised_vf_fig <- function(){
-  # categorical plot
-vf_cat_data = filtered_data %>% 
-                     mutate(cat_measure = as.factor(measure))
-plot <- ggplot_resp_cat_vf(indicator_name = indicator_name,
-                    x.lab = ind.axis.title,
-                   data = vf_cat_data )
-
-ggsave(filename = paste0("Figs//ind_",
-                         formatC(ind.num, width = 2, format = "d", flag = "0"),
-                         "_", indicator_name, "vf_boxplot.png"),
-       plot = plot,
-       width = 300, height = 150, units = "mm")
-
-##ggplotly
-plotly_p <- ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
-    config(displayModeBar = F) %>% 
-    layout(yaxis = list(range = c(-5, 105)))
-
-# remove outliers from plotly
-# for(i in 1:length(plotly_p)){
-# plotly_p$x$data[[i]]$marker$opacity = 0 
-# }
-
-plotly_p
-}
 ```
 
 
@@ -610,30 +455,8 @@ continuous_vf_fig()
 ### Weights
 ```{r vf Tree age size distribution - weights, fig.width= 4, echo = F , results="asis"}
 
-weights_fig <- function(){
-  wt.plot <- ggplot_resp_weight_ind(indicator_name = indicator_name)
+ggplot_resp_weight_ind(indicator_name = indicator_name)
 
-ggsave(filename = paste0("Figs//ind_",
-                         formatC(ind.num, width = 2, format = "d", flag = "0"),
-                         "_", indicator_name, "weights.png"),
-       plot = wt.plot,
-       width = 300, height = 150, units = "mm")
-
-
-plotly_p <- ggplotly(wt.plot, tooltip = "text", dynamicTicks = F) %>% 
-    config(displayModeBar = F) %>% 
-    layout(yaxis = list(range = c(-5, 105)))
-
-# remove outliers from plotly
-# for(i in 1:length(plotly_p)){
-# plotly_p$x$data[[i]]$marker$opacity = 0 
-# }
-
-plotly_p
-
-}
-
-weights_fig()
 ```
 
 ## {-}
@@ -672,7 +495,7 @@ continuous_vf_fig()
 ### Weights
 ```{r vf Canopy Nativness - weights, fig.width= 4, echo = F , results="asis"}
 
-weights_fig()
+ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 
 ## {-}
@@ -723,7 +546,7 @@ continuous_vf_fig()
 ### Weights
 ```{r vf Vertical Structure - weights, fig.width= 4, echo = F , results="asis"}
 
-weights_fig()
+ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 
 ## {-}
@@ -766,7 +589,7 @@ continuous_vf_fig()
 ### Weights
 ```{r vf Native tree an shrub species richness - weights, fig.width= 4, echo = F , results="asis"}
 
-weights_fig()
+ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 
 ## {-}
@@ -809,7 +632,7 @@ continuous_vf_fig()
 ### Weights
 ```{r vf Invasives - weights, fig.width= 4, echo = F , results="asis"}
 
-weights_fig()
+ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 
 ## {-}
@@ -852,7 +675,7 @@ continuous_vf_fig()
 ### Weights
 ```{r vf Deadwood - weights, fig.width= 4, echo = F , results="asis"}
 
-weights_fig()
+ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 
 ## {-}
@@ -895,7 +718,7 @@ continuous_vf_fig()
 ### Weights
 ```{r vf AVTs - weights, fig.width= 4, echo = F , results="asis"}
 
-weights_fig()
+ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 
 ## {-}
@@ -938,7 +761,7 @@ continuous_vf_fig()
 ### Weights
 ```{r vf Woodland Extent - weights, fig.width= 4, echo = F , results="asis"}
 
-weights_fig()
+ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 
 ## {-}
@@ -981,7 +804,7 @@ continuous_vf_fig()
 ### Weights
 ```{r vf Regeneration - weights, fig.width= 4, echo = F , results="asis"}
 
-weights_fig()
+ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 
 ## {-}
@@ -1024,7 +847,7 @@ continuous_vf_fig()
 ### Weights
 ```{r vf Herbivore Impact - weights, fig.width= 4, echo = F , results="asis"}
 
-weights_fig()
+ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 
 ## {-}
@@ -1067,7 +890,7 @@ continuous_vf_fig()
 ### Weights
 ```{r vf Tree Health - weights, fig.width= 4, echo = F , results="asis"}
 
-weights_fig()
+ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 
 ## {-}
@@ -1110,7 +933,7 @@ continuous_vf_fig()
 ### Weights
 ```{r vf Ground Flora - weights, fig.width= 4, echo = F , results="asis"}
 
-weights_fig()
+ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 
 ## {-}
@@ -1153,7 +976,7 @@ continuous_vf_fig()
 ### Weights
 ```{r vf Horizontal complexity - weights, fig.width= 4, echo = F , results="asis"}
 
-weights_fig()
+ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 
 ## {-}
@@ -1196,7 +1019,7 @@ continuous_vf_fig()
 ### Weights
 ```{r vf Human Damage - weights, fig.width= 4, echo = F , results="asis"}
 
-weights_fig()
+ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 
 ## {-}

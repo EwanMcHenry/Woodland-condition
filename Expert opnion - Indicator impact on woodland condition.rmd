@@ -198,10 +198,6 @@ respondant_colours <- glasbey.colors(nlevels(respondants_with_something)+1)[-1] 
 
 ```
 
-```{r functions to make value function plots, echo = F }
-
-```
-
 
 This document explores the expert opinion gathered from staff at the Woodland Trust, related to the measurement of `r has_completed$indicator_name %>% unique() %>% length()` indicators of woodland ecological condition, and the relationship between these indicators' and a wood's potential to promote flourishing wildlife species communities (by estimating "value functions" and importance weightings for each indicator). 
 
@@ -223,8 +219,9 @@ Participants were encouraged to keep a clear distinction between the quantitativ
 
 It was also stated that noted exceptions would be analysed and, where appropriate, used to inform future development of the WEC measure to account for important nuance.
 
+<button class="btn btn-primary" data-toggle="collapse" data-target="#BlockName">Indicators of Woodland Ecological Condition - Show/Hide</button>  
+<div id="BlockName" class="collapse">  
 
-# Indicators considered  
 
 ```{r  indicators table, echo = F }
 ind.table <- ind.matcher.df [,1:2]
@@ -242,7 +239,7 @@ ind.table %>%
               rownames = F#,
               #container = sketch.lcm.areas
               ) %>% 
-    formatStyle( columns = c("Indicator"), fontWeight = 'bold', `text-align` = 'left', "white-space" = "nowrap")# %>% 
+    formatStyle( columns = c("Indicator"), fontWeight = 'bold', `text-align` = 'left', "white-space" = "nowrap") 
 
 
 ```
@@ -345,7 +342,7 @@ Figure 1. Completion of expert opinion survey components by each panelist (colou
 
 ## Survey completion details  
 
-```{r what needs done by participants details, eval = F}
+```{r what needs done by participants details, eval = T}
 
 # Create a data frame with participant names and the four columns
 participant_table <- data.frame(respondent_names = completed_summary$respondent_names,
@@ -463,12 +460,12 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ### Comments
 
-Consensus on VF likely:  
+VFs - consensus  likely:  
 - All continuous relationships have same shape.  
 - Complete agreement on upper and lower value.  
 - Some put maximum value at 3 classes.  
 
-Disagreement on weight:  
+Weight - Disagreement:  
 - Two camps, giving relatively low and high weights (compared to other indicators) at c. 60 and 90, respectively.  
 
 
@@ -503,10 +500,19 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 ### Comments  
 
 VF:  
-- Similar trends. Some prefer linear, some S-shaped, some exponential, some logarithmic
-- Bit of disagreement RE requirement for max value
+- Similar general trends, but a lot of variation
+- Different shapes - Some linear, some S-shaped, some exponential, some logarithmic("r" shaped)
+- disagreement RE max value  
 
-Weightings: fairly wide spread
+Recommend focus for thought on:  
+- lower 25% native 
+- upper 75-100%
+
+
+Weightings: 
+- fairly wide spread
+- 5 or so think it amongst most important
+- rest think it is middle-importance
  
 
 ## Vertical Structure {.tabset .tabset-fade .tabset-pills}
@@ -553,6 +559,14 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ### Comments
 
+VFs:  
+- good general agreement
+- may re-consider 2 and 3 layers value 
+
+Weights:  
+- most think middling importance
+- a few think amongst most important, a few least important
+
 
 ## Native tree an shrub species richness {.tabset .tabset-fade .tabset-pills}
 
@@ -569,6 +583,11 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
+### Continuous Value function
+```{r vf Native tree an shrub species richness - continuous, echo = F , results="asis"}
+continuous_vf_fig()
+```
+
 ### Categorised value function
 ```{r vf Native tree an shrub species richness - categorical, echo = F , results="asis"}
 categorised_vf_fig()
@@ -581,10 +600,6 @@ filtered_data %>%
 knitr::kable()
 
 ```
-### Continuous Value function
-```{r vf Native tree an shrub species richness - continuous, echo = F , results="asis"}
-continuous_vf_fig()
-```
 
 ### Weights
 ```{r vf Native tree an shrub species richness - weights, fig.width= 4, echo = F , results="asis"}
@@ -596,6 +611,11 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ### Comments
 
+VFs:  
+- Feeling consensus may strengthen easily here
+- Particular focus useful for 1-2 species  
+
+Weightings - big variation, some making it least important, some making it most.  
 
 ## Invasives {.tabset .tabset-fade .tabset-pills}
 
@@ -612,18 +632,6 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Categorised value function
-```{r vf Invasives - categorical, echo = F , results="asis"}
-categorised_vf_fig()
-
-## table
-filtered_data %>%
-  group_by(measure) %>%
-  summarise(Mean = mean(value, na.rm = TRUE) %>% round(digits = 1),
-            'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
-knitr::kable()
-
-```
 ### Continuous Value function
 ```{r vf Invasives - continuous, echo = F , results="asis"}
 continuous_vf_fig()
@@ -638,7 +646,11 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 ## {-}
 
 ### Comments
+VF:  
+- a lot of variation. Worth considering Woodland Wildlife Toolkit approaches when revising estiamtes.
 
+Weightings:  
+- some think it mos important, rest middling.  
 
 ## Deadwood {.tabset .tabset-fade .tabset-pills}
 
@@ -655,18 +667,6 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Categorised value function
-```{r vf Deadwood - categorical, echo = F , results="asis"}
-categorised_vf_fig()
-
-## table
-filtered_data %>%
-  group_by(measure) %>%
-  summarise(Mean = mean(value, na.rm = TRUE) %>% round(digits = 1),
-            'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
-knitr::kable()
-
-```
 ### Continuous Value function
 ```{r vf Deadwood - continuous, echo = F , results="asis"}
 continuous_vf_fig()
@@ -682,6 +682,12 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ### Comments
 
+VFs:  
+- A lot of variation, concensus may emerge
+
+Weights:  
+- Some think it most important (and are quite certain)  
+- Some of lower or middling importance (but typically less certain
 
 ## AVTs {.tabset .tabset-fade .tabset-pills}
 
@@ -698,18 +704,6 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Categorised value function
-```{r vf AVTs - categorical, echo = F , results="asis"}
-categorised_vf_fig()
-
-## table
-filtered_data %>%
-  group_by(measure) %>%
-  summarise(Mean = mean(value, na.rm = TRUE) %>% round(digits = 1),
-            'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
-knitr::kable()
-
-```
 ### Continuous Value function
 ```{r vf AVTs - continuous, echo = F , results="asis"}
 continuous_vf_fig()
@@ -724,6 +718,12 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 ## {-}
 
 ### Comments
+
+VFs:  
+- Biggest disagreement is about where max should occur  
+
+Weights:
+- Massive variation, may need some evidence or guidance.  
 
 
 ## Woodland Extent {.tabset .tabset-fade .tabset-pills}
@@ -741,18 +741,6 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Categorised value function
-```{r vf Woodland Extent - categorical, echo = F , results="asis"}
-categorised_vf_fig()
-
-## table
-filtered_data %>%
-  group_by(measure) %>%
-  summarise(Mean = mean(value, na.rm = TRUE) %>% round(digits = 1),
-            'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
-knitr::kable()
-
-```
 ### Continuous Value function
 ```{r vf Woodland Extent - continuous, echo = F , results="asis"}
 continuous_vf_fig()
@@ -768,8 +756,14 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ### Comments
 
+VFs:  
+- consensus may form  
 
-## Regeneration {.tabset .tabset-fade .tabset-pills}
+Weights:  
+- Some think it most important, some more middling
+
+
+## Regeneration {.tabset .tabset-fade .tabset-pills}  
 
 ```{r vf Regeneration - init, echo = F , results="asis"}
 
@@ -782,7 +776,13 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
   mutate(respondant_name = as.factor(respondant_name))
 
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
+```  
+  
+### Continuous Value function
+```{r vf Regeneration - continuous, echo = F , results="asis"}
+continuous_vf_fig()
 ```
+
 
 ### Categorised value function
 ```{r vf Regeneration - categorical, echo = F , results="asis"}
@@ -796,11 +796,6 @@ filtered_data %>%
 knitr::kable()
 
 ```
-### Continuous Value function
-```{r vf Regeneration - continuous, echo = F , results="asis"}
-continuous_vf_fig()
-```
-
 ### Weights
 ```{r vf Regeneration - weights, fig.width= 4, echo = F , results="asis"}
 
@@ -811,8 +806,17 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ### Comments
 
+VFs:  
+- Disagreement in shape of relationship
+- A lot of variation around value of 1 and 2 classes
+
+Weights:  
+- a lot of variation
+
 
 ## Herbivore Impact {.tabset .tabset-fade .tabset-pills}
+
+Note: Complete revision of indicator since ROUND 1
 
 ```{r vf Herbivore Impact - init, echo = F , results="asis"}
 
@@ -827,18 +831,6 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Categorised value function
-```{r vf Herbivore Impact - categorical, echo = F , results="asis"}
-categorised_vf_fig()
-
-## table
-filtered_data %>%
-  group_by(measure) %>%
-  summarise(Mean = mean(value, na.rm = TRUE) %>% round(digits = 1),
-            'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
-knitr::kable()
-
-```
 ### Continuous Value function
 ```{r vf Herbivore Impact - continuous, echo = F , results="asis"}
 continuous_vf_fig()
@@ -870,18 +862,6 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Categorised value function
-```{r vf Tree Health - categorical, echo = F , results="asis"}
-categorised_vf_fig()
-
-## table
-filtered_data %>%
-  group_by(measure) %>%
-  summarise(Mean = mean(value, na.rm = TRUE) %>% round(digits = 1),
-            'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
-knitr::kable()
-
-```
 ### Continuous Value function
 ```{r vf Tree Health - continuous, echo = F , results="asis"}
 continuous_vf_fig()
@@ -897,6 +877,11 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ### Comments
 
+VFs:  
+- A lot of variation - Refer to Woodland Wildlife Toolkit approach when reviewing
+
+Weights:  
+- full range of variation
 
 ## Ground Flora {.tabset .tabset-fade .tabset-pills}
 
@@ -913,18 +898,6 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Categorised value function
-```{r vf Ground Flora - categorical, echo = F , results="asis"}
-categorised_vf_fig()
-
-## table
-filtered_data %>%
-  group_by(measure) %>%
-  summarise(Mean = mean(value, na.rm = TRUE) %>% round(digits = 1),
-            'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
-knitr::kable()
-
-```
 ### Continuous Value function
 ```{r vf Ground Flora - continuous, echo = F , results="asis"}
 continuous_vf_fig()
@@ -938,7 +911,15 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ## {-}
 
-### Comments
+### Comments  
+
+Will obviously need development, particularly RE appropriate species for the site.  
+
+VF:  
+- logarithmic "r" shaped relationship most popular, followed by sigmoid "s" shape
+- Consensus likely
+
+weights: medium - high importance
 
 
 ## Horizontal complexity {.tabset .tabset-fade .tabset-pills}
@@ -956,6 +937,11 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
+### Continuous Value function
+```{r vf Horizontal complexity - continuous, echo = F , results="asis"}
+continuous_vf_fig()
+```
+
 ### Categorised value function
 ```{r vf Horizontal complexity - categorical, echo = F , results="asis"}
 categorised_vf_fig()
@@ -968,11 +954,6 @@ filtered_data %>%
 knitr::kable()
 
 ```
-### Continuous Value function
-```{r vf Horizontal complexity - continuous, echo = F , results="asis"}
-continuous_vf_fig()
-```
-
 ### Weights
 ```{r vf Horizontal complexity - weights, fig.width= 4, echo = F , results="asis"}
 
@@ -981,8 +962,12 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ## {-}
 
-### Comments
+### Comments  
 
+VFs:  
+- consensus likely
+
+Weights: big range
 
 ## Human Damage {.tabset .tabset-fade .tabset-pills}
 
@@ -999,18 +984,6 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Categorised value function
-```{r vf Human Damage - categorical, echo = F , results="asis"}
-categorised_vf_fig()
-
-## table
-filtered_data %>%
-  group_by(measure) %>%
-  summarise(Mean = mean(value, na.rm = TRUE) %>% round(digits = 1),
-            'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
-knitr::kable()
-
-```
 ### Continuous Value function
 ```{r vf Human Damage - continuous, echo = F , results="asis"}
 continuous_vf_fig()
@@ -1024,76 +997,17 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ## {-}
 
-### Comments
+### Comments  
 
-# plot all indicators sequentially
+VFs:
+- Big range, but may converge to a consensus.  
+- Recommend using WWT method to contextualize
 
-```{r vf plot vfs, echo = F , results="asis"}
-# CREATE VF PLOTS ----
-each.plotly <- list(NA)
-
-for(i in 1: length(ind.matcher.df$indicator_name)){
-  
-  plot <- ggplot_gam_resp_vf(indicator_name = ind.matcher.df$indicator_name[i])
-  
-  plotly <- ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
-    config(displayModeBar = F) %>% 
-    layout(yaxis = list(range = c(-5, 105)))
-
-  each.plotly[[i]] <- plotly
-  
-  }
-
-# print some set text (a title) and the vf figure
-for (i in 1:length(ind.matcher.df$indicator_name)) {
-  cat("###", ind.matcher.df$sheet_name[i], "\n\n")
-   print(htmltools::tagList(each.plotly[[i]] ))
-   cat('\n')
-}
+Weights:  
+- Full range
 
 
-```
-```{r vf 2plot vfs, echo = F , results="asis"}
-
-   # exceptions <- expert.data$value_func_exceptions[expert.data$indicator_num %>% unlist()==i] 
-   # respondants <- expert.data$respondant_name[expert.data$indicator_num %>% unlist()==i] %>% unlist()
-   # 
-   # for ( ii in 1:sum(lengths(exceptions)>0) ){
-   #   cat("*",respondants[lengths(exceptions)>0][ii], "*  ")
-   #   exceptions[lengths(exceptions)>0][ii] %>% unlist()
-   #   }
-
-# }
-# 
-#  cat("  \n###",  month.name[i], "Air Quaility  \n")
-#   #print(plot(airquality[airquality$Month == i,]))
-#   plot(airquality[airquality$Month == i,])
-#   cat("  \n")
-# 
-# 
-
-
-
-# i <- 1
-# 
-# each.plotly[[i]]
-# 
-# exceptions <- expert.data$value_func_exceptions[expert.data$indicator_num %>% unlist()==i] 
-# respondants <- expert.data$respondant_name[expert.data$indicator_num %>% unlist()==i] %>% unlist()
-# 
-# respondants[lengths(exceptions)>0]
-# 
-# for ( ii in 1:sum(lengths(exceptions)>0) ){
-#   print(paste0("*",respondants[lengths(exceptions)>0][ii], "*  "))
-#   exceptions[lengths(exceptions)>0][ii]
-# 
-# }
-
-
-
-```
-
-## Indicatior weights
+# Indicatior weights
 
 ```{r}
 #-----------------------------------------------------
@@ -1139,7 +1053,7 @@ ggplotly(plot, tooltip = "text", dynamicTicks = F) %>%
 ```
 
 
-## Certainties
+# Certainties
 
 
 

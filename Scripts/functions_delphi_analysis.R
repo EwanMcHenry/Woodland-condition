@@ -35,6 +35,7 @@ ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.ma
                aes(x = measure, y = value, color = respondant_name,
                    text = map(
                      paste0("<b>", `respondant_name`, "</b>",
+                            "<br><b>Indicator:</b>", measure, ", <b>Value:</b>", value,"<br>",
                             "<br><b>Certainty:</b>", cert_val_funct, "<br>",
                             "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"#,
                             #        "<b>Sentance: </b>", vf.sentance
@@ -210,8 +211,8 @@ plot_grid <-   plot_grid(plot, indiv.weights, rel_widths = c(1, 2))
   
   girafe(
     ggobj = plot_grid,
-    width_svg = 15,
-    height_svg = 8, 
+    width_svg = 10,
+    height_svg = 5, 
     options = list(
       opts_hover_inv(css = "stroke-opacity:0.01;"),
       opts_hover(css = "stroke:orange;stroke-width:5;fill-opacity:1")

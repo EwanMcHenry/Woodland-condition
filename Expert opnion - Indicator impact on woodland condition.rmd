@@ -1,12 +1,14 @@
 ---
 title: "Assessing Woodland Ecological Condition"
+author: "Ewan McHenry"
 date:    |
   `r format(Sys.time(), '%d %B, %Y')`
 output: 
   html_document:
     toc: true
+    toc_depth: 2
     toc_float: true
-    theme: united
+    theme: cosmo
 ---
 <style>
 .html-widget {
@@ -22,6 +24,7 @@ output:
 
 ```{r global-options, include=FALSE}
 knitr::opts_chunk$set(fig.width=12, fig.height=5, fig.path='Figs/',
+                      table.width = "50%",
                       echo=FALSE, warning=FALSE, message=FALSE)
 forms.direct <- "Data\\Delphi round 1\\response sheets\\"
 extraction.location <- "Data\\Delphi round 1\\"
@@ -208,20 +211,9 @@ and identifying where agreements and disagreements in understanding occur.
   
 The method relies on repetitive surveying in at least two to three ‘rounds’ where participants are asked the same questions. After each round participants review and consider the answers given by all panel-members, and are then given the opportunity to revise their answers. The Delphi method has a history of successful use in supporting conservation action where empirical evidence is insufficient and information is needed rapidly to inform decisions. It's transparency and repeatability also add to its appeal.  
 
-Each participant either attended an introductory workshop to the process, or was taken through individually. A sub-section of participants were also involved in development the proposed methods to measure each indicator in the field. Answers were submitted into individual Excel spread sheets, with questions relating to:  
-
-- Value functions describing how each indicator related to WEC, in typical conditions
-- Weightings decreeing the relative important of each indicator to WEC, in typical conditions
-- Certainty around value function and weighting estimates (subjective score 0-5)
-- Comments or concerns relating to: situations where these "typical" responses might be inappropriate, the proposed method to measure indicators, and any other relevant information.  
-
-Participants were encouraged to keep a clear distinction between the quantitative responses provided (i.e. value functions and weightings under typical conditions) and exceptions to those typical relationships (that they highlighted in their comments).  
-
-It was also stated that noted exceptions would be analysed and, where appropriate, used to inform future development of the WEC measure to account for important nuance.
 
 <button class="btn btn-primary" data-toggle="collapse" data-target="#BlockName">Indicators of Woodland Ecological Condition - Show/Hide</button>  
 <div id="BlockName" class="collapse">  
-
 
 ```{r  indicators table, echo = F }
 ind.table <- ind.matcher.df [,1:2]
@@ -243,15 +235,32 @@ ind.table %>%
 
 
 ```
+</div>
 
 
-# Analysis Method
-### Scaling
+# Methods  
+
+## Ellicitation of expert opinion
+
+Each participant either attended an introductory workshop to the process, or was taken through individually. A sub-section of participants were also involved in development the proposed methods to measure each indicator in the field. Answers were submitted into individual Excel spread sheets, with questions relating to:  
+
+- Value functions describing how each indicator related to WEC, in typical conditions.  
+  - These were entered as points representing potential indicator measurements and that potential measurement's corresponding relative value (on a 0-100 scale from low to high).
+- Weightings describing the relative importance of each indicator to WEC, in typical conditions (by which an indicator's value would be multiplied).
+- Certainty around value function and weighting estimates (subjective score 0-5), to aid participants in reviewing responses.
+- Comments or concerns relating to: situations where these "typical" responses might be inappropriate, the proposed method to measure indicators, and any other relevant information.  
+
+Participants were encouraged to keep a clear distinction between the quantitative responses provided (i.e. value functions and weightings under typical conditions) and exceptions to those typical relationships (that they highlighted in their comments).  
+
+Participants were instructed that noted exceptions would be analysed and, where appropriate, used to inform future development of the WEC measure to account for important nuance.
+
+## Analysis Method
+### Scaling values and weights
 
 Values and weights are all measured relative to each other. Some respondents did not use the full 0 to 100 range for all value functions and weights. Comparison between participants requires that they all use the same scale, and so all value functions where scaled from 0 to 100 and weightings were scaled so that the highest indicator weighting for each panelist was 100.
 
-<button class="btn btn-primary" data-toggle="collapse" data-target="#BlockName"> Show/Hide details of responses requiring scalling </button>  
-<div id="BlockName" class="collapse">  
+<button class="btn btn-primary" data-toggle="collapse" data-target="#Scaling_info">Details of responses requiring scaling - Show/Hide</button>  
+<div id="Scaling_info" class="collapse">  
 
 
 **Value functions** scaled for:  
@@ -260,30 +269,30 @@ Values and weights are all measured relative to each other. Some respondents did
 **Weights** were scaled for:  
 
 `r paste0("<br>- ", which.scaled.wt)`  
+</div>
+
 
 ### Edits to responses
 
-In some cases - where appropriate to allow categorisation - points were added to value functions by visual interpolation. Some points where also added by extrapolation where a maximum/minimum value was clearly implied.  
+In some cases where deemed appropriate (e.g. where respondents had described a linear trend using few, widely spaced points), points were added to value functions by visual interpolation. Some points where also added by extrapolation where a maximum/minimum value was clearly implied, and corrections where made to clearly erroneous points following individual consultation with respondents. 
 
 
-### Displaying of results
+## Reviewing results between rounds
 
 A copy of this report was circulated to respondents between rounds to allow respondents to investigate estimates provided by others, and their certainties.
 
-Where appropriate value functions where plotted categorically (with box plots summarising the estimated value at each category), and continuously (with lines connecting points and an indication of the general trend - see model details below). Indicator relative weightings were presented on boxplots, including the mean and median estimates. Interactive hover-text displayed respondent name and their certainty in their estimate.
-
-#### Model details
-
-Value functions were modeled with a binomial GAM. The influence of points from each respondent weighted by the inverse of the number of points provided by that respondent, with the aim of ensuring that all respondents had the same influence on the result, regardless of how many points they provided.
+Where appropriate value functions where plotted categorically (with box plots summarising the estimated value at each category), and continuously. Indicator relative weightings were presented on boxplots, including the mean and median estimates. Interactive hover-text displayed respondent name and their certainty in their estimate.
 
 
-# Participants and survey completion{.tabset .tabset-fade .tabset-pills}
+# Round 1 survey completion{.tabset .tabset-fade .tabset-pills}
 
 `r has_completed$respondent_names %>% unique() %>% length()` expert practitioners from Woodland Trust and Plantlife staff were invited to provide their opinion the value and weight of indicators.  
 `r sum(completed_summary[,2:5] %>% rowSums() >0)` have provided a response as of `r date()`.   
 Of these, `r sum((completed_summary[,2:5] %>% rowSums() >0) & (completed_summary[,2:5] %>% rowSums() < (4* has_completed$indicator_name %>% unique() %>% length() ) ))` remain partially incomplete.  
 
-## Survey completion summary  
+<button class="btn btn-primary" data-toggle="collapse" data-target="#completion_summary">Survey completion summary - Show/Hide</button>  
+<div id="completion_summary" class="collapse">  
+
 The chart below summarises participant completion of different elements of the survey. For more detail see table (button below chart).
 
 ``` {r  participation_chart - make, echo = F, eval = F }
@@ -317,18 +326,20 @@ combine <- rbind(tableGrob(t(c(col_names)), theme = ttheme_minimal(), rows = "")
                        arrangeGrob(grobs = gg_pie_charts, nrow = length(row_names), ncol = length(col_names)),  size = "last"), size = "last")
 }
 
-gg_pie_charts <- list(NA)
-bk = 1
-for (i in 1:(length(completed_summary$respondent_names))){
-  for (ii in 1:(dim(completed_summary)[2]-1)){
-    count <- completed_summary[i,1+ii] %>% as.numeric()
-    gg_pie_charts[[bk]] <-  create_gg_pie_chart(count, length(unique(df$indicator_name)))
-  bk = bk+1
-    }}
-  
+# gg_pie_charts <- list(NA)
+# bk = 1
+# for (i in 1:(length(completed_summary$respondent_names))){
+#   for (ii in 1:(dim(completed_summary)[2]-1)){
+#     count <- completed_summary[i,1+ii] %>% as.numeric()
+#     gg_pie_charts[[bk]] <-  create_gg_pie_chart(count, length(unique(df$indicator_name)))
+#   bk = bk+1
+#     }}
+#   
 save(combine, file = "Figs//gg_pie_charts.RData")
 
 ```
+
+
 ``` {r  participation_chart - plot, echo = F }
 load(file = "Figs//gg_pie_charts.RData")
 
@@ -340,7 +351,10 @@ grid.draw(combine)
 ```
 Figure 1. Completion of expert opinion survey components by each panelist (coloured portion of pies) for value functions ("Value func"), value function certainties ("VF cert"), indicator weightings ("Weights") and weighting certainties ("wt certs").  
 
-## Survey completion details  
+</div>
+
+<button class="btn btn-primary" data-toggle="collapse" data-target="#completion_details">Survey completion details - Show/Hide</button>  
+<div id="completion_details" class="collapse">  
 
 ```{r what needs done by participants details, eval = T}
 
@@ -394,10 +408,13 @@ participant_table %>%
     formatStyle( columns = c("Respondent"), fontWeight = 'bold', `text-align` = 'left', "white-space" = "nowrap")# %>% 
 
 ```
+</div>
+
 
 # Reponses by indicator  
 
-## Tree age/size distribution {.tabset .tabset-fade .tabset-pills}
+## Tree age/size distribution 
+### {.tabset .tabset-fade .tabset-pills}
 ```{r vf Tree age size distribution - init, echo = F , results="asis"}
 
 ind.num = 1
@@ -411,7 +428,7 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Categorised value function
+#### Categorised value function
 ```{r vf Tree age size distribution - categorical, echo = F , results="asis"}
 
 
@@ -426,7 +443,7 @@ knitr::kable()
 
 ```
 
-### Continuous Value function
+#### Continuous Value function
 ```{r vf Tree age size distribution - continuous, echo = F , results="asis"}
 
 
@@ -449,14 +466,12 @@ continuous_vf_fig()
 
 ```
 
-### Weights
+#### Weights
 ```{r vf Tree age size distribution - weights, fig.width= 4, echo = F , results="asis"}
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ```
-
-## {-}
 
 ### Comments
 
@@ -469,7 +484,8 @@ Weight - Disagreement:
 - Two camps, giving relatively low and high weights (compared to other indicators) at c. 60 and 90, respectively.  
 
 
-## Canopy nativness {.tabset .tabset-fade .tabset-pills}
+## Canopy nativness 
+### {.tabset .tabset-fade .tabset-pills}
 
 ```{r vf Canopy Nativness - init, echo = F , results="asis"}
 
@@ -484,18 +500,16 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Continuous Value function
+#### Continuous Value function
 ```{r vf Canopy Nativness - continuous, echo = F , results="asis"}
 continuous_vf_fig()
 ```
 
-### Weights
+#### Weights
 ```{r vf Canopy Nativness - weights, fig.width= 4, echo = F , results="asis"}
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
-
-## {-}
 
 ### Comments  
 
@@ -515,9 +529,11 @@ Weightings:
 - rest think it is middle-importance
  
 
-## Vertical Structure {.tabset .tabset-fade .tabset-pills}
+## Vertical Structure 
 
 Of four possible categories: >15m; 5-15m; 2-5m; 0.5-2m; measured at plot level
+
+### {.tabset .tabset-fade .tabset-pills}
 
 ```{r vf Vertical Structure - init, echo = F , results="asis"}
 
@@ -532,7 +548,7 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Categorised value function
+#### Categorised value function
 ```{r vf Vertical Structure - categorical, echo = F , results="asis"}
 categorised_vf_fig()
 
@@ -544,18 +560,16 @@ filtered_data %>%
 knitr::kable()
 
 ```
-### Continuous Value function
+#### Continuous Value function
 ```{r vf Vertical Structure - continuous, echo = F , results="asis"}
 continuous_vf_fig()
 ```
 
-### Weights
+#### Weights
 ```{r vf Vertical Structure - weights, fig.width= 4, echo = F , results="asis"}
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
-
-## {-}
 
 ### Comments
 
@@ -568,7 +582,9 @@ Weights:
 - a few think amongst most important, a few least important
 
 
-## Native tree an shrub species richness {.tabset .tabset-fade .tabset-pills}
+## Native tree an shrub species richness 
+### {.tabset .tabset-fade .tabset-pills}
+
 
 ```{r vf Native tree an shrub species richness - init, echo = F , results="asis"}
 
@@ -583,12 +599,12 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Continuous Value function
+#### Continuous Value function
 ```{r vf Native tree an shrub species richness - continuous, echo = F , results="asis"}
 continuous_vf_fig()
 ```
 
-### Categorised value function
+#### Categorised value function
 ```{r vf Native tree an shrub species richness - categorical, echo = F , results="asis"}
 categorised_vf_fig()
 
@@ -601,13 +617,11 @@ knitr::kable()
 
 ```
 
-### Weights
+#### Weights
 ```{r vf Native tree an shrub species richness - weights, fig.width= 4, echo = F , results="asis"}
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
-
-## {-}
 
 ### Comments
 
@@ -617,7 +631,9 @@ VFs:
 
 Weightings - big variation, some making it least important, some making it most.  
 
-## Invasives {.tabset .tabset-fade .tabset-pills}
+## Invasives 
+### {.tabset .tabset-fade .tabset-pills}
+
 
 ```{r vf Invasives - init, echo = F , results="asis"}
 
@@ -632,27 +648,26 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Continuous Value function
+#### Continuous Value function
 ```{r vf Invasives - continuous, echo = F , results="asis"}
 continuous_vf_fig()
 ```
 
-### Weights
+#### Weights
 ```{r vf Invasives - weights, fig.width= 4, echo = F , results="asis"}
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 
-## {-}
-
 ### Comments
 VF:  
-- a lot of variation. Worth considering Woodland Wildlife Toolkit approaches when revising estiamtes.
+- a lot of variation. Worth considering Woodland Wildlife Toolkit approaches when revising estimates.
 
 Weightings:  
 - some think it mos important, rest middling.  
 
-## Deadwood {.tabset .tabset-fade .tabset-pills}
+## Deadwood 
+### {.tabset .tabset-fade .tabset-pills}
 
 ```{r vf Deadwood - init, echo = F , results="asis"}
 
@@ -667,29 +682,28 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Continuous Value function
+#### Continuous Value function
 ```{r vf Deadwood - continuous, echo = F , results="asis"}
 continuous_vf_fig()
 ```
 
-### Weights
+#### Weights
 ```{r vf Deadwood - weights, fig.width= 4, echo = F , results="asis"}
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 
-## {-}
-
 ### Comments
 
 VFs:  
-- A lot of variation, concensus may emerge
+- A lot of variation, consensus may emerge
 
 Weights:  
 - Some think it most important (and are quite certain)  
 - Some of lower or middling importance (but typically less certain
 
-## AVTs {.tabset .tabset-fade .tabset-pills}
+## AVTs 
+### {.tabset .tabset-fade .tabset-pills}
 
 ```{r vf AVTs - init, echo = F , results="asis"}
 
@@ -704,18 +718,16 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Continuous Value function
+#### Continuous Value function
 ```{r vf AVTs - continuous, echo = F , results="asis"}
 continuous_vf_fig()
 ```
 
-### Weights
+#### Weights
 ```{r vf AVTs - weights, fig.width= 4, echo = F , results="asis"}
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
-
-## {-}
 
 ### Comments
 
@@ -726,7 +738,8 @@ Weights:
 - Massive variation, may need some evidence or guidance.  
 
 
-## Woodland Extent {.tabset .tabset-fade .tabset-pills}
+## Woodland Extent 
+### {.tabset .tabset-fade .tabset-pills}
 
 ```{r vf Woodland Extent - init, echo = F , results="asis"}
 
@@ -741,18 +754,16 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Continuous Value function
+#### Continuous Value function
 ```{r vf Woodland Extent - continuous, echo = F , results="asis"}
 continuous_vf_fig()
 ```
 
-### Weights
+#### Weights
 ```{r vf Woodland Extent - weights, fig.width= 4, echo = F , results="asis"}
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
-
-## {-}
 
 ### Comments
 
@@ -763,7 +774,8 @@ Weights:
 - Some think it most important, some more middling
 
 
-## Regeneration {.tabset .tabset-fade .tabset-pills}  
+## Regeneration 
+### {.tabset .tabset-fade .tabset-pills}
 
 ```{r vf Regeneration - init, echo = F , results="asis"}
 
@@ -778,13 +790,13 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```  
   
-### Continuous Value function
+#### Continuous Value function
 ```{r vf Regeneration - continuous, echo = F , results="asis"}
 continuous_vf_fig()
 ```
 
 
-### Categorised value function
+#### Categorised value function
 ```{r vf Regeneration - categorical, echo = F , results="asis"}
 categorised_vf_fig()
 
@@ -796,13 +808,11 @@ filtered_data %>%
 knitr::kable()
 
 ```
-### Weights
+#### Weights
 ```{r vf Regeneration - weights, fig.width= 4, echo = F , results="asis"}
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
-
-## {-}
 
 ### Comments
 
@@ -813,10 +823,11 @@ VFs:
 Weights:  
 - a lot of variation
 
-
-## Herbivore Impact {.tabset .tabset-fade .tabset-pills}
+## Herbivore Impact 
 
 Note: Complete revision of indicator since ROUND 1
+
+### {.tabset .tabset-fade .tabset-pills}
 
 ```{r vf Herbivore Impact - init, echo = F , results="asis"}
 
@@ -831,23 +842,21 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Continuous Value function
+#### Continuous Value function
 ```{r vf Herbivore Impact - continuous, echo = F , results="asis"}
 continuous_vf_fig()
 ```
 
-### Weights
+#### Weights
 ```{r vf Herbivore Impact - weights, fig.width= 4, echo = F , results="asis"}
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 
-## {-}
-
 ### Comments
 
-
-## Tree Health {.tabset .tabset-fade .tabset-pills}
+## Tree Health 
+### {.tabset .tabset-fade .tabset-pills}
 
 ```{r vf Tree Health - init, echo = F , results="asis"}
 
@@ -862,18 +871,16 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Continuous Value function
+#### Continuous Value function
 ```{r vf Tree Health - continuous, echo = F , results="asis"}
 continuous_vf_fig()
 ```
 
-### Weights
+#### Weights
 ```{r vf Tree Health - weights, fig.width= 4, echo = F , results="asis"}
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
-
-## {-}
 
 ### Comments
 
@@ -883,7 +890,8 @@ VFs:
 Weights:  
 - full range of variation
 
-## Ground Flora {.tabset .tabset-fade .tabset-pills}
+## Ground Flora
+### {.tabset .tabset-fade .tabset-pills}
 
 ```{r vf Ground Flora - init, echo = F , results="asis"}
 
@@ -898,18 +906,16 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Continuous Value function
+#### Continuous Value function
 ```{r vf Ground Flora - continuous, echo = F , results="asis"}
 continuous_vf_fig()
 ```
 
-### Weights
+#### Weights
 ```{r vf Ground Flora - weights, fig.width= 4, echo = F , results="asis"}
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
-
-## {-}
 
 ### Comments  
 
@@ -922,7 +928,8 @@ VF:
 weights: medium - high importance
 
 
-## Horizontal complexity {.tabset .tabset-fade .tabset-pills}
+## Horizontal complexity 
+### {.tabset .tabset-fade .tabset-pills}
 
 ```{r vf Horizontal complexity - init, echo = F , results="asis"}
 
@@ -937,12 +944,12 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Continuous Value function
+#### Continuous Value function
 ```{r vf Horizontal complexity - continuous, echo = F , results="asis"}
 continuous_vf_fig()
 ```
 
-### Categorised value function
+#### Categorised value function
 ```{r vf Horizontal complexity - categorical, echo = F , results="asis"}
 categorised_vf_fig()
 
@@ -954,13 +961,11 @@ filtered_data %>%
 knitr::kable()
 
 ```
-### Weights
+#### Weights
 ```{r vf Horizontal complexity - weights, fig.width= 4, echo = F , results="asis"}
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
-
-## {-}
 
 ### Comments  
 
@@ -969,7 +974,8 @@ VFs:
 
 Weights: big range
 
-## Human Damage {.tabset .tabset-fade .tabset-pills}
+## Human Damage 
+### {.tabset .tabset-fade .tabset-pills}
 
 ```{r vf Human Damage - init, echo = F , results="asis"}
 
@@ -984,18 +990,16 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 paste(length(unique(filtered_data$respondant_name)), "respondants.")
 ```
 
-### Continuous Value function
+#### Continuous Value function
 ```{r vf Human Damage - continuous, echo = F , results="asis"}
 continuous_vf_fig()
 ```
 
-### Weights
+#### Weights
 ```{r vf Human Damage - weights, fig.width= 4, echo = F , results="asis"}
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
-
-## {-}
 
 ### Comments  
 

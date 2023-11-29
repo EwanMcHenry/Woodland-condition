@@ -22,6 +22,7 @@ ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.ma
               aes(x = measure, y = value, color = respondant_name,
                   text = map(
                     paste0("<b>", `respondant_name`, "</b>",
+                           "<br><b>Indicator:</b>", measure, ", <b>Value:</b>", value,"<br>",
                            "<br><b>Certainty:</b>", cert_val_funct, "<br>",
                            "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"#,
                            #"<b>Sentance: </b>", vf.sentance
@@ -78,7 +79,7 @@ ggplot_resp_cat_vf <- function(indicator_name, x.lab = ind.matcher.df$ind.axis.t
                 aes(x = cat_measure, y = value, color = respondant_name,
                     text = map(
                       paste0("<b>", `respondant_name`, "</b>",
-                             "<br><b>Value:</b>", value, "<br>",
+                             "<br><b>Indicator:</b>", cat_measure, ", <b>Value:</b>", value,"<br>",
                              "<br><b>Certainty:</b>", cert_val_funct, "<br>",
                              "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"),
                       HTML),

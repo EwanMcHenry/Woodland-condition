@@ -352,7 +352,7 @@ grid.draw(combine)
 Figure 1. Completion of expert opinion survey components by each panelist (coloured portion of pies) for value functions ("Value func"), value function certainties ("VF cert"), indicator weightings ("Weights") and weighting certainties ("wt certs").  
 
 </div>
-
+  
 <button class="btn btn-primary" data-toggle="collapse" data-target="#completion_details">Survey completion details - Show/Hide</button>  
 <div id="completion_details" class="collapse">  
 
@@ -409,6 +409,91 @@ participant_table %>%
 
 ```
 </div>
+
+# Indicatior weights
+
+## Raw weights of all indicators
+
+```{r raw weights, echo = F , results="asis"}
+#-----------------------------------------------------
+# PLOT WEIGHTS --------------------------------------------------
+#-----------------------------------------------------
+
+plot <- ggplot() +
+  geom_boxplot(data = just.one.df, aes(x = sheet_name, y = weight), 
+               width=0.3, color="grey70", fill = "white", alpha=0.2) +
+  geom_point(data = just.one.df, 
+             position = position_jitter(width = 0.2, height = 0),
+             size = 1, shape = 16,
+             aes(x = sheet_name, y = weight, color = respondant_name,
+                 text = map(
+                   paste0("<b>", `respondant_name`, "</b><br>",
+                          "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"),
+                   HTML))) +
+  stat_summary(data = just.one.df, aes(x = sheet_name, y = weight,
+                                       text = map(
+                                         paste0("Mean weight"),
+                                         HTML)),
+               geom = "point", fun = mean,
+               color = "red", shape = 3, size = 2,
+               position = position_nudge(x = 0.05, y = 0)
+               ) +
+  labs(x = NULL, y = "Relative importance (weight)", 
+       title = "Indicator weights",
+       color = "Respondant") +
+  theme_pubr()+
+  theme(plot.title = element_text(size = 12),
+        plot.subtitle = element_text(size = 12),
+        legend.title = element_text(size = 12 , face = "bold"),
+        legend.text =  element_text(size = 12),
+        axis.text.x = element_text(angle = -60, hjust = 0, size = 10),
+        axis.text.y = element_text(size = 12),
+        axis.title =  element_text(size = 12),
+        legend.position = "right",
+        plot.margin = margin(0.5, 1, 0.5, 1, "cm")
+  ) 
+ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
+  config(displayModeBar = F) %>% 
+  layout(yaxis = list(range = c(-5, 105)))
+
+```
+
+## Correlation between weights
+
+Correlation plot of indicators below.  
+- High positive correlation (large & blue) means that these indicators similarly weighted by individuals respondents (i.e. both high/medium/low).  
+- High negative correlation (large & red) indicators are consistently given different weights by individuals respondents (i.e. one high and one low).
+- Low correlation (small) indicators have little relationship  weights by individuals respondents (i.e. one high and one low).
+
+```{r corr weights, echo = F , results="asis"}
+
+```{r corr weights, echo = F , results="asis"}
+
+# Correspondants analysis of respondants by weights given to different indicators
+library("FactoMineR")
+library("factoextra")
+
+for.ca <- just.one.df %>%
+  dplyr::select(sheet_name, 
+                respondant_name, weight) %>%
+  spread(key = sheet_name, value = weight) 
+#make respondant name the row names
+rownames(for.ca) <- for.ca$respondant_name
+for.ca <- for.ca[, -1]
+colnames(for.ca) <- c ("Age", "Native", "Vert.", "N spp.", "Invas.", "Deadwood",
+                       "Vet.", "Ext.", "Regen", "Herb.", "Health", "Flora", "Horiz.",
+                       "Anthro.")
+
+# make corrplot of the different indicators
+library("corrplot")
+
+for.ca %>% na.omit() %>% 
+  cor() %>% 
+  corrplot(method = "circle", diag = F, type = "upper")
+
+
+```
+
 
 
 # Reponses by indicator  
@@ -999,6 +1084,7 @@ continuous_vf_fig()
 ```{r vf Human Damage - weights, fig.width= 4, echo = F , results="asis"}
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
+
 ```
 
 ### Comments  
@@ -1009,53 +1095,6 @@ VFs:
 
 Weights:  
 - Full range
-
-
-# Indicatior weights
-
-```{r}
-#-----------------------------------------------------
-# PLOT WEIGHTS --------------------------------------------------
-#-----------------------------------------------------
-
-plot <- ggplot() +
-  geom_boxplot(data = just.one.df, aes(x = sheet_name, y = weight), 
-               width=0.3, color="grey70", fill = "white", alpha=0.2) +
-  geom_point(data = just.one.df, 
-             position = position_jitter(width = 0.2, height = 0),
-             size = 1, shape = 16,
-             aes(x = sheet_name, y = weight, color = respondant_name,
-                 text = map(
-                   paste0("<b>", `respondant_name`, "</b><br>",
-                          "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"),
-                   HTML))) +
-  stat_summary(data = just.one.df, aes(x = sheet_name, y = weight,
-                                       text = map(
-                                         paste0("Mean weight"),
-                                         HTML)),
-               geom = "point", fun = mean,
-               color = "red", shape = 3, size = 2,
-               position = position_nudge(x = 0.05, y = 0)
-               ) +
-  labs(x = NULL, y = "Relative importance (weight)", 
-       title = "Indicator weights",
-       color = "Respondant") +
-  theme_pubr()+
-  theme(plot.title = element_text(size = 12),
-        plot.subtitle = element_text(size = 12),
-        legend.title = element_text(size = 12 , face = "bold"),
-        legend.text =  element_text(size = 12),
-        axis.text.x = element_text(angle = -60, hjust = 0, size = 10),
-        axis.text.y = element_text(size = 12),
-        axis.title =  element_text(size = 12),
-        legend.position = "right",
-        plot.margin = margin(0.5, 1, 0.5, 1, "cm")
-  ) 
-ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
-  config(displayModeBar = F) %>% 
-  layout(yaxis = list(range = c(-5, 105)))
-```
-
 
 # Certainties
 

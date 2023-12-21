@@ -50,16 +50,22 @@ respondant_colours <- glasbey.colors(nlevels(respondants_with_something)+1)[-1] 
 
 ```
 
-This document explores the expert opinion gathered from staff at the Woodland Trust, related to the measurement of `r has_completed$indicator_name %>% unique() %>% length()` indicators of woodland ecological condition, and the relationship between these indicators' and a wood's potential to promote flourishing wildlife species communities (by estimating "value functions" and importance weightings for each indicator).
+This document explores expert opinion, gathered from Woodland Trust staff, relating to `r has_completed$indicator_name %>% unique() %>% length()` indicators of woodland ecological condition: their effective measurement, and how those measurements might relate to ecological condition.
 
-Expert opinion on the value function and weight for each indicator was elicited using the Delphi method. The Delphi method is designed to collect and distill expert knowledge, using repeated surveys to refine estimates, increasing their reliability <!-- (Edwards et al., 2011) --> and identifying where agreements and disagreements in understanding occur.
-<!-- (Buckley, 1995; Kangas, Alho, Kolehmainen, & Mononen, 1998; Landeta, 2006). -->
+> **Woodland ecological condition** is defined as: a wood's potential to promote flourishing wildlife species communities (i.e. ignoring time-lags in wildlife species colonisation).
 
-The method relies on repetitive surveying in at least two to three ‘rounds’ where participants are asked the same questions. After each round participants review and consider the answers given by all panel-members, and are then given the opportunity to revise their answers. The Delphi method has a history of successful use in supporting conservation action where empirical evidence is insufficient and information is needed rapidly to inform decisions. It's transparency and repeatability also add to its appeal.
+The indicators were selected based on their perceived correlation with woodland ecological condition, and their feasibility of measurement. The relationship between each indicator and woodland ecological condition was captured by estimating **value functions** ("what good looks like" ) and importance **weightings** for each indicator, based on expert opinion.
 
-<button class="btn btn-primary" data-toggle="collapse" data-target="#BlockName">Indicators of Woodland Ecological Condition - Show/Hide</button>
-<div id="BlockName" class="collapse">  
+<button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#IndicatorsTable" aria-expanded="false" aria-controls="collapseExample">
 
+Toggle Indicators Table
+
+</button>
+
+</p>
+
+::: {#IndicatorsTable .collapse}
+::: {.card .card-body}
 ```{r  indicators table, echo = F }
 
 ind.table <- ind.matcher.df [,1:2]
@@ -79,4 +85,9 @@ ind.table %>%
     formatStyle( columns = c("Indicator"), fontWeight = 'bold', `text-align` = 'left', "white-space" = "nowrap") 
 
 ```
-</div>
+:::
+:::
+
+Expert opinion on the value function and weight for each indicator was elicited using the Delphi method. The Delphi method is a well-established method designed to collect and distill expert knowledge and has a history of successful use in supporting conservation action where empirical evidence is insufficient and information is needed rapidly to inform decisions. It's transparency and repeatability also add to its appeal.
+
+The Delphi method relies on using repeated surveys where participants are asked the same questions in at least two to three ‘rounds’ . Between rounds participants review and consider the answers given by all panel-members and can then revise their answers, increasing their reliability <!-- (Edwards et al., 2011) --> and identifying areas where agreements and disagreements in understanding occur. <!-- (Buckley, 1995; Kangas, Alho, Kolehmainen, & Mononen, 1998; Landeta, 2006). -->

@@ -1,0 +1,12 @@
+book_filename: "Woodland Ecological Condition Assessment"
+language:
+  ui:
+    chapter_name: ""
+delete_merged_file: true
+output:
+  bookdown::gitbook:
+    config:
+      toc:
+        collapse: section
+        before: |
+          <li><a href="./">My Book</a></li>

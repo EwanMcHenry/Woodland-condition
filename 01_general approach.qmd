@@ -1,0 +1,126 @@
+# A general approach
+
+```{r libraries_data, echo = F, include = F, eval = T }
+
+# LIBARIES ---------------------------------------------------------------
+# library(readxl)
+library(tidyverse)
+# library(stringr)
+# library(plotly)
+# library(htmltools)
+# library(htmlwidgets)
+# library(gridExtra)
+# library(grid)
+library(DT)
+# library(ggiraph)
+# library(cowplot)
+# library(ggnewscale)
+# library(Polychrome)
+source("Scripts\\functions_delphi_analysis.R")
+
+```
+
+```{r load curated data, echo = F, include = F, eval = T }
+extraction.location <- "Data\\Delphi round 1\\"
+load(paste0(extraction.location,"curated.RData"))
+```
+
+The method proposed here takes inspiration from many existing international projects that use woodland structural indicators to assess the ecological condition of sites and provide evidence across national scales.
+
+# Indicator selection
+
+Indicators were selected based on their perceived correlation with woodland ecological condition, and their feasibility of measurement, using WEC indicators from Forest Research and the Woodland Wildlife Toolkit as an initial basis. These are mainly intended to be measured in the field at sample plots within woodland sites, but some will take information form remote sensing data.
+
+A workshop session involving Woodland Trust staff from estates, outreach, policy and CO&E identified a consensus around which were relatively easy to define and those which would require more work. Since then, further work has been done to refine how each indicator could be measured.
+
+<button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#IndicatorsTable" aria-expanded="false" aria-controls="collapseExample">
+
+Toggle Indicators Table
+
+</button>
+
+</p>
+
+::: {#IndicatorsTable .collapse}
+::: {.card .card-body}
+```{r  indicators table, echo = F }
+
+ind.table <- ind.matcher.df [,1:2]
+names(ind.table) <- c("Indicator", "Description")
+ind.table %>% 
+   datatable(extensions = c('FixedColumns',"FixedHeader"),
+              options = list(scrollX = T, 
+                             paging = F,
+                             fixedHeader=F,
+                             dom = 't',
+                             fixedColumns = list(leftColumns = 1) #,
+                             # buttons = c('copy', 'csv')
+                             ),
+              rownames = F#,
+              #container = sketch.lcm.areas
+              ) %>% 
+    formatStyle( columns = c("Indicator"), fontWeight = 'bold', `text-align` = 'left', "white-space" = "nowrap") 
+
+```
+:::
+:::
+
+## Calculating WEC from indicator measurments
+
+**Indicator condition scores** at sites/plots will be calculated from their measurements by applying **value functions** (descriptions of "what good looks like" ) and **importance weightings**. All individual **indicator condition scores** will then be aggregated to give an overall **site condition score**.
+
+![](_book/Figs/indicator_measure_to_values.png){fig-align="center" width="6in"}
+
+Site condition scores can be compared against **thresholds** to assign a **favorability status** to each site, plot or indicator (this can also be done for **indicator condition scores**).
+
+-   Site- and plot-level favorability statuses can be used to evidence statements such as "60% of our sites are in favorable ecological condition".
+
+-   Indicator-level favourability statuses can support statements such as "60% of sites are favorable for tree age distribution, while only 20% have favorable deadwood"
+
+![Indicator score will be aggregated to a site/plot condition score, which will be used to assign favourability status](_book/Figs/aggregate_thresholds.png){fig-align="center" width="6in"}
+
+The benefit of including condition score as well as status is that allows us to track small changes through time and between sites, even when it's favorability status category does not change. This allows us to evidence statements such as "90% of the woods in our care have improved in condition in the last five years".
+
+![A continuous condition score allows small improvements in condition to be tracked, even when there a favourability classification does not change](_book/Figs/favorability%20through%20time.png){fig-align="center" width="6in"}
+
+### Assigning favourability status thresholds
+
+The decision of which initial thresholds to set should ideally be deferred until data has been collected for more than *c.* 20 sites (*c.* 50 preferred) of different types. This would allow thresholds to be calibrated using real sites, and made context-specific where appropriate (e.g. by assigning different thresholds based on attributes such as woodland age).
+
+## Value functions and weightings
+
+Value functions and weightings are quantitative descriptions of how woodland ecological condition relates to indicator measurements. Their reliability is crucial, as they will fundamentally define what "Good" ecological condition is, as we understand it. They must therefore be based on reliable ecological evidence and be open to scrutiny/adaptation[^01_general-approach-1]. Here, they will be estimated through a synthesis of systematically collected expert opinion (using a Delphi method) and published evidence (peer reviewed and grey literature).
+
+[^01_general-approach-1]: Note that as long as indicator measurement methods are consistent/comparable, adapting weightings/value functions in light of new evidence and retrospectively recalculating condition scores will be relatively simple
+
+### Weightings: How important each indicator is
+
+Weightings describe the importance of indicators to ecological condition, relative to each other. For example, if deadwood was considered twice as important as horizontal complexity, these indicators might have weightings of 100 and 50, respectively (on a scale of 0 - 100).
+
+Note: The NFI WEC and the Woodland Wildlife Toolkit do not explicitly use weightings (thus all indicators are equally weighted). Failure to use indicators has been identified as one of the ten common mistakes in designing biodiversity indicators for forest policy[@failing2003].
+
+### Value functions: What good looks like
+
+**Value functions describe the shape of the relationship between indicator measurements and ecological condition** (when all else is equal). Value functions can be continuous or categorical (e.g. Low, medium, high), but categories must have relative values assigned to them (e.g. 0, 30, 100).
+
+![](_book/Figs/categorical%20and%20continuous%20vfs.png){fig-align="center" width="6in"}
+
+Value functions can be as complex as is needed (but ideally not more so) e.g:
+
+-   Value may change more quickly over some parts of an indicator's range, or reach a maximum/minimum beyond which no further significant change occurs.
+
+    ![](_book/Figs/continuous%20vf01.png){fig-align="center" width="3in"}
+
+-   An optimum may exist for an indicator, where extremely high or low measurements indicate reduced value.
+
+    ![](_book/Figs/continuous%20vf02.png){fig-align="center" width="3in"}
+
+-   Value may be context dependent
+
+    ![](_book/Figs/continuous%20vf03.png){fig-align="center" width="6in"}
+
+Value could also relate to the diversity between measurements (e.g. Variation in canopy height between plots within a site).
+
+Note: Improvement beyond an indicator's maximum ecological value is theoretically possible (in terms of biodiversity), but beyond the conservation management tools and decision making at our disposal.
+
+# References

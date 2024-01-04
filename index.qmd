@@ -1,0 +1,81 @@
+# Preface {.unnumbered}
+
+```{r libraries_data, echo = F, include = F, eval = T }
+
+# LIBARIES ---------------------------------------------------------------
+# library(readxl)
+library(tidyverse)
+# library(stringr)
+# library(plotly)
+library(htmltools)
+library(htmlwidgets)
+# library(gridExtra)
+# library(grid)
+library(DT)
+# library(ggiraph)
+# library(cowplot)
+# library(ggnewscale)
+library(Polychrome)
+source("Scripts\\functions_delphi_analysis.R")
+
+forms.direct <- "Data\\Delphi round 1\\response sheets\\"
+extraction.location <- "Data\\Delphi round 1\\"
+
+```
+
+```{r data_extraction_from_excelsheets and curation - preliminary work, echo = F, include = F, eval = F }
+
+# extract from excel sheets ----
+source("Scripts\\Extract_expert_info.R")
+# if all is well this should:
+# save ind.matcher ind.matcher.df and expert.data (expert opinion responses from the Delphi forms) 
+# as files within the specified extraction.location to be loaded together
+
+# curation ----
+source("Scripts\\curation of extracted data.R")
+# this one loads the data and does some curation, scaling responses etc
+# then saves the dataframes
+
+# then later I loads it (in Italian-American mafiosi accent)
+
+```
+
+```{r load curated data, echo = F, include = F, eval = T }
+load(paste0(extraction.location,"curated.RData"))
+```
+
+```{r respondant colours, echo = F, include = F, eval = T }
+respondant_colours <- glasbey.colors(nlevels(respondants_with_something)+1)[-1] %>% as.character() %>% 
+    setNames(., respondants_with_something)
+
+```
+
+This document explores `r has_completed$indicator_name %>% unique() %>% length()` indicators of woodland ecological condition: their effective measurement and how those measurements might be used to assess the ecological condition of a woodland site, based upon evidence from the literature and the expert opinion, gathered from Woodland Trust staff.
+
+The proposed method takes inspiration from many existing international projects that use woodland structural indicators to assess the ecological condition of sites and provide evidence across national scales to inform management and policy.
+
+## A Definition
+
+> **Woodland ecological condition (WEC)**: The potential for a woodland site to sustain biodiverse, dynamic and well-functioning species communities (i.e. ignoring time-lags in wildlife species colonisation).
+
+## Why measure WEC?
+
+Woodland conservationists aim to either improve the ecological condition of wooded sites or maintain condition above some favorable threshold and need reliable evidence on current condition status at different scales (e.g. site, region) and how best to achieve improvement in that context through management and policy interventions. A reliable WEC metric based on rapidly and easily-assessable woodland structural indicators would enable rapid monitoring across a large number of sites at relatively frequent intervals (e.g. Every 5 years). This would enable reporting on the changing state of WEC (relative to strategic goals) and the testing of different interventions to determine which most effectively improve condition (integration with monitoring, evaluation and learning).
+
+# Project Scope
+
+#### Product Users
+
+The assessment protocol should be achievable within a single day's surveying at a typical site and be adaptable to the expertise of different users including:
+
+-   Estate/outreach staff and external consultants, who hold the skills/technical knowledge required for a full survey
+    -   Although training may be required
+-   Landowners, with a less specific skill set but may be able to provide rough survey information where full surveys are a lower priority (e.g. small woodland creation sites such as MOREWOODS).
+
+#### "Woodland"
+
+-   The asessment aims to consider a variety of different woodland types
+    -   Methods must be generalisable to allow the specific setting and context of a woodland to be considered in its assessment (e.g. Woodland creation site, oak woodland, upland birch, woodpasture)
+-   The approach will not be applicable for non-wooded habitats e.g. Grassland, open water etc.
+
+#### 

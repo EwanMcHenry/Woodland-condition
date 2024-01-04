@@ -2,10 +2,11 @@
 .Rhistory
 .RData
 .Ruserdata
-
 /.quarto/
-
 /Data/Delphi round 1/
 /Figs/
 Data/Delphi round 1/
 Figs/
+_book/
+scratch.R
+slides - calculating woodland condition - the process 01.Rmd

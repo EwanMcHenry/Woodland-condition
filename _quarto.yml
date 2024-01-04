@@ -12,6 +12,7 @@ book:
     - 02_methods.qmd
     - 03_participation and survey completion.qmd
     - 04_Importance weightings.qmd
+    - 05_ind_tree_age.qmd
     
 
 bibliography: references.bib
@@ -28,3 +29,4 @@ editor: visual
 
 execute:
   echo: false
+  warning: false

@@ -95,7 +95,7 @@ Value functions and weightings are quantitative descriptions of how woodland eco
 
 ### Weightings: How important each indicator is
 
-Weightings describe the importance of indicators to ecological condition, relative to each other. For example, if deadwood was considered twice as important as horizontal complexity, these indicators might have weightings of two and one, respectively.
+Weightings describe the importance of indicators to ecological condition, relative to each other. For example, if deadwood was considered twice as important as horizontal complexity, these indicators might have weightings of 100 and 50, respectively (on a scale of 0 - 100).
 
 Note: The NFI WEC and the Woodland Wildlife Toolkit do not explicitly use weightings (thus all indicators are equally weighted). Failure to use indicators has been identified as one of the ten common mistakes in designing biodiversity indicators for forest policy[@failing2003].
 

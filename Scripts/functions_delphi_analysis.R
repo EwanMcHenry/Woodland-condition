@@ -123,7 +123,7 @@ ggplot_resp_weight_ind <- function(indicator_name, this.ind.num = ind.num, pal =
   
   # PLOT weights for this ind ----
   plot <- ggplot(filtered_data) +
-    geom_boxplot(aes(x = 0, y = weight)) +
+    geom_boxplot(aes(x = 0, y = weight), outlier.shape = NA) +
     stat_summary(data = filtered_data,
                  aes(x = 0, y = weight),
                  geom = "point", fun = mean,

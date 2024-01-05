@@ -33,11 +33,17 @@ source("Scripts\\functions_delphi_analysis.R")
 forms.direct <- "Data\\Delphi round 1\\response sheets\\"
 extraction.location <- "Data\\Delphi round 1\\"
 
+# add reverce rank of wieghts by each respondant to just.one.df
+just.one.df <- just.one.df %>% 
+  group_by(respondant_name) %>% 
+  mutate(rank_weight = rank(-weight, ties.method = "min")) %>% 
+  ungroup()
+
 ```
 
-## Raw weights of all indicators
+## Raw weightings
 
-Within individual indicators there was a lot of variation between respondents in the weightings given. This variation is much more than variation between the average score of the indicators themselves.
+There was a lot of variation between respondents for the weightings given for each individual indicator, much more than the variation between the indicators themselves (in terms of their average weight among respondents).
 
 ```{r raw weights ggiraph, echo = F , results="asis", caption = "Expert opnion indicator weights: estimates for all indicators for all respontants, with boxplots showing the median and inter-quartile range for each indicator."}
   
@@ -95,7 +101,9 @@ Within individual indicators there was a lot of variation between respondents in
 
 ```
 
-Respondents varied a lot in terms of [the amount of difference]{.underline} between indicators. The figure below shows how much variation there was in the weightings given by each respondant. Respondants with lower standard deviations gave more similar weights to indicators, while those with higher tended to vary much more between indicators.
+## Variation between weightings by respondents
+
+Respondents varied in terms of [the amount of difference]{.underline} they provided for the weights of indicators. The figure below shows how much variation there was in the weightings given by each respondent. Respondents with lower standard deviations gave more similar weights to indicators, while those with higher tended to vary much more between indicators.
 
 ```{r raw weights sd, echo = F , results="asis", fig.width = 6, fig.height=2, out.height= "30%", caption = "Variation in indicator weights by respondants: respondants with higher standard devidation in their answers varied more between indicators."}
 # plotly boxplot of the variation in weights given by each respondant
@@ -148,19 +156,97 @@ respondant.sd.plot <- ggplot(respondant.sd, aes(y = sd, x = 0)) +
     
 
     
+    
 ```
 
-For most respondents, indicator weights tended not to vary by more than `r median(respondant.sd$sd)` from each respondent's average weight. This small variation may be due to a tendency for respondents to consider that "all indicators are important". However, using weights with a small amount of variation will not have a large impact on their relative contribution to the final ecological condition score: essentially all indicators will be treated as being approximately equal in value. While there is nothing technically wrong with this, there is a risk that equal weightings are adopted inadvertently, without full consideration of the potential consequences.
+> Question for respondents: Do you think being more variable in the weights you gave might be appropriate?
 
-Some further consideration should be given to how to best facilitate useful and robust weightings from the expert panel, either through better explanation of the process and discussion of whether or not variable weightings should be considered, or by using a different exercise to elicit expert opinion such as:
+### Implications of low weighting variation between-indicators
 
--   [Q-Method](https://en.wikipedia.org/wiki/Q_methodology)
+A lot of respondents provided weights which did not vary to a large degree between indicators. Most respondents, tended not to vary by more than `r median(respondant.sd$sd)` from their average weight. This small variation may be due to a tendency for respondents to consider that "all indicators are important". However, using weights with a small amount of variation will not have a large impact on their relative contribution to the final ecological condition score: essentially all indicators will be treated as being approximately equal in value. While there is nothing technically wrong with this, there is a risk that equal weightings are adopted inadvertently, without full consideration of the potential consequences.
 
--   Sorting by importance in small groups to build consensus
+> Q: How how do we best to elicit useful and robust weighting estimates from the expert panel?
+
+### Recommendations
+
+The next workshop should first determine a consensus as to whether or not differential indicator weightings are appropriate in principle, and (if they are) then approximately how big the range between the most and least important indicators should be. e.g. through series of quick votes on a virtual poll with options:
+
+-   All my indicators have equal value
+
+-   My least important indicator is 1/2 as important as the most important
+
+-   My least important indicator is 1/3 as important as the most important
+
+etc., up until 1/10.
+
+This report should be shared with respondents. Our approach should be transparent and accessible to the respondents, in particular to give a working understanding of \[how condition scores will be estimated from indicator measurements\@sec-ind_calc_approach\], to promote effective discussion and deliberation in forthcoming workshops.
+
+Some consideration should be given to alternative or adapted methods to elicit expert opinion estimates for indicator weights. Options include
+
+-   Relying more on order that respondents ranked indicators, rather than the raw scores themselves, and building consensus based on that (initial exploration below).
+
+    -   Reliable informantion on the order of indicators could be used to guide the assignment of weightings (ideally by some formalised process).
+
+    -   Future workshop sessions for weighting estimates could be orientated more around sorting and grouping indicators by their importance. This could incorporate small-group sessions, or a methodology like the [Q-Method](#0).
 
 -   Allocating a limited number of "points" between indicators
 
-> **Question for respondents:** Do you think being more variable in the weights you gave might be appropriate?
+## Ranked weightings
+
+These figures explore the rankings of indicator weightings by each respondent. This may provide useful information about the relative importance of indicators, that was hidden in the raw weightings (due to the respondents varying their estimates between indicators to different extents).
+
+```{r ranked weights ggiraph, echo = F , results="asis", caption = "Expert opnion indicator weights: estimates for all indicators for all respontants, with boxplots showing the median and inter-quartile range for each indicator."}
+  
+  indicator.lines = data.frame(
+    y = rep(c(0,14), each = length(just.one.df$sheet_name %>% unique())),
+    sheet_name = rep(just.one.df$sheet_name %>% unique(), times = 2) %>% 
+      as.factor()
+  )
+
+  indiv.weights <- ggplot() +
+    geom_point_interactive(data = just.one.df, 
+                           position = position_jitter(width = 0.2, height = 0),
+                           size = 2, shape = 16,
+                           aes(x = sheet_name, y = rank_weight,
+                               col = respondant_name,
+                               tooltip = paste0(respondant_name, "<br>",sheet_name, "<br>Weight = ", weight, "<br>Certainty = ", cert_weight),
+                               data_id = respondant_name #,
+                               # text = map(
+                               #   paste0("<b>", respondant_name, "</b><br>",
+                               #          "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"),
+                               # HTML)
+                           )) +
+    geom_boxplot(data = just.one.df, aes(x = sheet_name, y = rank_weight), 
+             width=0.5, color="grey30", fill = "white",
+               outlier.shape = NA) +
+    scale_colour_manual(values = respondant_colours, name = "Respondant") +
+    scale_y_continuous(limits = c(1,14)) + 
+    scale_y_reverse() +
+    guides(color = guide_legend(ncol =1)) +
+    labs(y = NULL, x = NULL, title = "Indicators weightings") +
+    theme_pubr()+
+    theme(plot.title = element_text(size = 12),
+          plot.subtitle = element_text(size = 12),
+          legend.title = element_text(size = 12 , face = "bold"),
+          legend.text =  element_text(size = 9),
+          axis.text.x = element_text(angle = -60, hjust = 0, size = 10),
+          axis.text.y = element_text(size = 12),
+          axis.title =  element_text(size = 12),
+          legend.box = "vertical",  # Set the legend box to vertical
+          legend.position = "right",
+          plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")
+    ) 
+  
+    girafe(
+    ggobj = indiv.weights,
+    width_svg = 10,
+    height_svg = 6, 
+    options = list(
+      opts_hover_inv(css = "stroke-opacity:0.01;"),
+      opts_hover(css = "stroke:orange;stroke-width:5;fill-opacity:1")
+    ) ) 
+
+```
 
 ## Patterns between respondents
 
@@ -168,11 +254,34 @@ The context within which respondents work might have a large impact on their sen
 
 ```{r heatmap of weights by respondant}
 
-weights.mat <- just.one.df %>% 
-  dplyr::select(respondant_name, sheet_name, weight) %>% 
-  spread(sheet_name, weight) %>% 
+weights.mat <- just.one.df %>%
+  dplyr::select(respondant_name, sheet_name, weight) %>%
+  spread(sheet_name, weight) %>%
     # make  respondant_name the row names
-  column_to_rownames(var = "respondant_name")
+  column_to_rownames(var = "respondant_name") %>%
+  na.omit() %>% #filter out rows with all NA
+  as.matrix() 
+
+
+library(heatmaply)
+heatmaply(weights.mat,
+        #dendrogram = "row",
+        xlab = "", ylab = "",
+        main = "",
+        scale = "column",
+        margins = c(60,100,40,20),
+        grid_color = "white",
+        grid_width = 0.00001,
+        titleX = FALSE,
+        hide_colorbar = TRUE,
+        branches_lwd = 0.1,
+        label_names = c("Respondent", "Feature:", "Value"),
+        fontsize_row = 5, fontsize_col = 5,
+        labCol = colnames(weights.mat),
+        labRow = rownames(weights.mat),
+        heatmap_layers = theme(axis.line=element_blank())
+        )
+
 
 ```
 

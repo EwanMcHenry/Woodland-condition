@@ -22,7 +22,6 @@ respondant.name <-  function(string = list.files(forms.direct)[1]){
   str_extract(string1, paste0(".*(?=", pattern, ")"))
 }
 
-
 # cell that contains a defined pattern
 matching_cell_index <- function(tibble_data, pattern) {
   matching_cells <- tibble_data %>%
@@ -72,6 +71,15 @@ ind.matcher.df$weight.name <- c("Tree Age distribution" ,"Canopy nativeness (all
                                 "Deadwood", "Veteran trees",  "Woodland extent", "Tree regeneration", 
                                 "Herbivore impact", "Tree health", "Ground flora" , "Horizontal complexity", 
                                 "Anthropogenic damage")
+# whats needed to match in the extractio nprocess to find locations of things in excel sheets
+ind.matcher.df$indicator_name_for_extraction <- ind.matcher.df$indicator_name
+ind.matcher.df$indicator_name_for_extraction[8] <- "Extent/ area of woodland"
+ind.matcher.df$indicator_name_for_extraction[9] <- "Tree regeneration"
+ind.matcher.df$indicator_name_for_extraction[10] <- "Herbivore impact"
+ind.matcher.df$indicator_name_for_extraction[11] <- "Tree disease and rapid mortality"
+ind.matcher.df$indicator_name_for_extraction[13] <- "Horizontal complexity (structural mosaics across a wood)"
+ind.matcher.df$indicator_name_for_extraction[14] <- "Anthropogenic damage"
+
 ### whats written on the axis title for that indicator's sheet.... wow, this is exhausting! ----
 ind.matcher.df$ind.axis.title <- NA
 for (indicator_num in 1:length(vf_sheets)){
@@ -140,7 +148,7 @@ extract.from.delphi.form <- function(forms.direct){
       data_weight  <- read_excel(this.form.direct, sheet = "Relative importance")
       
       weight_indicies_loc <- which(data_weight == 
-                                     ind.matcher.df$weight.name[ind.matcher.df$indicator_name == expert.data$indicator_name[[bk]]],
+                                     ind.matcher.df$weight.name[ind.matcher.df$indicator_name_for_extraction == expert.data$indicator_name[[bk]]],
                                    arr.ind = T) %>% as.numeric() + 
         c(0,1) 
       expert.data$weight_indicy_score[[bk]] <- data_weight[weight_indicies_loc[1], weight_indicies_loc[2]] %>% as.numeric()

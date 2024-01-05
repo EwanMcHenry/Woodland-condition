@@ -41,7 +41,7 @@ df <- data.frame(
   cert_weight = rep(cert_weight, sapply(expert.data$value.points, nrow)),
   
   stringsAsFactors = FALSE
-) %>% merge(., ind.matcher.df, by.x = "indicator_name", by.y = "indicator_name", all.x = T) # this is wrong -- its sheet name.. but its fine
+) %>% merge(., ind.matcher.df, by.x = "indicator_name", by.y = "indicator_name_for_extraction", all.x = T) # this is wrong -- its sheet name.. but its fine
 
 # working here - need to get sheet name formatted right for the weights plots
 df <- df %>% 
@@ -95,7 +95,7 @@ has_completed <- data.frame(respondent_names = respondent_names,
                             vf = sapply(expert.data$value.points, nrow)>1,
                             vf_cert = !is.na(as.numeric(cert_val_funct))
 ) %>% 
-  left_join(., ind.matcher.df[, c("sheet_name", "indicator_name")], by = "indicator_name")
+  left_join(., ind.matcher.df[, c("sheet_name", "indicator_name_for_extraction")], by = c("indicator_name" =  "indicator_name_for_extraction"))
 
 # create df of group by(indicator, respondant) %>% sum(completed) for each
 completed_summary <- has_completed %>% 

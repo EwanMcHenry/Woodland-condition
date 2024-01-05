@@ -65,7 +65,7 @@ ind.table %>%
 :::
 :::
 
-## Calculating WEC from indicator measurments
+## Calculating WEC from indicator measurments {#sec-ind_calc_approach}
 
 **Indicator condition scores** at sites/plots will be calculated from their measurements by applying **value functions** (descriptions of "what good looks like" ) and **importance weightings**. All individual **indicator condition scores** will then be aggregated to give an overall **site condition score**.
 

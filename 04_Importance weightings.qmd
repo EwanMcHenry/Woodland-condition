@@ -10,25 +10,29 @@ There was much more variation between respondents than there was between indicat
 
 Many respondents provided estimates that were very similar between indicators. The implications of this are discussed below.
 
-### Recommendations
+## Recommendations
 
 > Q: How how do we best to elicit useful and robust weighting estimates from the expert panel?
 
-The next workshop should first determine a consensus as to whether or not differential indicator weightings are appropriate in principle, and (if they are) then approximately how big the range between the most and least important indicators should be. e.g. through series of quick votes on a virtual poll with options:
+The next workshop should first determine a consensus as to whether or not differential indicator weightings are appropriate in principle, and (assuming they are) then approximately how big the range between the most and least important indicators should be. e.g. through series of quick votes on a virtual poll:
 
--   All my indicators have equal value
-
--   My least important indicator is 1/2 as important as the most important
-
--   My least important indicator is 1/3 as important as the most important
+> Think to yourself: "My most important indicator is \_\_\_\_ and my least is \_\_\_", and select an answer from the following:
+>
+> -   Both are of equal importance
+>
+> -   There is only a small difference
+>
+> -   My least important is 1/2 as important as the most important
+>
+> -   My least important is 1/3 as important as the most important
 
 etc., up until 1/10.
 
-This report should be shared with all respondents. Our approach should be transparent and accessible to the respondents, in particular to give a working understanding of [how condition scores will be estimated from indicator measurements](01_general%20approach.qmd) and thus promote effective discussion and deliberation in forthcoming workshops.
+This report should be shared with all respondents. Our approach should be transparent and accessible to the respondents, in particular to give a working understanding of [how condition scores will be estimated from indicator measurements](01_general%20approach.qmd) to promote effective discussion and deliberation in forthcoming workshops.
 
-Some consideration should be given to alternative or adapted methods to elicit expert opinion estimates for indicator weights. Options include
+Some consideration should be given to alternative or adapted methods to estimate indicator weights. Options include
 
--   Relying more on order that respondents ranked indicators, rather than the raw scores themselves, and building consensus based on that (initial exploration below: @sec-introduction ).
+-   Relying more on the rank order of estimates, rather than the raw weighting, and building consensus based on that (initial exploration below).
 
     -   Reliable information on the order of indicators could be used to guide the assignment of weightings (ideally by some formalised process).
 
@@ -119,8 +123,8 @@ respondant.sd.plot <- ggplot(respondant.sd, aes(y = sd, x = 0)) +
 
     girafe(
     ggobj = respondant.sd.plot,
-    width_svg = 6,
-    height_svg = 2,
+    width_svg = 12,
+    height_svg = 4,
     options = list(
       opts_hover_inv(css = "stroke-opacity:0.01;"),
       opts_hover(css = "stroke:orange;stroke-width:5;fill-opacity:1")
@@ -138,36 +142,49 @@ respondant.sd.plot <- ggplot(respondant.sd, aes(y = sd, x = 0)) +
 A lot of respondents provided weights which did not vary to a large degree between indicators. Most respondents, tended not to vary by more than `r median(respondant.sd$sd)` from their average weight. This small variation may be due to a tendency for respondents to consider that "all indicators are important". However, using weights with a small amount of variation will not have a large impact on their relative contribution to the final ecological condition score: essentially all indicators will be treated as being approximately equal in value. While there is nothing technically wrong with this, there is a risk that equal weightings are adopted inadvertently, without full consideration of the potential consequences.
 
 ## Exploration of weightings
+
 ::: panel-tabset
-## Raw weights
+### Raw weights
 
-There was a lot of variation between respondents for the raw weightings given for each individual indicator, much more than the variation between the indicators themselves (in terms of their average weight among respondents). This limits how useful the first round of estimated raw weightings will be to differentiate between different indicator importances.
+Raw weightings varied a lot between respondents for each individual indicator, much more than the variation between the indicators themselves (in terms of their average weight among respondents). This limits how useful the first round of estimated raw weightings will be to differentiate between different indicators importance.
 
-```{r raw weights ggiraph, echo = F , results="asis", caption = "Expert opnion indicator weights: estimates for all indicators for all respontants, with boxplots showing the median and inter-quartile range for each indicator."}
+```{r raw weights ggiraph, fig.height= 1,echo = F , results="asis", caption = "Expert opnion indicator weights: estimates for all indicators for all respontants, with boxplots showing the median and inter-quartile range for each indicator."}
 
-#add a col to just.one.df that is the proportion of all of each respondents weight given to each indicator
+#add a col to just.one.df that is the proportion of all of each respondents weight given to each indicator, and one of weights standardised by respondant
 just.one.df <- just.one.df %>%
   group_by(respondant_name) %>%
-  mutate(weight_share = weight/sum(weight, na.rm = T) * 100) %>%
+  mutate(weight_share = weight/sum(weight, na.rm = T) * 100,
+         weight_standardised = (weight - mean(weight, na.rm = T))/sd(weight, na.rm = T)         ) %>%
   ungroup()
+
+  # Order the levels of sheet_name by the median of rank_weight
+ordered_levels <- just.one.df %>%
+  group_by(sheet_name) %>%
+  summarise(av_weight = median(weight, na.rm = TRUE)) %>%
+  arrange(-av_weight) %>%
+  pull(sheet_name)
+
   
 # just some background lines to help read the graph
   indicator.lines = data.frame(
     y = rep(c(0,100), each = length(just.one.df$sheet_name %>% unique())),
     sheet_name = rep(just.one.df$sheet_name %>% unique(), times = 2) %>% 
       as.factor()
-  )
+  ) %>% 
+    mutate(sheet_name = factor(sheet_name, levels = ordered_levels))
+    
+    
 
-  indiv.weights <- ggplot() +
+  indiv.weights <- ggplot(data = just.one.df %>% 
+                            mutate(sheet_name = factor(just.one.df$sheet_name, levels = ordered_levels))) +
     geom_line(data = indicator.lines, color = "grey95",
               aes(x = sheet_name, y = y,
                   data_id = sheet_name),
               show.legend = FALSE) +
-    geom_boxplot(data = just.one.df, aes(x = sheet_name, y = weight), 
+    geom_boxplot(aes(x = sheet_name, y = weight), 
                width=0.5, color="grey30", fill = "white", alpha=0.2,
                outlier.shape = NA) +
-    geom_point_interactive(data = just.one.df, 
-                           position = position_jitter(width = 0.2, height = 0),
+    geom_point_interactive(position = position_jitter(width = 0.2, height = 0),
                            size = 2, shape = 16,
                            aes(x = sheet_name, y = weight,
                                col = respondant_name,
@@ -181,7 +198,8 @@ just.one.df <- just.one.df %>%
                            )) +
     scale_colour_manual(values = respondant_colours, name = "Respondant") +
     scale_y_continuous(limits = c(0,100)) +
-    guides(color = guide_legend(ncol =1), alpha = F) +
+    guides(color = F#guide_legend(ncol =1)
+           , alpha = F) +
     labs(y = NULL, x = NULL, title = "Indicators weightings") +
     theme_pubr()+
     theme(plot.title = element_text(size = 12),
@@ -206,9 +224,10 @@ just.one.df <- just.one.df %>%
     ) ) 
 
 ```
-## Ranked weights
 
-These figures explore the rankings of indicator weightings by each respondent. This may provide useful information about the relative importance of indicators, that was hidden in the raw weightings (due to the respondents varying their estimates between indicators to different extents).
+### Ranked weights {#sec-rank_weights}
+
+The rank of weightings from each respondent may provide useful information about which indicators are generally considered to be more important than others.
 
 ```{r ranked weights ggiraph, echo = F , results="asis", caption = "Expert opnion indicator weights: ranks of indicator importance weightings for all respontants, with boxplots showing the median and inter-quartile range for each indicator's rank."}
   # Order the levels of sheet_name by the median of rank_weight
@@ -242,7 +261,8 @@ ordered_levels <- just.one.df %>%
     scale_colour_manual(values = respondant_colours, name = "Respondant") +
     scale_y_continuous(limits = c(1,14)) + 
     scale_y_reverse() +
-    guides(color = guide_legend(ncol =1)) +
+    guides(color = F#guide_legend(ncol =1)
+           , alpha = F) +
     labs(y = NULL, x = NULL, title = "Indicators weighting ranks") +
     theme_pubr()+
     theme(plot.title = element_text(size = 12),
@@ -267,41 +287,44 @@ ordered_levels <- just.one.df %>%
     ) ) 
 
 ```
-## Weight shares
 
-```{r shares of total weights ggiraph, caption = "Weightings shares: percentage of total weights given to each indicator, boxplots show the median and inter-quartile range for each indicator's weighting share"}
+### Standardised weights
 
+Standardised weights of each indicator by respondents, calculated so that all respondents varied the same amount, around the same average (0). This is useful for comparing the relative importance of indicators across respondents, while ignoring the differing variation between indicators given by respondents. However, those differences may be important, and should not be ignored completely.
+
+```{r standardised weights ggiraph, echo = F , results="asis", caption = "Standardised weights: weights given to each indicator by respondents, standardised so that all respondents varied the same amount, with boxplots showing the median and inter-quartile range for each indicator's weight."}
   # Order the levels of sheet_name by the median of rank_weight
 ordered_levels <- just.one.df %>%
   group_by(sheet_name) %>%
-  summarise(median_rank = median(weight_share, na.rm = TRUE)) %>%
-  arrange(-median_rank) %>%
+  summarise(median_standard_weight = median(weight_standardised, na.rm = TRUE)) %>%
+  arrange(-median_standard_weight) %>%
   pull(sheet_name)
 
 # Apply the ordered levels to the sheet_name variable
 # just.one.df$sheet_name <- factor(just.one.df$sheet_name, levels = ordered_levels)
 
-  indiv.weights <- ggplot(data = just.one.df %>% 
+ indiv.weights <- ggplot(data = just.one.df %>% 
                             mutate(sheet_name = factor(just.one.df$sheet_name, levels = ordered_levels))) +
     geom_point_interactive(position = position_jitter(width = 0.2, height = 0),
                            size = 2, shape = 16,
-                           aes(x = sheet_name, y = weight_share,
+                           aes(x = sheet_name, y = weight_standardised,
                                col = respondant_name,
                                alpha = cert_weight,
-                               tooltip = paste0(respondant_name, "<br>",sheet_name, "<br>Weight = ", weight, "<br>Weight rank = ", rank_weight, "<br> Weight share = ", weight_share, "<br>Certainty = ", cert_weight),
+                               tooltip = paste0(respondant_name, "<br>",sheet_name, "<br>Weight = ", weight, "<br>Weight rank = ", rank_weight, "<br> Standardised weight = ", weight_standardised, "<br>Certainty = ", cert_weight),
                                data_id = respondant_name #,
                                # text = map(
                                #   paste0("<b>", respondant_name, "</b><br>",
                                #          "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"),
                                # HTML)
                            )) +
-    geom_boxplot(aes(x = sheet_name, y = weight_share), 
+    geom_boxplot(aes(x = sheet_name, y = weight_standardised), 
              width=0.5, color="grey30", fill = NA,
                outlier.shape = NA) +
     scale_colour_manual(values = respondant_colours, name = "Respondant") +
     # scale_y_continuous(limits = c(1,14)) + 
-    guides(color = guide_legend(ncol =1)) +
-    labs(y = NULL, x = NULL, title = "Indicators weighting shares") +
+    guides(color = F#guide_legend(ncol =1)
+           , alpha = F) +
+    labs(y = NULL, x = NULL, title = "Standardised weightings by respondant") +
     theme_pubr()+
     theme(plot.title = element_text(size = 12),
           plot.subtitle = element_text(size = 12),
@@ -323,31 +346,18 @@ ordered_levels <- just.one.df %>%
       opts_hover_inv(css = "stroke-opacity:0.01;"),
       opts_hover(css = "stroke:orange;stroke-width:5;fill-opacity:1")
     ) ) 
+    
+
 ```
 
 
-:::
-
-## Raw weightings
-
-
-## Ranked weightings {#sec-introduction}
-
-
-## Share of total weightings given to each indicator
-
-The ranks given to indicator importance also exhibited a lot of variation between respondents, although there are a few general trends worth noting (to which there are many exceptions):
-
--   Deadwood and horizontal complexity were generally ranked very highly
--   Regen, native canopy percentage and
--   Tree health and woodland extent generally ranked low
--   
+### Indicator weightings data summary
 
 ```{r caption = "*the average prortion of each respondants' sum weights given to each indicator."}
 
 
 
-column_names <- c("Indicator", "Average weight", "Average weight rank (lower better)", "Average weight share (higher better)*","Ranked most important \n(% responants)", "Ranked least important (% responants)"
+column_names <- c("Indicator", "Average weight", "Average weight rank (lower better)", "Average standardised weight","Ranked most important \n(% responants)", "Ranked least important (% responants)"
                   #, "Sum of Ranks (lower better)"
                   )
 
@@ -356,7 +366,7 @@ DT::datatable(just.one.df %>%
                 summarise(
                   av_weight = round(mean(weight, na.rm = T), 0),
                   av_rank_weight = round(mean(rank_weight, na.rm = T), 0),
-                  av_weight_share = round(mean(weight_share, na.rm = T), 2),
+                  ave_weight_standardised = round(mean(weight_standardised, na.rm = T), 0),
 n_rank_1 = round(sum(rank_weight == 1)/ n() * 100),
                   n_lowest = round(sum(rank_weight == max(rank_weight, na.rm = T))/ n() * 100)# but rank is ordered, so actually this is the "min"
 #,
@@ -380,12 +390,25 @@ n_rank_1 = round(sum(rank_weight == 1)/ n() * 100),
 
 ```
 
+:::
+
+### Conculsions from round 1 weightings estiamtes
+
+There was too much variation in raw weightings between respondents to draw many useful conclusions from that data directly.
+
+The rankings of indicators by their importance, and the shares of importance given to each indicator also exhibited a lot of variation between respondents, but there were a few general trends worth noting (to which there are many exceptions):
+
+-   Deadwood and horizontal complexity were generally ranked highest
+-   Tree health and woodland extent generally ranked low, and the lowest by many respondents
+
 ## Patterns between respondents
 
 The context within which respondents work might have a large impact on their sense for which indicators are more or less important. The plots below explore this by looking for trends and groupings between respondents, to add further context and help respondents determine where their own responses may be based on experiences that are less relevant to more "typical" woodland. In the later case, they may wish to alter their weightings and provide further input via a comment/exception to their general estimation.
 
+### Heatmaps 
+
 ::: panel-tabset
-## Raw weightings
+#### Raw weightings
 
 ```{r heatmap function}
 library(heatmaply)
@@ -427,15 +450,70 @@ generate_interactive_heatmap <- function(data, weight_variable) {
 generate_interactive_heatmap(just.one.df, "weight")
 ```
 
-## Ranked weightings
+#### Ranked weightings
 
 ```{r heatmap rank weights, echo = F, results="asis"}
 generate_interactive_heatmap(just.one.df, "rank_weight")
 ```
 
-## Weightings shares
+:::
 
-```{r heatmap share weights, echo = F, results="asis"}
-generate_interactive_heatmap(just.one.df, "weight_share")
+### Principle Component analysis
+
+```{r PCA function}
+library(factoextra)
+library(FactoMineR)
+
+generate_interactive_PCA <- function(data, weight_variable) {
+  # Select relevant columns and spread the data
+  weights.mat <- data %>%
+    dplyr::select(respondant_name, sheet_name, !!sym(weight_variable)) %>%
+    spread(sheet_name, !!sym(weight_variable)) %>%
+    # Make respondant_name the row names
+    column_to_rownames(var = "respondant_name") %>%
+    na.omit() %>% # Filter out rows with all NA
+    as.matrix()
+
+  # Generate PCA
+  pca <- PCA(weights.mat, graph = F)
+
+  # Generate interactive PCA
+  fviz_pca_biplot(pca, repel = TRUE,
+                col.var = "#2E9FDF", # Variables color
+                col.ind = "#696969",  # Individuals color
+                geom.ind = "point",
+                col.quanti.sup = "black",
+                col.ind.sup = "black",
+                  col.var.sup = "black",
+                  pointsize = 1,
+                  title = "",
+                  axes = c(1, 2),
+                  addEllipses = TRUE,
+                  ellipse.level = 0.95,
+                  labelsize = 3,
+                  legend.title = "",
+                  legend.position = "none",
+                  legend.justification = "none",
+                  legend.direction = "none",
+                  legend.box = "none",
+                  repel.max.iter = 1000,
+                  repel.strength = 0.1,
+                  repel.seed = 123,
+                  ggtheme = theme_pubr()
+  )
+}
+
 ```
+::: panel-tabset
+#### Raw weightings
+
+```{r PCA weights raw, echo = F, results="asis"}
+generate_interactive_PCA(just.one.df, "weight")
+```
+#### Ranked weightings
+
+```{r PCA rank weights, echo = F, results="asis"}
+generate_interactive_PCA(just.one.df, "rank_weight")
+```
+
 :::

@@ -10,7 +10,7 @@ There was much more variation between respondents than there was between indicat
 
 Many respondents provided estimates that were very similar between indicators. The implications of this are discussed below.
 
-## Recommendations
+## Recommendations for next workshop
 
 > Q: How how do we best to elicit useful and robust weighting estimates from the expert panel?
 
@@ -39,6 +39,8 @@ Some consideration should be given to alternative or adapted methods to estimate
     -   Future workshop sessions for weighting estimates could be orientated more around sorting and grouping indicators by their importance. This could incorporate small-group sessions, or a methodology like the [Q-Method](#0).
 
 -   Allocating a limited number of "points" between indicators
+
+The patterns and groupings between respondents could be used to construct workshop breakout groups. For example, groups could be designed to bring together respondents who differed most in their initial responses.
 
 ```{r load curated data, echo = F, include = F, eval = T }
 extraction.location <- "Data\\Delphi round 1\\"
@@ -77,9 +79,9 @@ just.one.df <- just.one.df %>%
 
 ```
 
-## Variation between weightings by respondents
+## Respondents varied in the amount of difference between indicators
 
-Respondents varied in terms of [the amount of difference]{.underline} they provided for the raw weights of indicators. The figure below shows how much variation there was in the weightings given by each respondent. Respondents with lower standard deviations gave more similar weights to indicators, while those with higher tended to vary much more between indicators.
+Respondents varied in terms of [the amount of difference]{.underline} between their indicator weights. The figure below shows how much variation there was between the weightings given by each respondent. Respondents with lower standard deviations weighted indicators more similarly, while those with higher tended to vary much more between indicators.
 
 ```{r raw weights sd, echo = F , results="asis", fig.width = 6, fig.height=2, out.height= "30%", caption = "Variation in indicator weights by respondants: respondants with higher standard devidation in their answers varied more between indicators."}
 # plotly boxplot of the variation in weights given by each respondant
@@ -146,7 +148,7 @@ A lot of respondents provided weights which did not vary to a large degree betwe
 ::: panel-tabset
 ### Raw weights
 
-Raw weightings varied a lot between respondents for each individual indicator, much more than the variation between the indicators themselves (in terms of their average weight among respondents). This limits how useful the first round of estimated raw weightings will be to differentiate between different indicators importance.
+Raw weightings varied a lot between respondents for each indicator, much more than the variation between the indicators themselves (in terms of their average). This limits how useful the first round of estimated raw weightings will be to differentiate between different indicators importance.
 
 ```{r raw weights ggiraph, fig.height= 1,echo = F , results="asis", caption = "Expert opnion indicator weights: estimates for all indicators for all respontants, with boxplots showing the median and inter-quartile range for each indicator."}
 
@@ -227,7 +229,7 @@ ordered_levels <- just.one.df %>%
 
 ### Ranked weights {#sec-rank_weights}
 
-The rank of weightings from each respondent may provide useful information about which indicators are generally considered to be more important than others.
+The rank of weightings from each respondent provide some useful information, particularly on which indicators are consistently considered to be most and least important
 
 ```{r ranked weights ggiraph, echo = F , results="asis", caption = "Expert opnion indicator weights: ranks of indicator importance weightings for all respontants, with boxplots showing the median and inter-quartile range for each indicator's rank."}
   # Order the levels of sheet_name by the median of rank_weight
@@ -290,7 +292,7 @@ ordered_levels <- just.one.df %>%
 
 ### Standardised weights
 
-Standardised weights of each indicator by respondents, calculated so that all respondents varied the same amount, around the same average (0). This is useful for comparing the relative importance of indicators across respondents, while ignoring the differing variation between indicators given by respondents. However, those differences may be important, and should not be ignored completely.
+Standardised weights were calculated so that all respondents varied the same amount, around the same average (0). This is useful for comparing the relative importance of indicators across respondents, while ignoring the difference between respondents in terms of how much their weightings varied. However, those differences may be important, and should not be ignored completely. There may be good reasons why some respondents though weighitns should vary more than others.
 
 ```{r standardised weights ggiraph, echo = F , results="asis", caption = "Standardised weights: weights given to each indicator by respondents, standardised so that all respondents varied the same amount, with boxplots showing the median and inter-quartile range for each indicator's weight."}
   # Order the levels of sheet_name by the median of rank_weight
@@ -350,7 +352,6 @@ ordered_levels <- just.one.df %>%
 
 ```
 
-
 ### Indicator weightings data summary
 
 ```{r caption = "*the average prortion of each respondants' sum weights given to each indicator."}
@@ -366,8 +367,8 @@ DT::datatable(just.one.df %>%
                 summarise(
                   av_weight = round(mean(weight, na.rm = T), 0),
                   av_rank_weight = round(mean(rank_weight, na.rm = T), 0),
-                  ave_weight_standardised = round(mean(weight_standardised, na.rm = T), 0),
-n_rank_1 = round(sum(rank_weight == 1)/ n() * 100),
+                  ave_weight_standardised = round(mean(weight_standardised, na.rm = T), 2),
+                  n_rank_1 = round(sum(rank_weight == 1)/ n() * 100),
                   n_lowest = round(sum(rank_weight == max(rank_weight, na.rm = T))/ n() * 100)# but rank is ordered, so actually this is the "min"
 #,
                   # sum_rank_weight = sum(rank_weight, na.rm = T),
@@ -384,136 +385,131 @@ n_rank_1 = round(sum(rank_weight == 1)/ n() * 100),
                 searching = F,
                 info = F,
                 columnDefs = list(list(width = '100px', targets = "_all"))
-              )
-) 
+)) 
 
 
 ```
-
 :::
 
 ### Conculsions from round 1 weightings estiamtes
 
 There was too much variation in raw weightings between respondents to draw many useful conclusions from that data directly.
 
-The rankings of indicators by their importance, and the shares of importance given to each indicator also exhibited a lot of variation between respondents, but there were a few general trends worth noting (to which there are many exceptions):
+The rankings of indicators by their weighting, and standardised weightings (by respondent) also exhibited a lot of variation, but there were a few general trends worth noting (to which there are many exceptions):
 
--   Deadwood and horizontal complexity were generally ranked highest
+-   Deadwood, regeneration and horizontal complexity were generally ranked highest
 -   Tree health and woodland extent generally ranked low, and the lowest by many respondents
+    -   Anthropogenic damage also typically scored low importance
 
 ## Patterns between respondents
 
 The context within which respondents work might have a large impact on their sense for which indicators are more or less important. The plots below explore this by looking for trends and groupings between respondents, to add further context and help respondents determine where their own responses may be based on experiences that are less relevant to more "typical" woodland. In the later case, they may wish to alter their weightings and provide further input via a comment/exception to their general estimation.
 
-### Heatmaps 
-
-::: panel-tabset
-#### Raw weightings
-
-```{r heatmap function}
-library(heatmaply)
-
-generate_interactive_heatmap <- function(data, weight_variable) {
-  # Select relevant columns and spread the data
-  weights.mat <- data %>%
-    dplyr::select(respondant_name, sheet_name, !!sym(weight_variable)) %>%
-    spread(sheet_name, !!sym(weight_variable)) %>%
-    # Make respondant_name the row names
-    column_to_rownames(var = "respondant_name") %>%
-    na.omit() %>% # Filter out rows with all NA
-    as.matrix()
-
-  # Generate interactive heatmap
-  heatmaply(weights.mat,
-            # Dendrogram = "row",
-            xlab = "", ylab = "",
-            main = "",
-            scale = "column",
-            margins = c(60, 100, 40, 20),
-            grid_color = "white",
-            grid_width = 0.00001,
-            titleX = FALSE,
-            hide_colorbar = TRUE,
-            branches_lwd = 0.1,
-            label_names = c("Respondent", "Feature:", "Value"),
-            fontsize_row = 5, fontsize_col = 5,
-            labCol = colnames(weights.mat),
-            labRow = rownames(weights.mat),
-            heatmap_layers = theme(axis.line = element_blank())
-  )
-}
-
-
-```
-
-```{r heatmap weights raw, echo = F, results="asis"}
-generate_interactive_heatmap(just.one.df, "weight")
-```
-
-#### Ranked weightings
-
-```{r heatmap rank weights, echo = F, results="asis"}
-generate_interactive_heatmap(just.one.df, "rank_weight")
-```
-
-:::
-
 ### Principle Component analysis
+
+-   **Clustering** of respondents reflects general agreement/disagreement in indicator weightings.
+
+-   **Arrow directions** suggest which indicators generally drive dissagrements in different locations on the plot.
+
+-   Longer arrows with a **warmer colour** suggest indicators that might contribute more to disagreements.
+
+-   The **center point** attempts to locate the "average respondent", as best it can (i.e on a 2 dimensional screen).
+
+Participants might want to reflect on those indicators that most separate them from each other, and a general consensus.
+
+> **Worked example** (see standardised weightings tab): Martin (sorry Martin!) might reflect that:
+>
+> -   He is around an "average" opinion RE invasive plants weighting;
+>
+>     -   That arrow is clearly a hot topic that divides opinion, but it hasn't dragged him particuarlly far in its direction.
+>
+> -   He seems to value vertical structure more than most, but maybe he has good reason to! How certain was he again??
+>
+> -   He weights woodland extent lower than most, but its not a very contentious topic (blue line).
+>
+> -   He can also see an indication of what indicators he typically agrees with other respondents on.
 
 ```{r PCA function}
 library(factoextra)
 library(FactoMineR)
+library(dplyr)
+library(tidyr)
+library(ggrepel)
 
 generate_interactive_PCA <- function(data, weight_variable) {
-  # Select relevant columns and spread the data
+  # Select relevant columns and spread the data  
   weights.mat <- data %>%
     dplyr::select(respondant_name, sheet_name, !!sym(weight_variable)) %>%
     spread(sheet_name, !!sym(weight_variable)) %>%
-    # Make respondant_name the row names
+    # Make respondant_name the row names     
     column_to_rownames(var = "respondant_name") %>%
-    na.omit() %>% # Filter out rows with all NA
-    as.matrix()
-
-  # Generate PCA
-  pca <- PCA(weights.mat, graph = F)
-
-  # Generate interactive PCA
-  fviz_pca_biplot(pca, repel = TRUE,
-                col.var = "#2E9FDF", # Variables color
-                col.ind = "#696969",  # Individuals color
-                geom.ind = "point",
-                col.quanti.sup = "black",
-                col.ind.sup = "black",
-                  col.var.sup = "black",
-                  pointsize = 1,
-                  title = "",
-                  axes = c(1, 2),
-                  addEllipses = TRUE,
-                  ellipse.level = 0.95,
-                  labelsize = 3,
-                  legend.title = "",
-                  legend.position = "none",
-                  legend.justification = "none",
-                  legend.direction = "none",
-                  legend.box = "none",
-                  repel.max.iter = 1000,
-                  repel.strength = 0.1,
-                  repel.seed = 123,
-                  ggtheme = theme_pubr()
+    na.omit() %>% # Filter out rows with all NA     
+    as.matrix()  
+  
+  # Generate PCA   
+  pca <- PCA(weights.mat, graph = F)  
+  
+  # Create PCA biplot
+  biplot <- fviz_pca_biplot(pca, repel = TRUE,
+                            col.var = "contrib", # Color by contributions to the PC
+                            gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+                            col.ind = "#696969",  # Individuals color
+                            geom.ind = "point",
+                            col.quanti.sup = "black",
+                            col.ind.sup = "black",
+                            col.var.sup = "black",
+                            pointsize = 1,
+                            title = "",
+                            axes = c(1, 2),
+                            ellipse.level = 0.95,
+                            labelsize = 3,
+                            legend.title = "",
+                            legend.position = "none",
+                            legend.justification = "none",
+                            legend.direction = "none",
+                            legend.box = "none",
+                            repel.max.iter = 1000,
+                            repel.strength = 5,
+                            repel.seed = 123,
+                            ggtheme = theme_pubr())
+  
+  # Add labels using ggrepel
+  biplot + geom_text_repel(data = as.data.frame(pca$ind$coord),
+                           aes(x = Dim.1, y = Dim.2, label = row.names(pca$ind$coord)),
+                           box.padding = 0.5,
+                           point.padding = 0.5,
+                           segment.color = "grey",
+                           segment.size = 0.5,
+                           segment.alpha = 0.5,
+                           size = 3,
+                           force = 2
   )
 }
 
+
+
+
+
 ```
+
 ::: panel-tabset
+#### Standardised weightings
+
+```{r PCA standardised weights, echo = F, results="asis"}
+generate_interactive_PCA(just.one.df, "weight_standardised")
+```
+
 #### Raw weightings
 
 ```{r PCA weights raw, echo = F, results="asis"}
 generate_interactive_PCA(just.one.df, "weight")
 ```
+
 #### Ranked weightings
 
 ```{r PCA rank weights, echo = F, results="asis"}
 generate_interactive_PCA(just.one.df, "rank_weight")
 ```
-
 :::
+
+### Conclusions - patterns between respondents

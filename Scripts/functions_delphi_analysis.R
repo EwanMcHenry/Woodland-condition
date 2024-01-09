@@ -21,8 +21,6 @@ continuous_vf_fig <- function(line.col = NA){
 
 
 
-
-
 # FUNCTION - PLOT RESPONDANTS' continuous INDICATOR VFs ----
 ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.matcher.df$ind.axis.title[i], pal = respondant_colours){
   # Filter the data for the selected indicator

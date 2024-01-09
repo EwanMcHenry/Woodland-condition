@@ -3,6 +3,24 @@ library(ggiraph)
 library(cowplot)
 
 
+# function to plot continuous delphi results
+continuous_vf_fig <- function(line.col = NA){
+  plot <- ggplot_gam_resp_vf(indicator_name = indicator_name,
+                             x.lab = ind.axis.title, gam.col = line.col)
+  
+  ggsave(filename = paste0("Figs//ind_",
+                           formatC(ind.num, width = 2, format = "d", flag = "0"),
+                           "_", indicator_name, "vf_continuous.png"),
+         plot = plot,
+         width = 300, height = 150, units = "mm")
+  
+  ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
+    config(displayModeBar = F) %>% 
+    layout(yaxis = list(range = c(-5, 105)))
+}
+
+
+
 
 
 # FUNCTION - PLOT RESPONDANTS' continuous INDICATOR VFs ----

@@ -1,4 +1,4 @@
-# Preface {.unnumbered}
+# Introduction {.unnumbered}
 
 ```{r libraries_data, echo = F, include = F, eval = T }
 
@@ -74,8 +74,23 @@ The assessment protocol should be achievable within a single day's surveying at 
 
 #### "Woodland"
 
--   The asessment aims to consider a variety of different woodland types
-    -   Methods must be generalisable to allow the specific setting and context of a woodland to be considered in its assessment (e.g. Woodland creation site, oak woodland, upland birch, woodpasture)
--   The approach will not be applicable for non-wooded habitats e.g. Grassland, open water etc.
+-   The assessment aims to consider a variety of different woodland types
+    -   Methods must be generalist to allow the specific setting and context of a woodland to be considered in its assessment (e.g. Woodland creation site, oak woodland, upland birch, woodpasture)
 
-#### 
+The approach will not be applicable for non-wooded habitats e.g. Grassland, open water etc.
+
+# Other Organisation Approaches
+
+The Woodland Trust currently assesses woodland condition across its estate on a 5 year cycle, collecting information on a range of structural attributes. However, these are not processed in a way that allows a site condition score to be calculated
+
+## National Forest Inventory & Woodland Wildlife Toolkit
+
+WEC is measured as part of the GB National Forest Inventory across a sample of wooded 1 ha plots. Simply repeating this method is inappropriate for Woodland Trust estate and outreach purposes for reasons including:
+
+-   The method used requires intensive sampling and specialist expertise. - The design aims to report on the <u>area</u> of woodland in different condition within regions and different wooded habitat types, rather than at the level of individual sites.
+
+-   The NFI's approach samples woodland throughout the UK, and the location of individual sampling locations, and other information gathered during assessment, is not accessible to WT staff.
+
+-   The NFI metric treats each structural indicator as equally important, despite general agreement that some indicators (e.g. Those related to deadwood availability) are of particularly high ecological value.
+
+-   The method of measuring some indicators, and classifying their favourability, are deemed unreliable, insofar as they can support WT objectives.

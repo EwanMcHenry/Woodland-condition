@@ -1,10 +1,32 @@
-# Expert Opinion Methods
+# Expert Opinion Methods & participation
 
 ```{r load curated data, echo = F, include = F, eval = T }
 extraction.location <- "Data\\Delphi round 1\\"
 load(paste0(extraction.location,"curated.RData"))
 ```
 
+```{r libraries_data, echo = F, include = F, eval = T }
+
+# LIBARIES ---------------------------------------------------------------
+# library(readxl)
+library(tidyverse)
+# library(stringr)
+# library(plotly)
+# library(htmltools)
+# library(htmlwidgets)
+library(gridExtra)
+library(grid)
+library(DT)
+library(ggiraph)
+library(cowplot)
+# library(ggnewscale)
+# library(Polychrome)
+source("Scripts\\functions_delphi_analysis.R")
+
+forms.direct <- "Data\\Delphi round 1\\response sheets\\"
+extraction.location <- "Data\\Delphi round 1\\"
+
+```
 Expert opinion on the value function and weighting for each indicator was elicited using the Delphi method.
 
 ## The Delphi method
@@ -74,3 +96,122 @@ Toggle details of responses requiring scaling - weights
 A copy of this report was circulated to respondents between rounds to allow respondents to investigate estimates provided by others, and their certainties.
 
 Where appropriate value functions where plotted categorically (with box plots summarising the estimated value at each category), and continuously. Indicator relative weightings were presented on boxplots, including the mean and median estimates. Interactive hover-text displayed respondent name and their certainty in their estimate.
+
+# Participation and survey completion
+
+## Round 1 {.tabset .tabset-fade .tabset-pills}
+
+`r has_completed$respondent_names %>% unique() %>% length()` experts from Woodland Trust and Plantlife staff were invited to provide their opinion the value and weight of indicators.
+
+`r sum(completed_summary[,2:5] %>% rowSums() >0)` have provided a response as of `r Sys.Date() %>% format("%e %b %Y")`.
+
+Of these, `r sum((completed_summary[,2:5] %>% rowSums() >0) & (completed_summary[,2:5] %>% rowSums() < (4* has_completed$indicator_name %>% unique() %>% length() ) ))` remain partially incomplete. The chart below summarises participant completion of different elements of the survey. For more detail see table (button below chart).
+
+```{r  participation_chart - make, echo = F, eval = F }
+
+# use df to ggplot
+# The first legitimate use of a pie chart in my carer!
+
+max_count = max(completed_summary$vf)
+
+create_gg_pie_chart <- function(count, max_count) {
+  percentage <- count / max_count * 100
+  pie_chart <- ggplot(data.frame(x = c("Done", "Remaining"), y = c(count, max_count - count)),
+                      aes(x = "", y = y, fill = x)) +
+    geom_bar(width = 1, stat = "identity") +
+    scale_fill_manual(values = c("steelblue", "lightgray")) +  # Specify custom colors
+    coord_polar(theta = "y") +
+    theme_void() +
+    theme(legend.position = "none")
+  
+  return(pie_chart)
+  
+}
+
+gg_pie_charts <- list(NA)
+bk = 1
+for (i in 1:(length(completed_summary$respondent_names))){
+  for (ii in 1:(dim(completed_summary)[2]-1)){
+    count <- completed_summary[i,1+ii] %>% as.numeric()
+    gg_pie_charts[[bk]] <-  create_gg_pie_chart(count, length(unique(df$indicator_name)))
+  bk = bk+1
+  }}
+
+pie_matrix <- arrangeGrob(grobs = gg_pie_charts, nrow = length(completed_summary$respondent_names), ncol = length(colnames(completed_summary[, c("wt", "wt_cert", "vf", "vf_cert")])))
+# Add row names (respondent names)
+row_names <- completed_summary$respondent_names
+
+# Add column names
+col_names <- c("Value func", "VF cert", "Weights", "wt cert")
+
+combine <- rbind(tableGrob(t(c(col_names)), theme = ttheme_minimal(), rows = ""), 
+                 cbind(tableGrob(row_names, theme = ttheme_minimal()), 
+                       arrangeGrob(grobs = gg_pie_charts, nrow = length(row_names), ncol = length(col_names)),  size = "last"), size = "last")
+
+
+save(combine, file = "Figs//gg_pie_charts.RData")
+
+```
+
+```{r  participation_chart - plot, echo = F, fig.cap = 'Completion of expert opinion survey components by each panelist (coloured portion of pies) for value functions (Value func), value function certainties (VF cert), indicator weightings (Weights) and weighting certainties (wt certs).', fig.height=9 }
+load(file = "Figs//gg_pie_charts.RData")
+
+# Convert the list of pie charts to a grid using grid.arrange
+
+grid.newpage()
+grid.draw(combine)
+
+```
+
+```{r what needs done by participants details, eval = T}
+
+# Create a data frame with participant names and the four columns
+participant_table <- data.frame(respondent_names = completed_summary$respondent_names,
+                                vf = "",
+                                vf_cert = "",wt = "",
+                                wt_cert = "",
+ stringsAsFactors = FALSE)
+
+# Iterate over each participant and update the table with the indicators not completed
+for (i in 1:nrow(completed_summary)) {
+  n.indicators <- has_completed$indicator_name %>% unique() %>% length()
+  participant <- completed_summary[i, "respondent_names"] %>% as.character()
+  not_completed_wt <- has_completed$sheet_name[has_completed$respondent_names == participant & has_completed$wt == FALSE]
+  not_completed_wt_cert <- has_completed$sheet_name[has_completed$respondent_names == participant & has_completed$wt_cert == FALSE]
+  not_completed_vf <- has_completed$sheet_name[has_completed$respondent_names == participant & has_completed$vf == FALSE]
+  not_completed_vf_cert <- has_completed$sheet_name[has_completed$respondent_names == participant & has_completed$vf_cert == FALSE]
+  
+  if (length(not_completed_wt) == n.indicators) not_completed_wt <- "all"
+  if (length(not_completed_wt_cert) == n.indicators) not_completed_wt_cert <- "all"
+  if (length(not_completed_vf) == n.indicators) not_completed_vf <- "all"
+  if (length(not_completed_vf_cert) == n.indicators) not_completed_vf_cert <- "all"
+
+  participant_table[participant_table$respondent_names == participant, "wt"] <- paste(not_completed_wt, collapse = ", ")
+  participant_table[participant_table$respondent_names == participant, "wt_cert"] <- paste(not_completed_wt_cert, collapse = ", ")
+  participant_table[participant_table$respondent_names == participant, "vf"] <- paste(not_completed_vf, collapse = ", ")
+  participant_table[participant_table$respondent_names == participant, "vf_cert"] <- paste(not_completed_vf_cert, collapse = ", ")
+}
+
+# Print the participant table
+
+names(participant_table) <- c("Respondent", "Value Functions", "vf certs", "Weights", "wt certs")
+
+participant_table %>%  
+    datatable(extensions = c('FixedColumns',"FixedHeader"),
+              options = list(scrollX = T, 
+                             scrollY = '400px',  # Set the desired height for the table
+                             scrollCollapse = TRUE,
+
+                             paging = F,
+                             fixedHeader=F,
+                             dom = 't',
+                             autoWidth = TRUE, fixedColumns = list(leftColumns = 1) #,
+                             # fixedColumns = list(leftColumns = 1) ,
+                             # buttons = c('copy', 'csv')
+                             ),
+              rownames = F#,
+              #container = sketch.lcm.areas
+              ) %>% 
+    formatStyle( columns = c("Respondent"), fontWeight = 'bold', `text-align` = 'left', "white-space" = "nowrap")# %>% 
+
+```

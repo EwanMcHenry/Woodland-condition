@@ -1,5 +1,44 @@
 # Tree age distribution
 
+## Justification
+
+More variation in age class increases niche-space, and hence biodiversity[^05_ind_tree_age-1]. Age-class evenness also provides a measure of the presence of continuous regeneration and healthy stand replacement (ecological functioning).
+
+[^05_ind_tree_age-1]: \[\[Peter Lowe\]\], \[\[Saul Herbert\]\]
+
+## Measuring
+
+Checkbox of size classes present, or better yet: estimated abundance/cover for each size class. Easily combined with measurement of regeneration and veteran trees.
+
+![](images/Tree%20Age%20Distribution%20-%20measure.png)
+
+### Suggested size classes:
+
+-   \< 7cm (tin of beans)
+-   7 - 30cm (approx. 1 m circumference)
+    -   Note very large range, consider splitting [^05_ind_tree_age-2]
+-   30 - 60 (approx. 1.9m circumference)
+-   60 cm
+    -   Note that a higher class may be useful[^05_ind_tree_age-3], though this does overlap with Veteran Trees[^05_ind_tree_age-4]
+
+[^05_ind_tree_age-2]: \[\[Chris Reid\]\]
+
+[^05_ind_tree_age-3]: \[\[Jim Smith-Wright\]\]
+
+[^05_ind_tree_age-4]: \[\[Ewan McHenry\]\]
+
+### Indicator design considerations
+
+This indicator captures age distribution, with more even age distributions ideally showing better condition.
+
+![](images/Tree%20Age%20or%20Size%20Distribution%20value%20function.png)
+
+This age-distribution could be summarised by e.g. a [Shannon diversity index](https://bio.libretexts.org/Sandboxes/tholmberg_at_nwcc.edu/General_Ecology_Ecology/Chapter_22%3A_Biodiversity/22.5%3A_Measuring_Biodiveristy), this would require information on the abundance/cover of trees in each size category.
+
+Where this is not possible the presence/absence of different size categories is a suitable alternative.
+
+Note: \[\[Veteran Trees - Woodland condition indicator\|Veteran Trees\]\] and \[\[Regeneration - Woodland Condition Indicator\|Regeneration\]\] are dealt with in separate indicators (as well).
+
 ```{r load curated data, echo = F, include = F, eval = T }
 extraction.location <- "Data\\Delphi round 1\\"
 load(paste0(extraction.location,"curated.RData"))
@@ -42,6 +81,8 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 
 ```
 
+# Respondent value functions and weights
+
 `r paste(length(unique(filtered_data$respondant_name)))` respondents.
 
 ::: panel-tabset
@@ -63,23 +104,6 @@ knitr::kable()
 #### Continuous Value function
 
 ```{r vf Tree age size distribution - continuous, echo = F , results="asis"}
-
-
-continuous_vf_fig <- function(line.col = NA){
-  plot <- ggplot_gam_resp_vf(indicator_name = indicator_name,
-                           x.lab = ind.axis.title, gam.col = line.col)
-
-ggsave(filename = paste0("Figs//ind_",
-                         formatC(ind.num, width = 2, format = "d", flag = "0"),
-                         "_", indicator_name, "vf_continuous.png"),
-       plot = plot,
-       width = 300, height = 150, units = "mm")
-
-ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
-    config(displayModeBar = F) %>% 
-    layout(yaxis = list(range = c(-5, 105)))
-}
-  
 continuous_vf_fig()
 
 ```
@@ -93,12 +117,164 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 ```
 :::
 
-### Comments
+### Comments on estimates
 
-VFs - consensus likely:\
-- All continuous relationships have same shape.\
-- Complete agreement on upper and lower value.\
-- Some put maximum value at 3 classes.
+VFs - consensus likely:
 
-Weight - Disagreement:\
-- Two camps, giving relatively low and high weights (compared to other indicators) at c. 60 and 90, respectively.
+-   All continuous relationships have same shape.
+
+-   Complete agreement on upper and lower value.
+
+-   Some put maximum value at 3 classes.
+
+Weight - very diverse opinions
+
+# Respondent comments
+
+### Considerations for indicator design
+
+Abundance of different sizes (and their distribution) is important: one dominant class + one slightly older tree this is not the same as a good mix of two age classes[^05_ind_tree_age-5]
+
+[^05_ind_tree_age-5]: \[\[Saul Herbert\]\]
+
+-   Number of classes alone might mislead, e.g. 3/5 could all be intermediate classes, with no old or young
+
+-   Number of trees in each class would be much more useful than cover (because bigger trees have more cover)
+
+Could measure size class diversity directly, e.g. Record dbh of all trees within plot to calculate standard deviation[^05_ind_tree_age-6]?
+
+[^05_ind_tree_age-6]: \[\[Kevin Watts\]\] suggests standard deviation of tree dbh as the single most important structural indicator of biodiversity
+
+Individual size classes may have different "Value": consider a score for each individual class present and sum (to a max of 100), with less points for intermediate stages [^05_ind_tree_age-7].
+
+[^05_ind_tree_age-7]: Alasdair Firth
+
+Likely to covary with Vertical Structure - May be better just using one (collinearity is a statistical pain in the neck, you are effetely counting the same thing twice)
+
+May be difficult to distinguish between more than three age classes, and yet condition could likely improve further[^05_ind_tree_age-8].
+
+[^05_ind_tree_age-8]: \[\[Saul Herbert\]\]
+
+Dbh not always a reliable indicator of age[^05_ind_tree_age-9]
+
+[^05_ind_tree_age-9]: \[\[Richard Brown\]\]
+
+### Priority exceptions
+
+Woodland Type
+
+-   Young woodland and woodland creation sites [^05_ind_tree_age-10]
+
+    -   Maybe 2 size classes would be max expected.
+
+    -   Lower importance in young wood[^05_ind_tree_age-11]
+
+-   Wet wood
+
+    -   Good condition at lower number of classes [^05_ind_tree_age-12]
+
+-   Scrub woodland
+
+    -   May be difficult to age e.g. Gorse, bramble[^05_ind_tree_age-13]
+
+-   Montane woodlands[^05_ind_tree_age-14]
+
+-   Upland woods
+
+    -   Wont have more than three, but that would be good[^05_ind_tree_age-15]
+
+-   Wood pasture/ffridd[^05_ind_tree_age-16]
+
+    -   Frequently have only one age class of surviving trees,
+
+        -   But this should represent reduced potential quality[^05_ind_tree_age-17]
+
+    -   Older trees likely to be more permanent[^05_ind_tree_age-18]
+
+        -   Could mean that condition will be easier to sustain on those sites, but not nessesarily "improve" the condition score[^05_ind_tree_age-19]
+
+    -   Scale/number of plots may need to be bigger to represent size classes present[^05_ind_tree_age-20]
+
+-   Coppice[^05_ind_tree_age-21]
+
+    -   Age-diversity may be between coups, rather than within plots
+
+[^05_ind_tree_age-10]: \[\[Chris Reid\]\], \[\[Peter Lowe\]\], \[\[Dave Bonsall\]\], \[\[Saul Herbert\]\], \[\[Kylie Jones Mattock\]\], \[\[Liam Plummer\]\]
+
+[^05_ind_tree_age-11]: \[\[Hannah Patterson\]\]
+
+[^05_ind_tree_age-12]: \[\[Saul Herbert\]\]
+
+[^05_ind_tree_age-13]: \[\[Saul Herbert\]\], \[\[Kylie Jones Mattock\]\]
+
+[^05_ind_tree_age-14]: \[\[Kylie Jones Mattock\]\]
+
+[^05_ind_tree_age-15]: \[\[Ian Moss\]\]
+
+[^05_ind_tree_age-16]: \[\[Peter Lowe\]\], \[\[Kylie Jones Mattock\]\]
+
+[^05_ind_tree_age-17]: \[\[Ewan McHenry\]\]
+
+[^05_ind_tree_age-18]: \[\[Liam Plummer\]\]
+
+[^05_ind_tree_age-19]: \[\[Ewan McHenry\]\]
+
+[^05_ind_tree_age-20]: \[\[Ewan McHenry\]\]
+
+[^05_ind_tree_age-21]: \[\[Peter Lowe\]\], \[\[Dave Bonsall\]\]
+
+Scale and landscape context[^05_ind_tree_age-22] -
+
+[^05_ind_tree_age-22]: \[\[Peter Lowe\]\], \[\[Kylie Jones Mattock\]\], \[\[Hannah Patterson\]\]
+
+-   A variety of even aged stands at different ages may be ok
+
+-   May not vary within plot, but be good across a site or even sub compartment[^05_ind_tree_age-23].
+
+-   Lower importance where landscape has plenty of woodland with diversity of ages[^05_ind_tree_age-24]
+
+[^05_ind_tree_age-23]: \[\[Liam Plummer\]\], \[\[Louise Hackett\]\]
+
+[^05_ind_tree_age-24]: \[\[Liam Plummer\]\]
+
+### Concerns covered by other indicators
+
+Important lichen stands[^05_ind_tree_age-25]
+
+[^05_ind_tree_age-25]: \[\[Kylie Jones Mattock\]\]
+
+> If the limitation here is light it may be better captured by other indicators. Not sure why an "age distribution effect on condition" would be have particuarlly important exceptions RE lichens[^05_ind_tree_age-26]
+
+[^05_ind_tree_age-26]: \[\[Ewan McHenry\]\]
+
+### Lower priority exceptions
+
+Pioneer species often regenerate in even aged cohorts[^05_ind_tree_age-27]
+
+[^05_ind_tree_age-27]: \[\[Peter Lowe\]\]
+
+> While this may make even-age structure more likely among pioneer species, it does not necessarily mean that the impact of age-structure on condition should be treated differently in that context. If they are all one age, condition is lower.[^05_ind_tree_age-28]
+
+[^05_ind_tree_age-28]: \[\[Ewan McHenry\]\]
+
+# Other approaches
+
+## Woodland Wildlife Toolkit & NFI
+
+Value score depends on number of classes present, out of three
+
+If tree species is not a birch, cherry or Sorbus
+
+-   0 – 20 years (Young)
+
+-   21 - 150 years (Intermediate)
+
+\>150 years (Old)
+
+For birch, cherry or Sorbus species: 0 - 20 years (Young) , 21 - 60 years (Intermediate) and \>60 years (Old)
+
+## Current WT estate condition assessment
+
+Records DAFOR for 5 age categories: \<20 yo;  20-50; 50-100, 100-200, veteran - Note: what exactly DAFOR means for veterans is unclear
+
+> Note: DOMIN scale would be preferred over DAFOR.

@@ -10,10 +10,10 @@ book:
     - index.qmd
     - 01_general approach.qmd
     - 02_methods.qmd
-    - 03_participation and survey completion.qmd
     - 04_Importance weightings.qmd
     - 05_ind_tree_age.qmd
-    
+
+number-depth: 0
 
 bibliography: references.bib
 

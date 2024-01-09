@@ -27,7 +27,7 @@ load(paste0(extraction.location,"curated.RData"))
 
 The method proposed here takes inspiration from many existing international projects that use woodland structural indicators to assess the ecological condition of sites and provide evidence across national scales.
 
-# Indicator selection
+## Indicator selection
 
 Indicators were selected based on their perceived correlation with woodland ecological condition, and their feasibility of measurement, using WEC indicators from Forest Research and the Woodland Wildlife Toolkit as an initial basis. These are mainly intended to be measured in the field at sample plots within woodland sites, but some will take information form remote sensing data.
 
@@ -43,10 +43,15 @@ Toggle Indicators Table
 
 ::: {#IndicatorsTable .collapse}
 ::: {.card .card-body}
-```{r  indicators table, echo = F }
+```{r  indicators table, echo = F, caption = "proposed indicators of woodland ecological condition, with a score suggesting the difficulty of measuring each indicator (higher being more difficult)" }
 
 ind.table <- ind.matcher.df [,1:2]
-names(ind.table) <- c("Indicator", "Description")
+
+ind.table$diff <- c(1, 1, 1, 2, 1, 
+                    1, 1, 1, 1, 1,
+                    1, 3, 2, 3)
+names(ind.table) <- c("Indicator", "Description", "Difficulty of measurement")
+
 ind.table %>% 
    datatable(extensions = c('FixedColumns',"FixedHeader"),
               options = list(scrollX = T, 
@@ -65,7 +70,7 @@ ind.table %>%
 :::
 :::
 
-## Calculating WEC from indicator measurments {#sec-ind_calc_approach}
+## Calculating WEC from indicator measurements {#sec-ind_calc_approach}
 
 **Indicator condition scores** at sites/plots will be calculated from their measurements by applying **value functions** (descriptions of "what good looks like" ) and **importance weightings**. All individual **indicator condition scores** will then be aggregated to give an overall **site condition score**.
 
@@ -87,7 +92,7 @@ The benefit of including condition score as well as status is that allows us to 
 
 The decision of which initial thresholds to set should ideally be deferred until data has been collected for more than *c.* 20 sites (*c.* 50 preferred) of different types. This would allow thresholds to be calibrated using real sites, and made context-specific where appropriate (e.g. by assigning different thresholds based on attributes such as woodland age).
 
-## Value functions and weightings
+## Value functions and weightings {sec-value_functions_and_weightings}
 
 Value functions and weightings are quantitative descriptions of how woodland ecological condition relates to indicator measurements. Their reliability is crucial, as they will fundamentally define what "Good" ecological condition is, as we understand it. They must therefore be based on reliable ecological evidence and be open to scrutiny/adaptation[^01_general-approach-1]. Here, they will be estimated through a synthesis of systematically collected expert opinion (using a Delphi method) and published evidence (peer reviewed and grey literature).
 
@@ -122,5 +127,27 @@ Value functions can be as complex as is needed (but ideally not more so) e.g:
 Value could also relate to the diversity between measurements (e.g. Variation in canopy height between plots within a site).
 
 Note: Improvement beyond an indicator's maximum ecological value is theoretically possible (in terms of biodiversity), but beyond the conservation management tools and decision making at our disposal.
+
+# Toy Example
+
+Here we will calculate condition for two simplified woodlands, that only consider two indicators (\[Tree Age or Size Distribution\] and \[Canopy nativeness\]), exploring the impact of a few different scenarios of weightings and value functions. Condition score is calculated in each case, out of a maximum of 200 (100 for each of 2 indicators), and re-scaled to be out of 100. The real conidition score will be calculated in a very similar way, but with 14 indicators.
+
+Woodland 1 (red) has: 100% native canopy and only 2 age classes present.
+
+Woodland 2 (black) has: 50% native canopy and 3 age classes present.
+
+![Two example toy woodlands](images/two%20woods%20toy%20example.png){fig-align="center"}
+
+### Scenario 1
+
+![](images/toy%20-s%2001.png)
+
+### Scenario 2: changed value function
+
+![](images/toy%20-s%2002.png)
+
+### Scenario 3: changed weights
+
+![](images/toy%20-s%2003.png)
 
 # References

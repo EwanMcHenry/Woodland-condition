@@ -37,7 +37,7 @@ This age-distribution could be summarised by e.g. a [Shannon diversity index](ht
 
 Where this is not possible the presence/absence of different size categories is a suitable alternative.
 
-Note: \[\[Veteran Trees - Woodland condition indicator\|Veteran Trees\]\] and \[\[Regeneration - Woodland Condition Indicator\|Regeneration\]\] are dealt with in separate indicators (as well).
+Note: Veteran Trees and Regeneration are dealt with in separate indicators (as well).
 
 ```{r load curated data, echo = F, include = F, eval = T }
 extraction.location <- "Data\\Delphi round 1\\"
@@ -89,6 +89,7 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 #### Categorised value function
 
 ```{r vf Tree age size distribution - categorical, echo = F , results="asis"}
+#| column: page
 
 categorised_vf_fig()
 
@@ -104,6 +105,7 @@ knitr::kable()
 #### Continuous Value function
 
 ```{r vf Tree age size distribution - continuous, echo = F , results="asis"}
+#| column: page
 continuous_vf_fig()
 
 ```
@@ -111,6 +113,7 @@ continuous_vf_fig()
 #### Weights
 
 ```{r vf Tree age size distribution - weights, fig.width= 4, echo = F , results="asis"}
+#| column: page
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 
@@ -148,8 +151,6 @@ Could measure size class diversity directly, e.g. Record dbh of all trees within
 Individual size classes may have different "Value": consider a score for each individual class present and sum (to a max of 100), with less points for intermediate stages [^05_ind_tree_age-7].
 
 [^05_ind_tree_age-7]: Alasdair Firth
-
-Likely to covary with Vertical Structure - May be better just using one (collinearity is a statistical pain in the neck, you are effetely counting the same thing twice)
 
 May be difficult to distinguish between more than three age classes, and yet condition could likely improve further[^05_ind_tree_age-8].
 

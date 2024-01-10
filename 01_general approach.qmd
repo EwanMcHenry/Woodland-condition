@@ -106,7 +106,9 @@ Note: The NFI WEC and the Woodland Wildlife Toolkit do not explicitly use weight
 
 ### Value functions: What good looks like
 
-**Value functions describe the shape of the relationship between indicator measurements and ecological condition** (when all else is equal). Value functions can be continuous or categorical (e.g. Low, medium, high), but categories must have relative values assigned to them (e.g. 0, 30, 100).
+**Value functions describe the shape of the relationship between indicator measurements and ecological condition** (when all else is equal).
+
+Value functions can be continuous or categorical (e.g. Low, medium, high), but categories must have relative values assigned to them (e.g. 0, 30, 100).
 
 ![](_book/Figs/categorical%20and%20continuous%20vfs.png){fig-align="center" width="6in"}
 
@@ -130,7 +132,7 @@ Note: Improvement beyond an indicator's maximum ecological value is theoreticall
 
 # Toy Example
 
-Here we will calculate condition for two simplified woodlands, that only consider two indicators (\[Tree Age or Size Distribution\] and \[Canopy nativeness\]), exploring the impact of a few different scenarios of weightings and value functions. Condition score is calculated in each case, out of a maximum of 200 (100 for each of 2 indicators), and re-scaled to be out of 100. The real conidition score will be calculated in a very similar way, but with 14 indicators.
+Here we will calculate condition for two simplified woodlands, that only consider two indicators (Tree Size Distribution and Canopy nativeness), exploring the impact of a few different scenarios of weightings and value functions. Condition score is calculated in each case, out of a maximum of 200 (100 for each of 2 indicators), and re-scaled to be out of 100. The real condition score will be calculated in a very similar way, but with 14 indicators.
 
 Woodland 1 (red) has: 100% native canopy and only 2 age classes present.
 
@@ -144,9 +146,13 @@ Woodland 2 (black) has: 50% native canopy and 3 age classes present.
 
 ### Scenario 2: changed value function
 
+More native canopy needed for "good" condition for that indicator
+
 ![](images/toy%20-s%2002.png)
 
 ### Scenario 3: changed weights
+
+Valuing age class diversity more than canopy nativeness, and reducing the difference in importance between them.
 
 ![](images/toy%20-s%2003.png)
 

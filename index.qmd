@@ -94,3 +94,5 @@ WEC is measured as part of the GB National Forest Inventory across a sample of w
 -   The NFI metric treats each structural indicator as equally important, despite general agreement that some indicators (e.g. Those related to deadwood availability) are of particularly high ecological value.
 
 -   The method of measuring some indicators, and classifying their favourability, are deemed unreliable, insofar as they can support WT objectives.
+
+-   The method involves an intensive survey of 1 ha, typically taking one working day. This is not an appropriate use of effort to assess condition at site-level.

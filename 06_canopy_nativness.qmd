@@ -1,43 +1,42 @@
-# Canopy nativness
+# Canopy nativeness
 
 ## Justification
 
-More variation in age class increases niche-space, and hence biodiversity[^06_canopy_nativness-1]. Age-class evenness also provides a measure of the presence of continuous regeneration and healthy stand replacement (ecological functioning).
-
-[^06_canopy_nativness-1]: \[\[Peter Lowe\]\], \[\[Saul Herbert\]\]
+Native trees have higher wildlife value, as native biodiversity has co-evolved with these species over millennium.
 
 ## Measuring
 
-Checkbox of size classes present, or better yet: estimated abundance/cover for each size class. Easily combined with measurement of regeneration and veteran trees.
+Estimate total cover of: tree canopy (percentage of plot area within the drip line), shrub canopy and open habitat.
 
-![](images/Tree%20Age%20Distribution%20-%20measure.png)
+Estimate the percentage of those canopy volumes that are **site**-native.
 
-### Suggested size classes:
-
--   \< 7cm (tin of beans)
--   7 - 30cm (approx. 1 m circumference)
-    -   Note very large range, consider splitting [^06_canopy_nativness-2]
--   30 - 60 (approx. 1.9m circumference)
--   60 cm
-    -   Note that a higher class may be useful[^06_canopy_nativness-3], though this does overlap with Veteran Trees[^06_canopy_nativness-4]
-
-[^06_canopy_nativness-2]: \[\[Chris Reid\]\]
-
-[^06_canopy_nativness-3]: \[\[Jim Smith-Wright\]\]
-
-[^06_canopy_nativness-4]: \[\[Ewan McHenry\]\]
+### ![](images/Canopy%20cover%20and%20nativeness%202023-11-13%2014.17.18.excalidraw.png)
 
 ### Indicator design considerations
 
-This indicator captures age distribution, with more even age distributions ideally showing better condition.
+-   DOMIN cover-abundance scale instead of un-prompted percentages. May be more reliable than DAFOR[^06_canopy_nativness-1].
 
-![](images/Tree%20Age%20or%20Size%20Distribution%20value%20function.png)
+[^06_canopy_nativness-1]: <http://www.magnificentmeadows.org.uk/assets/pdfs/How_to_do_an_NVC_Survey.pdf>
 
-This age-distribution could be summarised by e.g. a [Shannon diversity index](https://bio.libretexts.org/Sandboxes/tholmberg_at_nwcc.edu/General_Ecology_Ecology/Chapter_22%3A_Biodiversity/22.5%3A_Measuring_Biodiveristy), this would require information on the abundance/cover of trees in each size category.
+::: column-margin
+![](images/DOMIN%20cover-abundance%20scale%202023-11-10%2019.53.50.excalidraw.png){fig-align="right"}
+:::
 
-Where this is not possible the presence/absence of different size categories is a suitable alternative.
+-   Consider measuring at different height bands, using same layers as for, Vertical Structure and Horizontal Complexity
 
-Note: \[\[Veteran Trees - Woodland condition indicator\|Veteran Trees\]\] and \[\[Regeneration - Woodland Condition Indicator\|Regeneration\]\] are dealt with in separate indicators (as well).
+-   Consider specifying a height requirements for trees/shrubs to count (3m for trees?).
+
+-   Would open habitat include areas with e.g. 2.5m regenerating trees?
+
+-   A measure of bramble and bracken specifically might be useful
+
+    -   Relates directly to light and could inform woodland management (e.g. thinning)
+
+    -   Not necessarily as part of condition score, but easy to assess and useful info for manager - Nearest 20% is good enough
+
+Note: There is confusion between "percentage OF canopy THAT IS native" and "percentage native canopy cover". Must be very explicit that this is the percentage **of the canopy**.
+
+# Respondent value functions and weights
 
 ```{r load curated data, echo = F, include = F, eval = T }
 extraction.location <- "Data\\Delphi round 1\\"
@@ -70,44 +69,16 @@ extraction.location <- "Data\\Delphi round 1\\"
 
 ```
 
-
-###  {.tabset .tabset-fade .tabset-pills}
-
 ```{r vf Canopy Nativness - init, echo = F , results="asis"}
 
 ind.num = 2
 indicator_name = ind.matcher.df$indicator_name[ind.num]
 ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
-indicator_name  
 
 filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
   mutate(respondant_name = as.factor(respondant_name))
 
 ```
-
-#### Continuous Value function
-
-```{r vf Canopy Nativness - continuous, echo = F , results="asis"}
-continuous_vf_fig()
-```
-
-#### Weights
-
-```{r vf Canopy Nativness - weights, fig.width= 4, echo = F , results="asis"}
-
-ggplot_resp_weight_ind(indicator_name = indicator_name)
-```
-
-### Comments
-
-VF:\
-- Similar general trends, but a lot of variation - Different shapes - Some linear, some S-shaped, some exponential, some logarithmic("r" shaped) - disagreement RE max value
-
-Recommend focus for thought on:\
-- lower 25% native - upper 75-100%
-
-Weightings: - fairly wide spread - 5 or so think it amongst most important - rest think it is middle-importance
-
 
 ```{r vf - init, echo = F , results="asis"}
 
@@ -123,41 +94,11 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 `r paste(length(unique(filtered_data$respondant_name)))` respondents.
 
 ::: panel-tabset
-#### Categorised value function
-
-```{r vf Tree age size distribution - categorical, echo = F , results="asis"}
-
-categorised_vf_fig()
-
-## table
-filtered_data %>%
-  group_by(measure) %>%
-  summarise(Mean = mean(value, na.rm = TRUE) %>% round(digits = 1),
-            'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
-knitr::kable()
-
-```
-
 #### Continuous Value function
 
 ```{r vf Tree age size distribution - continuous, echo = F , results="asis"}
+#| column: page
 
-
-continuous_vf_fig <- function(line.col = NA){
-  plot <- ggplot_gam_resp_vf(indicator_name = indicator_name,
-                           x.lab = ind.axis.title, gam.col = line.col)
-
-ggsave(filename = paste0("Figs//ind_",
-                         formatC(ind.num, width = 2, format = "d", flag = "0"),
-                         "_", indicator_name, "vf_continuous.png"),
-       plot = plot,
-       width = 300, height = 150, units = "mm")
-
-ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
-    config(displayModeBar = F) %>% 
-    layout(yaxis = list(range = c(-5, 105)))
-}
-  
 continuous_vf_fig()
 
 ```
@@ -165,168 +106,139 @@ continuous_vf_fig()
 #### Weights
 
 ```{r vf Tree age size distribution - weights, fig.width= 4, echo = F , results="asis"}
+#| column: page
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ```
 :::
 
-### Comments on estimates
+### Comments on data
 
-VFs - consensus likely:\
-- All continuous relationships have same shape.\
-- Complete agreement on upper and lower value.\
-- Some put maximum value at 3 classes.
+Value functions:
 
-Weight - Disagreement:\
-- Two camps, giving relatively low and high weights (compared to other indicators) at c. 60 and 90, respectively.
+-   Similar general trends, but a lot of variation - Different shapes - Some linear, some S-shaped, some exponential, some logarithmic("r" shaped) - disagreement RE max value
+
+> Recommend focusing reassessments on
+>
+> -   The areas of 0-25% native and 75-100%
+>
+> -   when a value of 100 is reached
+
+Weightings:
+
+-   Fairly wide spread - 5 or so think it among most important - rest think it is middle-importance
 
 # Respondent comments
 
 ### Considerations for indicator design
 
-Abundance of different sizes (and their distribution) is important: one dominant class + one slightly older tree this is not the same as a good mix of two age classes[^06_canopy_nativness-5]
+Non-natives can provide important structural functions not provided by the native species present, important to note where removing them may be adverse[^06_canopy_nativness-2]. Assessment should note where the non-native component contributes significantly to other indicators, e.g. Veteran Trees, Vertical Structure, Tree Age etc. Structure and active management probably more important[^06_canopy_nativness-3]
 
-[^06_canopy_nativness-5]: \[\[Saul Herbert\]\]
+[^06_canopy_nativness-2]: \[\[Kylie Jones Mattock\]\]
 
--   Number of classes alone might mislead, e.g. 3/5 could all be intermediate classes, with no old or young
+[^06_canopy_nativness-3]: \[\[Dave Bonsall\]\]
 
--   Number of trees in each class would be much more useful than cover (because bigger trees have more cover)
+> Assessment should give space to note significant structural contributions of non-natives, focusing on where native species are not providing those structures.
+>
+> Good to record for management. For the condition score the structural complexity added by non-natives would be captured by those specific indicators.
 
-Could measure size class diversity directly, e.g. Record dbh of all trees within plot to calculate standard deviation[^06_canopy_nativness-6]?
+What to do with overlapping canopy of native/non-native species?
 
-[^06_canopy_nativness-6]: \[\[Kevin Watts\]\] suggests standard deviation of tree dbh as the single most important structural indicator of biodiversity
-
-Individual size classes may have different "Value": consider a score for each individual class present and sum (to a max of 100), with less points for intermediate stages [^06_canopy_nativness-7].
-
-[^06_canopy_nativness-7]: Alasdair Firth
-
-Likely to covary with Vertical Structure - May be better just using one (collinearity is a statistical pain in the neck, you are effetely counting the same thing twice)
-
-May be difficult to distinguish between more than three age classes, and yet condition could likely improve further[^06_canopy_nativness-8].
-
-[^06_canopy_nativness-8]: \[\[Saul Herbert\]\]
-
-Dbh not always a reliable indicator of age[^06_canopy_nativness-9]
-
-[^06_canopy_nativness-9]: \[\[Richard Brown\]\]
+-   Should native/ non-native canopy cover be explicitly considered (rather than just native only)?
 
 ### Priority exceptions
 
-Woodland Type
+Some non-natives not as bad as others
 
--   Young woodland and woodland creation sites [^06_canopy_nativness-10]
+-   Larch and Scots pine [^06_canopy_nativness-4]
 
-    -   Maybe 2 size classes would be max expected.
+-   Honorary natives such as sweet chestnut in the SE, sycamore[^06_canopy_nativness-5]
 
-    -   Lower importance in young wood[^06_canopy_nativness-11]
+    -   Sycamore can provide similar bark pH to ash which could be important for lichens associated with ash, particularly in context of ash dieback.
 
--   Wet wood
+-   Specific tree species that are part of targeted conservation management of wildlife species (e.g. potentially goshawk and red squirrel).
 
-    -   Good condition at lower number of classes [^06_canopy_nativness-12]
+-   Non-native species that have ranges that overlap with UK-native species (European larch, Norway spruce etc)[^06_canopy_nativness-6]
 
--   Scrub woodland
+-   Species that share mycorrhizal associations with native trees[^06_canopy_nativness-7]
 
-    -   May be difficult to age e.g. Gorse, bramble[^06_canopy_nativness-13]
+-   UK-native species that aren't site-native, but are ecologically site-appropriate.
 
--   Montane woodlands[^06_canopy_nativness-14]
+[^06_canopy_nativness-4]: \[\[Peter Lowe\]\], \[\[Alasdair Firth\]\]
 
--   Upland woods
+[^06_canopy_nativness-5]: \[\[Dave Bonsall\]\], \[\[Jim Smith-Wright\]\]
 
-    -   Wont have more than three, but that would be good[^06_canopy_nativness-15]
+[^06_canopy_nativness-6]: \[\[Martin Hugi\]\]
 
--   Wood pasture/ffridd[^06_canopy_nativness-16]
-
-    -   Frequently have only one age class of surviving trees,
-
-        -   But this should represent reduced potential quality[^06_canopy_nativness-17]
-
-    -   Older trees likely to be more permanent[^06_canopy_nativness-18]
-
-        -   Could mean that condition will be easier to sustain on those sites, but not nessesarily "improve" the condition score[^06_canopy_nativness-19]
-
-    -   Scale/number of plots may need to be bigger to represent size classes present[^06_canopy_nativness-20]
-
--   Coppice[^06_canopy_nativness-21]
-
-    -   Age-diversity may be between coups, rather than within plots
-
-[^06_canopy_nativness-10]: \[\[Chris Reid\]\], \[\[Peter Lowe\]\], \[\[Dave Bonsall\]\], \[\[Saul Herbert\]\], \[\[Kylie Jones Mattock\]\], \[\[Liam Plummer\]\]
-
-[^06_canopy_nativness-11]: \[\[Hannah Patterson\]\]
-
-[^06_canopy_nativness-12]: \[\[Saul Herbert\]\]
-
-[^06_canopy_nativness-13]: \[\[Saul Herbert\]\], \[\[Kylie Jones Mattock\]\]
-
-[^06_canopy_nativness-14]: \[\[Kylie Jones Mattock\]\]
-
-[^06_canopy_nativness-15]: \[\[Ian Moss\]\]
-
-[^06_canopy_nativness-16]: \[\[Peter Lowe\]\], \[\[Kylie Jones Mattock\]\]
-
-[^06_canopy_nativness-17]: \[\[Ewan McHenry\]\]
-
-[^06_canopy_nativness-18]: \[\[Liam Plummer\]\]
-
-[^06_canopy_nativness-19]: \[\[Ewan McHenry\]\]
-
-[^06_canopy_nativness-20]: \[\[Ewan McHenry\]\]
-
-[^06_canopy_nativness-21]: \[\[Peter Lowe\]\], \[\[Dave Bonsall\]\]
-
-Scale and landscape context[^06_canopy_nativness-22] -
-
-[^06_canopy_nativness-22]: \[\[Peter Lowe\]\], \[\[Kylie Jones Mattock\]\], \[\[Hannah Patterson\]\]
-
--   A variety of even aged stands at different ages may be ok
-
--   May not vary within plot, but be good across a site or even sub compartment[^06_canopy_nativness-23].
-
--   Lower importance where landscape has plenty of woodland with diversity of ages[^06_canopy_nativness-24]
-
-[^06_canopy_nativness-23]: \[\[Liam Plummer\]\], \[\[Louise Hackett\]\]
-
-[^06_canopy_nativness-24]: \[\[Liam Plummer\]\]
-
-### Concerns covered by other indicators
-
-Important lichen stands[^06_canopy_nativness-25]
-
-[^06_canopy_nativness-25]: \[\[Kylie Jones Mattock\]\]
-
-> If the limitation here is light it may be better captured by other indicators. Not sure why an "age distribution effect on condition" would be have particuarlly important exceptions RE lichens[^06_canopy_nativness-26]
-
-[^06_canopy_nativness-26]: \[\[Ewan McHenry\]\]
+[^06_canopy_nativness-7]: \[\[Martin Hugi\]\]
 
 ### Lower priority exceptions
 
-Pioneer species often regenerate in even aged cohorts[^06_canopy_nativness-27]
+Arboretums[^06_canopy_nativness-8]
 
-[^06_canopy_nativness-27]: \[\[Peter Lowe\]\]
+[^06_canopy_nativness-8]: \[\[Kylie Jones Mattock\]\]
 
-> While this may make even-age structure more likely among pioneer species, it does not necessarily mean that the impact of age-structure on condition should be treated differently in that context. If they are all one age, condition is lower.[^06_canopy_nativness-28]
+Amenity woodlands[^06_canopy_nativness-9]
 
-[^06_canopy_nativness-28]: \[\[Ewan McHenry\]\]
+[^06_canopy_nativness-9]: \[\[Kylie Jones Mattock\]\]
+
+> Don't quite understand this one
+>
+> -   [ ] should follow up.
+
+Shelter belts, often need to be non-native to be effective[^06_canopy_nativness-10]
+
+[^06_canopy_nativness-10]: \[\[Ian Moss\]\]
+
+> Here there may be a trade-off that should be made explicitly: an accepted loss of potential wildlife value (i.e. ecological condition) for the service of shelter, a non-native shelter-belt would just have a low condition score[^06_canopy_nativness-11]
+
+[^06_canopy_nativness-11]: \[\[Ewan McHenry\]\]
+
+### Concerns already covered by this or other indicators
+
+Non-native veteran trees can provide significant wildlife value e.g. in historic parkland[^06_canopy_nativness-12]
+
+[^06_canopy_nativness-12]: \[\[Chris Reid\]\]
+
+-   e.g. sweet chestnut heart rot provides similar habitat niche to oak heart rot.
+
+> This should be accounted for within the Veteran Trees indicator[^06_canopy_nativness-13]
+
+[^06_canopy_nativness-13]: \[\[Ewan McHenry\]\]
+
+Some natives can be detrimental if in monoculture, e.g. yew, holly[^06_canopy_nativness-14]
+
+[^06_canopy_nativness-14]: \[\[Jim Smith-Wright\]\]
+
+> This is definitely worth making a note of, but may be best dealt with using the Native Tree and Shrub Species Richness indicator[^06_canopy_nativness-15]
+
+[^06_canopy_nativness-15]: \[\[Ewan McHenry\]\]
+
+Commercial plantations[^06_canopy_nativness-16]
+
+[^06_canopy_nativness-16]: \[\[Kylie Jones Mattock\]\]
+
+> The "negative" impacts of commercial management of native plantations should be picked up in other indicators. Non-native plantations would be expected to score poorly for this indicator[^06_canopy_nativness-17].
+
+[^06_canopy_nativness-17]: \[\[Ewan McHenry\]\]
 
 # Other approaches
 
 ## Woodland Wildlife Toolkit & NFI
 
-Value score depends on number of classes present, out of three
+Occupancy of natives at whole woodland level
 
-If tree species is not a birch, cherry or Sorbus
+-   3: \> 80% (90 % in Scotland)
 
--   0 – 20 years (Young)
+-   2: 50-80%
 
--   21 - 150 years (Intermediate)
-
-\>150 years (Old)
-
-For birch, cherry or Sorbus species: 0 - 20 years (Young) , 21 - 60 years (Intermediate) and \>60 years (Old)
+-   1: \< 50%
 
 ## Current WT estate condition assessment
 
-Records DAFOR for 5 age categories: \<20 yo;  20-50; 50-100, 100-200, veteran - Note: what exactly DAFOR means for veterans is unclear
+Canopy dominated by 1/2 species (T/F)
 
-> Note: DOMIN scale would be preferred over DAFOR.
+> Note no specific mention of "native"[^06_canopy_nativness-18]
+
+[^06_canopy_nativness-18]: \[\[Ewan McHenry\]\]

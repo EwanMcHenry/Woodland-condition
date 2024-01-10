@@ -30,16 +30,16 @@ ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.ma
   # PREDICT TREND ----
   filtered_data$point.influence <- 1/(table(filtered_data$respondant_name)[as.factor(filtered_data$respondant_name)]) %>% 
     as.numeric()
-  gam_model <- mgcv::gam(value.dec ~ s(measure, k = 4),
-                   data = filtered_data, family = binomial(), weights = point.influence)
-  # Create dummy data for prediction
-  dummy_data <- data.frame(measure = seq(min(filtered_data$measure), max(filtered_data$measure), length.out = 50))
-  # Predict using the GAM model
-  dummy_data$predicted_value <- predict(gam_model, newdata = dummy_data, type = "response")*100
+  # gam_model <- mgcv::gam(value.dec ~ s(measure, k = 4),
+  #                  data = filtered_data, family = binomial(), weights = point.influence)
+  # # Create dummy data for prediction
+  # dummy_data <- data.frame(measure = seq(min(filtered_data$measure), max(filtered_data$measure), length.out = 50))
+  # # Predict using the GAM model
+  # dummy_data$predicted_value <- predict(gam_model, newdata = dummy_data, type = "response")*100
   
   # PLOT SPEC, LINES AND TREND ----
   plot <- ggplot() +
-    geom_line(data = dummy_data, size = 2, aes(y = predicted_value, x = measure), colour = gam.col) + # gam prediction
+    # geom_line(data = dummy_data, size = 2, aes(y = predicted_value, x = measure), colour = gam.col) + # gam prediction
     geom_line(data = filtered_data, 
               aes(x = measure, y = value, color = respondant_name,
                   text = map(
@@ -102,7 +102,7 @@ ggplot_resp_cat_vf <- function(indicator_name, x.lab = ind.matcher.df$ind.axis.t
                 aes(x = cat_measure, y = value, color = respondant_name,
                     text = map(
                       paste0("<b>", `respondant_name`, "</b>",
-                             "<br><b>Indicator:</b> ", cat_measure, ", <b>Value:</b> ", value,"<br>",
+                             "<br><b>Measure:</b> ", cat_measure, ", <b>Value:</b> ", value,"<br>",
                              "<br><b>Certainty:</b> ", cert_val_funct, "<br>",
                              "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"),
                       HTML),
@@ -235,7 +235,7 @@ ggplot_resp_weight_ind <- function(indicator_name, this.ind.num = ind.num, pal =
   girafe(
     ggobj = plot_grid,
     width_svg = 10,
-    height_svg = 8, 
+    height_svg = 5, 
     options = list(
       opts_hover_inv(css = "stroke-opacity:0.01;"),
       opts_hover(css = "stroke:orange;stroke-width:5;fill-opacity:1")

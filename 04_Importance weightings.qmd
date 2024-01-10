@@ -6,9 +6,9 @@ Weightings define the importance of different indicators, or the amount each con
 
 ## Results summary
 
-There a lot of variation between respondents for [raw indicator weightings](#sec-raw_weights), much more than there was between actual indicators. This may have be partly because respondents varied a lot in terms of the [amount of difference between indicators](#variation in raw indicators). This limited what useful information could be drawn from raw weightings, and prompted an exploration of the [ranking of indicator weightings](#sec-rank_weights) by respondents and [Standardised weights](#sec-standardised_weights) (transformed so that all respondents varied the same amount between indicators).
+There a lot of variation between respondents for [raw indicator weightings](#sec-raw_weights), much more than there was between actual indicators. This may have be partly because respondents varied a lot in terms of the [amount of difference between indicators](#variation%20in%20raw%20indicators). This limited what useful information could be drawn from raw weightings, and prompted an exploration of the [ranking of indicator weightings](#sec-rank_weights) by respondents and [Standardised weights](#sec-standardised_weights) (transformed so that all respondents varied the same amount between indicators).
 
-Many respondents provided estimates that were very similar between indicators. The implications of this are discussed [below](#variation in raw indicators).
+Many respondents provided estimates that were very similar between indicators. The implications of this are discussed [below](#variation%20in%20raw%20indicators).
 
 There were clear [patterns](#sec-patterns) of disagreement between respondents in round 1, that might be used to inform the second round of deliberation.
 
@@ -157,6 +157,7 @@ The figures below show the weightiness for each indicator given by respondents: 
 Raw weightings varied a lot between respondents for each indicator, much more than the variation between the indicators themselves (in terms of their average). This limits how useful the first round of estimated raw weightings will be to differentiate between different indicators importance.
 
 ```{r raw weights ggiraph, fig.height= 1,echo = F , results="asis", caption = "Expert opnion indicator weights: estimates for all indicators for all respontants, with boxplots showing the median and inter-quartile range for each indicator."}
+#| column: screen-inset-shaded
 
 #add a col to just.one.df that is the proportion of all of each respondents weight given to each indicator, and one of weights standardised by respondant
 just.one.df <- just.one.df %>%
@@ -238,6 +239,7 @@ ordered_levels <- just.one.df %>%
 The rank of weightings from each respondent provide some useful information, particularly on which indicators are consistently considered to be most and least important
 
 ```{r ranked weights ggiraph, echo = F , results="asis", caption = "Expert opnion indicator weights: ranks of indicator importance weightings for all respontants, with boxplots showing the median and inter-quartile range for each indicator's rank."}
+#| column: screen-inset-shaded
   # Order the levels of sheet_name by the median of rank_weight
 ordered_levels <- just.one.df %>%
   group_by(sheet_name) %>%
@@ -301,6 +303,7 @@ ordered_levels <- just.one.df %>%
 Standardised weights were calculated so that all respondents varied the same amount, around the same average (0). This is useful for comparing the relative importance of indicators across respondents, while ignoring the difference between respondents in terms of how much their weightings varied. However, those differences may be important, and should not be ignored completely. There may be good reasons why some respondents though weightings should vary more than others.
 
 ```{r standardised weights ggiraph, echo = F , results="asis", caption = "Standardised weights: weights given to each indicator by respondents, standardised so that all respondents varied the same amount, with boxplots showing the median and inter-quartile range for each indicator's weight."}
+#| column: screen-inset-shaded
   # Order the levels of sheet_name by the median of rank_weight
 ordered_levels <- just.one.df %>%
   group_by(sheet_name) %>%
@@ -361,6 +364,7 @@ ordered_levels <- just.one.df %>%
 ### Indicator weightings data summary
 
 ```{r caption = "*the average prortion of each respondants' sum weights given to each indicator."}
+#| column: screen-inset-shaded
 
 
 
@@ -490,18 +494,24 @@ generate_interactive_PCA <- function(data, weight_variable) {
 #### Standardised weightings {#sec-patterns_standardised}
 
 ```{r PCA standardised weights, echo = F, results="asis"}
+#| column: screen-inset-shaded
+
 generate_interactive_PCA(just.one.df, "weight_standardised")
 ```
 
 #### Raw weightings
 
 ```{r PCA weights raw, echo = F, results="asis"}
+#| column: screen-inset-shaded
+
 generate_interactive_PCA(just.one.df, "weight")
 ```
 
 #### Ranked weightings
 
 ```{r PCA rank weights, echo = F, results="asis"}
+#| column: screen-inset-shaded
+
 generate_interactive_PCA(just.one.df, "rank_weight")
 ```
 :::

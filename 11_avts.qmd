@@ -1,0 +1,209 @@
+# Veteran trees
+
+## Justification
+
+Veteran features provide diverse niches for wildlife species. Their continuity benefits wildlife species communities.
+
+## Measuring
+
+Extend plot to a 1 ha square (50m from centre in each direction) and count AVTs (up to a maximum).
+
+Where recording of AVTs is effective (i.e. an inventory has been done). This can be use instead of field survey - May encourage better recording on estate[^11_avts-1].
+
+[^11_avts-1]: Saul Herbert
+
+Note where AVTs make up the majority of all trees present. There may be too many for a long-term sustainability[^11_avts-2].
+
+[^11_avts-2]: \[\[Alasdair Firth\]\]
+
+# Respondent value functions and weights
+
+```{r load curated data, echo = F, include = F, eval = T }
+extraction.location <- "Data\\Delphi round 1\\"
+load(paste0(extraction.location,"curated.RData"))
+```
+
+```{r libraries_data, echo = F, include = F, eval = T }
+
+# LIBARIES ---------------------------------------------------------------
+# library(readxl)
+library(tidyverse)
+library(ggpubr)
+library(plotly)
+library(htmltools)
+
+# library(stringr)
+# library(plotly)
+# library(htmlwidgets)
+# library(gridExtra)
+# library(grid)
+# library(DT)
+# library(ggiraph)
+# library(cowplot)
+# library(ggnewscale)
+# library(Polychrome)
+source("Scripts\\functions_delphi_analysis.R")
+
+forms.direct <- "Data\\Delphi round 1\\response sheets\\"
+extraction.location <- "Data\\Delphi round 1\\"
+
+```
+
+```{r vf Canopy Nativness - init, echo = F , results="asis"}
+
+ind.num = 7
+indicator_name = ind.matcher.df$indicator_name[ind.num]
+ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
+
+filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
+  mutate(respondant_name = as.factor(respondant_name))
+
+```
+
+`r paste(length(unique(filtered_data$respondant_name)))` respondents.
+
+::: panel-tabset
+#### Continuous Value function
+
+```{r vf - continuous, echo = F , results="asis"}
+#| column: page
+
+continuous_vf_fig()
+
+```
+
+#### Weights
+
+```{r vf - weights, fig.width= 4, echo = F , results="asis"}
+#| column: page
+
+ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+```
+:::
+
+### Comments on data
+
+VFs:
+
+-   Biggest disagreement is about where max should occur
+
+Weights:
+
+-   Massive variation, may need some evidence or guidance.
+
+# Respondent comments
+
+### Considerations for indicator design
+
+Need to include coppice stools, but no agreed way to assess veteran status[^11_avts-3]
+
+[^11_avts-3]: \[\[Dave Bonsall\]\]
+
+Extending sample plot to 1 ha may be difficult, particularly in dense vegetation or steep ground.
+
+Somewhat subjective definition of a veteran tree[^11_avts-4]
+
+[^11_avts-4]: \[\[Jim Smith-Wright\]\]
+
+Should record future potential veterans, particularly important where the site has current veterans[^11_avts-5]
+
+[^11_avts-5]: \[\[Alasdair Firth\]\]
+
+> Research Q: Is there good evidence for AVT density needed for e.g. a diverse invert assemblage?
+
+### Priority exceptions
+
+Woodland type:
+
+-   Wood pasture/parkland:
+
+    -   Good condition would require eight or more[^11_avts-6]
+
+    -   More important here[^11_avts-7]
+
+-   Young woodland - Expect none[^11_avts-8], lower importance[^11_avts-9]
+
+-   Upland/montane[^11_avts-10],
+
+-   Coppice[^11_avts-11]
+
+-   Alder carr, wet willow woodland more dynamic woods - retention of trees to veteran is less important[^11_avts-12]
+
+-   Upland birch: may be solely veteran[^11_avts-13], but also potentially very dynamic[^11_avts-14]
+
+[^11_avts-6]: \[\[Chris Reid\]\], \[\[Liam Plummer\]\], \[\[Adam Thorogood\]\]
+
+[^11_avts-7]: \[\[Liam Plummer\]\], \[\[Jim Smith-Wright\]\]
+
+[^11_avts-8]: \[\[Chris Reid\]\], \[\[Dave Bonsall\]\], \[\[Kylie Jones Mattock\]\], \[\[Hannah Patterson\]\], \[\[Ian Moss\]\]
+
+[^11_avts-9]: \[\[Liam Plummer\]\], \[\[Hannah Patterson\]\], \[\[Louise Hackett\]\]
+
+[^11_avts-10]: \[\[Peter Lowe\]\]
+
+[^11_avts-11]: \[\[Peter Lowe\]\], \[\[Dave Bonsall\]\]
+
+[^11_avts-12]: \[\[Adam Thorogood\]\]
+
+[^11_avts-13]: \[\[Peter Lowe\]\]
+
+[^11_avts-14]: Adam Thorogood
+
+### Lower priority exceptions
+
+Some species more value than others[^11_avts-15]
+
+[^11_avts-15]: \[\[Jim Smith-Wright\]\]
+
+Lowland ancient woodland often have no AVTs[^11_avts-16]
+
+[^11_avts-16]: \[\[Peter Lowe\]\]
+
+> Should they be managed with AVTs more in mind?
+
+### Concerns already covered by this or other indicators
+
+Commercial plantations[^11_avts-17]
+
+[^11_avts-17]: \[\[Kylie Jones Mattock\]\]
+
+> Will score low for this indicator if no AVTs present
+
+If whole wood is old there is no space for young trees[^11_avts-18]
+
+[^11_avts-18]: \[\[Alasdair Firth\]\]
+
+> Should be dealt with via tree age or distribution and regeneration. Have Added suggestion to note where AVTs are the majority of trees present[^11_avts-19]
+
+[^11_avts-19]: \[\[Ewan McHenry\]\]
+
+# Other approaches
+
+## Woodland Wildlife Toolkit
+
+Map locations of veteran trees encountered during woodland walk and any other known.
+
+Veteran defined based on species-specific DBH and/or \>=3 veteran features:
+
+> Veteran features: major trunk cavities or hollowing; water pools in crevices; decay-caused small holes in trunk/larger branches/large roots; missing or loose bark; large quantities of canopy deadwood; sap seeping through bark; crevices sheltered from rainfall; fungi on trunk and larger branches; plants (not mosses or lichen) growing on trunk or branches.
+
+-   Value 3: \> 4 per ha
+
+-   Value 2: 1-2 per ha
+
+-   Value 1: 0 AVTs
+
+## NFI
+
+Recorded within 1 ha plot:
+
+-   Favourable: \> 2 per ha
+
+-   Intermediate: 0.05 - 2 per
+
+-   Unfavourable: \< 0.05 per ha
+
+## Current WT estate condition assessment
+
+# References

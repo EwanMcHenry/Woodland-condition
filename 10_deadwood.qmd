@@ -1,0 +1,238 @@
+# Deadwood
+
+## Justification
+
+Deadwood provides habitat for a range of native species. Takes a lot and a wide range of types and stages of decay to maximise value[^10_deadwood-1]
+
+[^10_deadwood-1]: \[\[Saul Herbert\]\]
+
+## Measuring
+
+Divide plot into quarters and count number of quarters with each deadwood type.
+
+Deadwood types:
+
+-   Deadwood in canopy \>0.5 m long, \>20 cm diameter at narrowest
+
+-   Deadwood on ground \>0.5 m long, \>20 cm diameter at narrowest
+
+-   Stumps 0.5 - 1m tall, \>20 cm diameter at narrowest
+
+-   Standing deadwood \> 1 m tall, \>20 cm diameter at narrowest
+
+Total sum for score (later development could weight deadwood types differently)
+
+![](images/Deadwood%20-%20woodland%20condition%20indicator%202023-11-08%2009.41.00.excalidraw.png)
+
+# Respondent value functions and weights
+
+```{r load curated data, echo = F, include = F, eval = T }
+extraction.location <- "Data\\Delphi round 1\\"
+load(paste0(extraction.location,"curated.RData"))
+```
+
+```{r libraries_data, echo = F, include = F, eval = T }
+
+# LIBARIES ---------------------------------------------------------------
+# library(readxl)
+library(tidyverse)
+library(ggpubr)
+library(plotly)
+library(htmltools)
+
+# library(stringr)
+# library(plotly)
+# library(htmlwidgets)
+# library(gridExtra)
+# library(grid)
+# library(DT)
+# library(ggiraph)
+# library(cowplot)
+# library(ggnewscale)
+# library(Polychrome)
+source("Scripts\\functions_delphi_analysis.R")
+
+forms.direct <- "Data\\Delphi round 1\\response sheets\\"
+extraction.location <- "Data\\Delphi round 1\\"
+
+```
+
+```{r vf Canopy Nativness - init, echo = F , results="asis"}
+
+ind.num = 6
+indicator_name = ind.matcher.df$indicator_name[ind.num]
+ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
+
+filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
+  mutate(respondant_name = as.factor(respondant_name))
+
+```
+
+`r paste(length(unique(filtered_data$respondant_name)))` respondents.
+
+::: panel-tabset
+#### Continuous Value function
+
+```{r vf - continuous, echo = F , results="asis"}
+#| column: page
+
+continuous_vf_fig()
+
+```
+
+#### Weights
+
+```{r vf - weights, fig.width= 4, echo = F , results="asis"}
+#| column: page
+
+ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+```
+:::
+
+### Comments on data
+
+VFs:\
+- A lot of variation, consensus may emerge
+
+Weights:\
+- Some think it most important (and are quite certain)\
+- Some of lower or middling importance (but typically less certain
+
+# Respondent comments
+
+### Considerations for indicator design
+
+Potential clustering of deadwood because of windfall etc could affect plot scoring[^10_deadwood-2].
+
+[^10_deadwood-2]: \[\[Jim Smith-Wright\]\]
+
+Deadwood volume estimation is already an UKWAS requirement.
+
+If a lower requirement was given for you woodland, how long would that last for?
+
+### Priority exceptions
+
+Woodland type
+
+-   Young woodland
+
+    -   Will have less dead wood [^10_deadwood-3], but there may still be some worth recording in surrounding hedges etc[^10_deadwood-4].
+
+    -   Less important here[^10_deadwood-5]
+
+    -   <div>
+
+        > Need to decide between having a specific value function, or reduce weighting
+
+        </div>
+
+-   Woodpasture/ parkland
+
+    -   Potentially more deadwood expected for favourable quality[^10_deadwood-6]. But could also be more important feature (higher weighting).
+
+    -   May need larger/more plots[^10_deadwood-7].
+
+[^10_deadwood-3]: \[\[Chris Reid\]\], \[\[Kylie Jones Mattock\]\],\[\[Hannah Patterson\]\], \[\[Ian Moss\]\]
+
+[^10_deadwood-4]: \[\[Chris Reid\]\]
+
+[^10_deadwood-5]: \[\[Hannah Patterson\]\], \[\[Liam Plummer\]\], \[\[Louise Hackett\]\]
+
+[^10_deadwood-6]: \[Chris Reid\]
+
+[^10_deadwood-7]: \[Liam Plummer\]
+
+Cause is important context, e.g. If from disease [^10_deadwood-8] or large-scale windblow event[^10_deadwood-9]
+
+[^10_deadwood-8]: \[\[Peter Lowe\]\]
+
+[^10_deadwood-9]: \[\[Kylie Jones Mattock\]\]
+
+Type of deadwood is important for its value
+
+-   Hard/softwood[^10_deadwood-10], shaded/open[^10_deadwood-11], species/nativeness of tree[^10_deadwood-12], hollowing, submerged/wet - On living/deadwood interface- important for saproxylics[^10_deadwood-13]
+
+[^10_deadwood-10]: \[\[Alasdair Firth\]\], \[\[Hannah Patterson\]\]
+
+[^10_deadwood-11]: \[\[Saul Herbert\]\]
+
+[^10_deadwood-12]: \[\[Kylie Jones Mattock\]\]
+
+[^10_deadwood-13]: \[\[Louise Hackett\]\]
+
+### Lower priority exceptions
+
+AWR sites where all wood is harvested[^10_deadwood-14] and coppice[^10_deadwood-15]
+
+[^10_deadwood-14]: \[\[Dave Bonsall\]\]
+
+[^10_deadwood-15]: \[\[Peter Lowe\]\], \[\[Dave Bonsall\]\], \[\[Kylie Jones Mattock\]\]
+
+> May just accept lower condition score here, or alter management to retain deadwood.
+
+Note the high diameter threshold for deadwood to be counted[^10_deadwood-16]
+
+[^10_deadwood-16]: \[\[Jim Smith-Wright\]\]
+
+Some nutrient sensitive areas may be undesirable[^10_deadwood-17]
+
+[^10_deadwood-17]: \[\[Jim Smith-Wright\]\]
+
+Higher importance to maintain where there has been historic continuity, compared to establishment of deadwood[^10_deadwood-18].
+
+[^10_deadwood-18]: \[Alasdair Firth\]
+
+May take a long time to accumulate, potentially making progress seem impossible[^10_deadwood-19].
+
+[^10_deadwood-19]: \[\[Louise Hackett\]\]
+
+### Concerns already covered by this or other indicators
+
+Excessive deadwood volume may indicate poor condition[^10_deadwood-20], in PAWs it may restrict ground flora and regeneration[^10_deadwood-21]
+
+[^10_deadwood-20]: \[\[Alasdair Firth\]\]
+
+[^10_deadwood-21]: \[\[Hannah Patterson\]\]
+
+> This should be covered by other indicators (e.g. regeneration). Possibly noting the presumed cause there (i.e. suppressed by excessive deadwood).
+
+May represent high fuel load in extreme cases[^10_deadwood-22] and a fire risk in sites with a lot of public access.
+
+[^10_deadwood-22]: \[\[Peter Lowe\]\], \[\[Kylie Jones Mattock\]\]
+
+> This should be an explicit trade-off between fire risk and the ecological value of deadwood. The indicator should not discourage/be apathetic towards fire risk management options that also promote good quality deadwood[^10_deadwood-23]
+
+[^10_deadwood-23]: \[\[Ewan McHenry\]\]
+
+# Other approaches
+
+## Woodland Wildlife Toolkit
+
+Record on woodland walk and in plots
+
+-   Standing \> 1 m tall
+
+-   Ground \>50 cm long, \>20 cm diameter at narrowest, including stumps 0.5 - 1 m tall
+
+-   Deadwood on live trees
+
+## NFI
+
+Estimated deadwood volume
+
+-   Favourable: \>80 m<sup>3</sup> ha<sup>-1</sup>
+
+-   Intermediate: 20 - 80 m<sup>3</sup> ha<sup>-1</sup>
+
+-   Unfavourable: \< 20 m<sup>3</sup> ha<sup>-1</sup>
+
+## Current WT estate condition assessment
+
+DAFOR for standing and fallen deadwood separately
+
+## Notes
+
+Richard Brown and Dave Bonsall consider the method unrealistic, as it will not pick up much deadwood. Richard Brown mentioned quarter-plot division is unnecessarily complex. Ewan McHenry and Peter Lowe have trailed in Assynt and thought it worked very well and is relatively quick, simple and informative.
+
+# References

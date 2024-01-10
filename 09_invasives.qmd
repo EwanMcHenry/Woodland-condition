@@ -1,0 +1,205 @@
+# Canopy nattiness
+
+## Justification
+
+Invasive species negatively impact biodiversity.
+
+## Measuring
+
+DOMIN/percentage cover for plots for each invasive present.
+
+Note maximum height of Cherry laurel or Rhododendron ponticum if present.
+
+Note invasive tree regeneration (e.g. Western hemlock)[^09_invasives-1]
+
+[^09_invasives-1]: \[\[Chris Reid\]\]
+
+Note detection/non detection of other invasives during woodland walk, ideally mapping their location, and nearby records from e.g. NBN.
+
+> Indicator will automatically score 0 if high priority invasives are present
+
+# Respondent value functions and weights
+
+```{r load curated data, echo = F, include = F, eval = T }
+extraction.location <- "Data\\Delphi round 1\\"
+load(paste0(extraction.location,"curated.RData"))
+```
+
+```{r libraries_data, echo = F, include = F, eval = T }
+
+# LIBARIES ---------------------------------------------------------------
+# library(readxl)
+library(tidyverse)
+library(ggpubr)
+library(plotly)
+library(htmltools)
+
+# library(stringr)
+# library(plotly)
+# library(htmlwidgets)
+# library(gridExtra)
+# library(grid)
+# library(DT)
+# library(ggiraph)
+# library(cowplot)
+# library(ggnewscale)
+# library(Polychrome)
+source("Scripts\\functions_delphi_analysis.R")
+
+forms.direct <- "Data\\Delphi round 1\\response sheets\\"
+extraction.location <- "Data\\Delphi round 1\\"
+
+```
+
+###  {.tabset .tabset-fade .tabset-pills}
+
+```{r vf Canopy Nativness - init, echo = F , results="asis"}
+
+ind.num = 5
+indicator_name = ind.matcher.df$indicator_name[ind.num]
+ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
+
+filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
+  mutate(respondant_name = as.factor(respondant_name))
+
+```
+
+`r paste(length(unique(filtered_data$respondant_name)))` respondents.
+
+::: panel-tabset
+#### Continuous Value function
+
+```{r vf - continuous, echo = F , results="asis"}
+#| column: page
+
+continuous_vf_fig()
+
+```
+
+#### Weights
+
+```{r vf - weights, fig.width= 4, echo = F , results="asis"}
+#| column: page
+
+ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+```
+:::
+
+### Comments on data
+
+VF:
+
+-   A lot of variation. Worth considering Woodland Wildlife Toolkit approaches when revising estimates.
+
+# Respondent comments
+
+### Considerations for indicator design
+
+Should drive early detection and eradication of invasives
+
+-   There shoudl be a rapid exponential drop in condition with presence of any invasive[^09_invasives-2]
+
+-   A little may not have a big impact initially[^09_invasives-3], but much easier to deal with before it spreads[^09_invasives-4], growth (and so the potential for impact and cost of removal) is likely exponential[^09_invasives-5].
+
+[^09_invasives-2]: \[\[Liam Plummer\]\], \[\[Jim Smith-Wright\]\]
+
+[^09_invasives-3]: \[\[Martin Hugi\]\]
+
+[^09_invasives-4]: \[\[Ewan McHenry\]\]
+
+[^09_invasives-5]: \[\[Saul Herbert\]\]
+
+Location may be worth noting: beside watercourses or boundary etc may have management implications[^09_invasives-6]
+
+[^09_invasives-6]: \[\[Hannah Patterson\]\]
+
+Note landscape-presence of invasives - relevant for management[^09_invasives-7]
+
+[^09_invasives-7]: \[\[Hannah Patterson\]\]
+
+### Priority exceptions
+
+May consider species such as Gualtheria shallon equal consideration to rhody, over laurel[^09_invasives-8]
+
+[^09_invasives-8]: \[\[Jim Smith-Wright\]\]
+
+### Lower priority exceptions
+
+Species - Some may spread more and be more costly/difficult to remove[^09_invasives-9]
+
+[^09_invasives-9]: \[\[Hannah Patterson\]\]
+
+> Not really ecologically-relevant, just needs to be a
+
+Aggressiveness of rhododendron and laurel depends on soil type[^09_invasives-10]
+
+[^09_invasives-10]: \[\[Jim Smith-Wright\]\]
+
+-   In SE cherry laurel may not spread[^09_invasives-11]
+
+[^09_invasives-11]: \[\[Dave Bonsall\]\]
+
+Woodland creation - Less important[^09_invasives-12]
+
+[^09_invasives-12]: \[\[Liam Plummer\]\]
+
+Non-plant invasives? Grey squirrel, mink etc.
+
+### Concerns already covered by this or other indicators
+
+Age/structure important[^09_invasives-13]
+
+[^09_invasives-13]: \[\[Ewan McHenry\]\], \[\[Jim Smith-Wright\]\]
+
+> Indicator now records of height/flowering status
+
+Appropriately managed species that are an acceptable part of the historic landscape[^09_invasives-14].
+
+[^09_invasives-14]: \[Jim Smith-Wright\]
+
+> This may mean willingly accepting dropping ecological condition, as a trade-off to historic-value
+
+Diverse, well functioning woodlands should be less invasive-suspectable.
+
+> Should therefore have a higher score for this indicator
+
+# Other approaches
+
+## Woodland Wildlife Toolkit & NFI
+
+Percentage cover for species at whole woodland level
+
+Presence of Rhododendron or Cherry laurel gives automatic poor condition
+
+-   Favourable: no invasive species
+
+-   Intermediate: Rhododendron and cherry laurel absent and other invasives \< 10 % cover
+
+-    Unfavourable: Rhododendron or cherry laurel present or other invasives \> 10 % cover
+
+Species considered:
+
+-   Hottentot-fig (*Carpobrotus edulis*)
+
+-   Cotoneaster (*Cotoneaster spp.*)
+
+-   Japanese knotweed (*Fallopia japonica*)
+
+-   Shallon (*Gaultheria shallon*)
+
+-   Giant rubarb (*Gunnera manicata*)
+
+-   Giant hogweed (*Heracleum mantegazzianum*)
+
+-   Himalayan Balsam (*Impatiens glandulifera*)
+
+-   Laurel (*Lauraceae*)
+
+-   Rhododendron (*Rhododendron ponticum*)
+
+-   Snowberry (*Symphoricarpos albus*)
+
+## Current WT estate condition assessment
+
+# References

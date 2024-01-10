@@ -1,0 +1,107 @@
+# Canopy nattiness
+
+## Justification
+
+## Measuring
+
+# Respondent value functions and weights
+
+```{r load curated data, echo = F, include = F, eval = T }
+extraction.location <- "Data\\Delphi round 1\\"
+load(paste0(extraction.location,"curated.RData"))
+```
+
+```{r libraries_data, echo = F, include = F, eval = T }
+
+# LIBARIES ---------------------------------------------------------------
+# library(readxl)
+library(tidyverse)
+library(ggpubr)
+library(plotly)
+library(htmltools)
+
+# library(stringr)
+# library(plotly)
+# library(htmlwidgets)
+# library(gridExtra)
+# library(grid)
+# library(DT)
+# library(ggiraph)
+# library(cowplot)
+# library(ggnewscale)
+# library(Polychrome)
+source("Scripts\\functions_delphi_analysis.R")
+
+forms.direct <- "Data\\Delphi round 1\\response sheets\\"
+extraction.location <- "Data\\Delphi round 1\\"
+
+```
+
+```{r vf Canopy Nativness - init, echo = F , results="asis"}
+
+ind.num = 2
+indicator_name = ind.matcher.df$indicator_name[ind.num]
+ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
+
+filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
+  mutate(respondant_name = as.factor(respondant_name))
+
+```
+
+`r paste(length(unique(filtered_data$respondant_name)))` respondents.
+
+::: panel-tabset
+#### Continuous Value function
+
+```{r vf - continuous, echo = F , results="asis"}
+#| column: page
+
+continuous_vf_fig()
+
+```
+
+#### Categorised value function
+
+```{r vf - categorical, echo = F , results="asis"}
+#| column: page
+
+categorised_vf_fig()
+
+## table
+filtered_data %>%
+  group_by(measure) %>%
+  summarise(Mean = mean(value, na.rm = TRUE) %>% round(digits = 1),
+            'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
+knitr::kable()
+
+```
+
+#### Weights
+
+```{r vf - weights, fig.width= 4, echo = F , results="asis"}
+#| column: page
+
+ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+```
+:::
+
+### Comments on data
+
+# Respondent comments
+
+### Considerations for indicator design
+
+### Priority exceptions
+
+### Lower priority exceptions
+
+### Concerns already covered by this or other indicators
+
+# Other approaches
+
+## Woodland Wildlife Toolkit & NFI
+
+## Current WT estate condition assessment
+
+# References

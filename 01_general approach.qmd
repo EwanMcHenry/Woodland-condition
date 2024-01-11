@@ -48,7 +48,7 @@ Toggle Indicators Table
 ind.table <- ind.matcher.df [,1:2]
 
 ind.table$diff <- c(1, 1, 1, 2, 1, 
-                    1, 1, 1, 1, 1,
+                    1, 1, 2, 1, 1,
                     1, 3, 2, 3)
 names(ind.table) <- c("Indicator", "Description", "Difficulty of measurement")
 

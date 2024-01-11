@@ -23,19 +23,16 @@ continuous_vf_fig <- function(line.col = NA){
 
 # FUNCTION - PLOT RESPONDANTS' continuous INDICATOR VFs ----
 ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.matcher.df$ind.axis.title[i], pal = respondant_colours){
-  # Filter the data for the selected indicator
-  filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
-    mutate(respondant_name = as.factor(respondant_name))
-  
+
   # PREDICT TREND ----
   filtered_data$point.influence <- 1/(table(filtered_data$respondant_name)[as.factor(filtered_data$respondant_name)]) %>% 
     as.numeric()
-  # gam_model <- mgcv::gam(value.dec ~ s(measure, k = 4),
-  #                  data = filtered_data, family = binomial(), weights = point.influence)
-  # # Create dummy data for prediction
-  # dummy_data <- data.frame(measure = seq(min(filtered_data$measure), max(filtered_data$measure), length.out = 50))
-  # # Predict using the GAM model
-  # dummy_data$predicted_value <- predict(gam_model, newdata = dummy_data, type = "response")*100
+  gam_model <- mgcv::gam(value.dec ~ s(measure, k = 4),
+                   data = filtered_data, family = binomial(), weights = point.influence)
+  # Create dummy data for prediction
+  dummy_data <- data.frame(measure = seq(min(filtered_data$measure), max(filtered_data$measure), length.out = 50))
+  # Predict using the GAM model
+  dummy_data$predicted_value <- predict(gam_model, newdata = dummy_data, type = "response")*100
   
   # PLOT SPEC, LINES AND TREND ----
   plot <- ggplot() +
@@ -127,7 +124,9 @@ ggplot_resp_cat_vf <- function(indicator_name, x.lab = ind.matcher.df$ind.axis.t
 }
 
 # FUNCTION - PLOT RESPONDANTS' WEIGHTS - FOR INDICATOR  ----
-ggplot_resp_weight_ind <- function(indicator_name, this.ind.num = ind.num, pal = respondant_colours){
+ggplot_resp_weight_ind <- function(indicator_name, 
+                                   indicator_name_for_extraction =  ind.matcher.df$indicator_name_for_extraction[ind.num], 
+                                   this.ind.num = ind.num, pal = respondant_colours){
   # plot weights by respondant for this indicator
   
   #filter data of one weight for each respondant:indicator
@@ -135,7 +134,7 @@ ggplot_resp_weight_ind <- function(indicator_name, this.ind.num = ind.num, pal =
     mutate(respondant_name = as.factor(respondant_name),
            this.ind = (indicator_num == this.ind.num))
   # Filter the data for the selected indicator
-  filtered_data <- weights_filtered_data[weights_filtered_data$indicator_name == indicator_name, ]
+  filtered_data <- weights_filtered_data[weights_filtered_data$indicator_name == indicator_name_for_extraction, ]
   
   # PLOT weights for this ind ----
   plot <- ggplot(filtered_data) +
@@ -160,7 +159,7 @@ ggplot_resp_weight_ind <- function(indicator_name, this.ind.num = ind.num, pal =
     scale_colour_manual(values = pal, name = "Respondant") +
     scale_y_continuous(limits = c(0,100)) +
     labs(y = "Weight",
-         colour = "Respondant", title = indicator_name) +
+         colour = "Respondant", title = filtered_data$sheet_name) +
     guides(alpha = F) +
     theme_pubr()+
     theme(plot.title = element_text(size = 12),

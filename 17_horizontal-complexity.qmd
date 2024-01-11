@@ -1,0 +1,223 @@
+# Horizontal complexity
+
+## Justification
+
+Wood of different height, including some open habitat, provide more complementary resources and niche space, benefiting biodiversity.
+
+## Measuring
+
+Straight transect from plot (c. 200m suggested), recording top height (or top height category) at stopping points (every 20 m suggested).
+
+> Alterantive 1: Condition relates to the number of different heights
+>
+> Alternative 2: Condition relates to a height-band diversity metric (e.g. \[Shannon Index\](<https://www.statology.org/shannon-diversity-index/>))
+
+Using same height bands as Vertical Structure and Canopy cover.
+
+![](images/Horizontal Complexity 2023-11-15 13.01.13.excalidraw.png)
+
+# Respondent value functions and weights
+
+```{r load curated data, echo = F, include = F, eval = T }
+extraction.location <- "Data\\Delphi round 1\\"
+load(paste0(extraction.location,"curated.RData"))
+```
+
+```{r libraries_data, echo = F, include = F, eval = T }
+
+# LIBARIES ---------------------------------------------------------------
+# library(readxl)
+library(tidyverse)
+library(ggpubr)
+library(plotly)
+library(htmltools)
+
+# library(stringr)
+# library(plotly)
+# library(htmlwidgets)
+# library(gridExtra)
+# library(grid)
+# library(DT)
+# library(ggiraph)
+# library(cowplot)
+# library(ggnewscale)
+# library(Polychrome)
+source("Scripts\\functions_delphi_analysis.R")
+
+forms.direct <- "Data\\Delphi round 1\\response sheets\\"
+extraction.location <- "Data\\Delphi round 1\\"
+
+```
+
+```{r vf Canopy Nativness - init, echo = F , results="asis"}
+
+ind.num = 13
+indicator_name = ind.matcher.df$indicator_name[ind.num]
+ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
+
+filtered_data <- df[df$indicator_name == ind.matcher.df$indicator_name_for_extraction[ind.num], ] %>% 
+  mutate(respondant_name = as.factor(respondant_name))
+
+```
+
+`r paste(length(unique(filtered_data$respondant_name)))` respondents.
+
+::: panel-tabset
+#### Continuous Value function
+
+```{r vf - continuous, echo = F , results="asis"}
+#| column: page
+
+continuous_vf_fig()
+
+```
+
+#### Categorised value function
+
+```{r vf - categorical, echo = F , results="asis"}
+#| column: page
+
+categorised_vf_fig()
+
+## table
+filtered_data %>%
+  group_by(measure) %>%
+  summarise(Mean = mean(value, na.rm = TRUE) %>% round(digits = 1),
+            'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
+knitr::kable()
+
+```
+
+#### Weights
+
+```{r vf - weights, fig.width= 4, echo = F , results="asis"}
+#| column: page
+
+ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+```
+:::
+
+### Comments on data
+
+VFs:
+
+-   consensus likely
+
+Weights: big range
+
+# Respondent comments
+
+### Considerations for indicator design
+
+Difficult/impossible/dangerous in rough terrain
+
+Transect is another "Thing to do" that makes the process more taxing[^17_horizontal-complexity-1]
+
+[^17_horizontal-complexity-1]: \[\[Richard Brown\]\]
+
+200m could easily lead out of a woodland[^17_horizontal-complexity-2]
+
+[^17_horizontal-complexity-2]: \[\[Richard Brown\]\]
+
+Random direction might be unrepresentative, possibly going through a strangely uniform stand, or along a linear, uniform features like a rides[^17_horizontal-complexity-3]
+
+[^17_horizontal-complexity-3]: \[\[Richard Brown\]\]
+
+> Random is the best insurance against bias, but we could allow the picking of another random direction if the initial one was "obviously unrepresentative"[^17_horizontal-complexity-4]. *It does allow bias to creep in though...*
+
+[^17_horizontal-complexity-4]: \[\[Ewan McHenry\]\]
+
+In the future will likely be measured as some Vertical complexity index using remote sensing data. But for now, we need a field based method. Will also need both types of data to be collected for a time to allow calibration.
+
+Feeling that this is a messy addtion, particuarlly when other indicators assess diversity of structure[^17_horizontal-complexity-5].
+
+[^17_horizontal-complexity-5]: Richard Brown
+
+> True, but the scale of this one is different (goes beyond plot).
+
+### Priority exceptions
+
+Woodland type
+
+-   Younger woodlands[^17_horizontal-complexity-6]
+
+[^17_horizontal-complexity-6]: \[\[Hannah Patterson\]\]
+
+> Could either use different top height categories, or calculate slightly differently[^17_horizontal-complexity-7].
+>
+> Note that e.g. an older wood could well only have 1-2 top height classes as well. A well designed woodland creation site should be able to compete.
+>
+> Could work well for woodland creation (perhaps with adaptation), as it can be an indicator of good design[^17_horizontal-complexity-8].
+
+[^17_horizontal-complexity-7]: \[\[Ewan McHenry\]\]
+
+[^17_horizontal-complexity-8]: \[\[Saul Herbert\]\]
+
+-   Wood pasture: Likely to have much more open habitat, may score low as a result, but be in "Good" condition[^17_horizontal-complexity-9]
+
+[^17_horizontal-complexity-9]: \[\[Liam Plummer\]\], \[\[Ian Moss\]\], \[\[Louise Hackett\]\]
+
+> Might consider longer transect, with wider spacing in some appropriate habitat types?
+
+-   Upland woods[^17_horizontal-complexity-10]
+
+-   Scrub - can have a lot of structure, but not captured by this top-height variation[^17_horizontal-complexity-11]
+
+-   Hazel woods[^17_horizontal-complexity-12]
+
+[^17_horizontal-complexity-10]: \[\[Ian Moss\]\], \[\[Louise Hackett\]\]
+
+[^17_horizontal-complexity-11]: \[\[Jim Smith-Wright\]\]
+
+[^17_horizontal-complexity-12]: \[\[Louise Hackett\]\]
+
+Landscape context:
+
+-   Site- level horizontal complexity may be less important where that variability is at larger scale[^17_horizontal-complexity-13]. A aomogenous high canopy wood within a diverse landscape could be ok.
+
+[^17_horizontal-complexity-13]: \[\[Liam Plummer\]\]
+
+### Lower priority exceptions
+
+Danger that this could drive extreme and weird management, or maybe some great ones[^17_horizontal-complexity-14]
+
+[^17_horizontal-complexity-14]: \[\[Saul Herbert\]\]
+
+Smaller woods may accept less variation[^17_horizontal-complexity-15]
+
+[^17_horizontal-complexity-15]: \[\[Jim Smith-Wright\]\]
+
+> -   [ ] Follow up: Not sure why this might be the case
+
+Commercial forestry[^17_horizontal-complexity-16]
+
+[^17_horizontal-complexity-16]: \[\[Kylie Jones Mattock\]\]
+
+> Would just score poorly - tradeoff between ecological condition and commercial management objectives
+
+UKWAS certification requires 20% "Open space"[^17_horizontal-complexity-17], need to allow measurement of this, either as well as or separately to this indicator
+
+[^17_horizontal-complexity-17]: \[\[Richard Brown\]\]
+
+### Concerns already covered by this or other indicators
+
+# Other approaches
+
+## Woodland Wildlife Toolkit 
+
+"Open Space": Note areas of open habitat during woodland walk highlight areas using aerial photographs (visiting where confirmation is required).
+
+-   Temporary open space, where trees can be expected to regenerate.
+
+-   At least 10m wide and \< 20% canopy cover.
+
+Transitions should be graded ecotones.
+
+## & NFI
+
+## Current WT estate condition assessment
+
+Captures open space and temporary open space
+
+# References

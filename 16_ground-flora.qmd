@@ -1,0 +1,221 @@
+# Ground flora
+
+## Justification
+
+The presence of an appropraite and rich community of ground flora species is a biodiverisity indicator.
+
+-   Highlights what is/isn't there and may require management
+
+## Measuring
+
+This indicator requires significant development. A key question is whether it should be based on the diversity of ground flora species present at the site, or another measure of plant community condition (perhaps less based on recorded species identities).
+
+From a species list that includes Ancient Woodland Indicators and plants likely to be associated with younger woodland communities (from the Woodland creation guide's Tree Species handbook).
+
+Should consider differences between sites RE which species might be appropriate.
+
+DOMIN/diversity/cover/species richness of woodland specialist plants (or from a suite of pre-selected)?
+
+## Challenges
+
+Shares many of the same challenges associated with the native tree species richness indicator around detectability and the site-appropriateness of different species(@sec-tree-sr-chalenges). Additionally, there are greater training requirements
+
+# Respondent value functions and weights
+
+```{r load curated data, echo = F, include = F, eval = T }
+extraction.location <- "Data\\Delphi round 1\\"
+load(paste0(extraction.location,"curated.RData"))
+```
+
+```{r libraries_data, echo = F, include = F, eval = T }
+
+# LIBARIES ---------------------------------------------------------------
+# library(readxl)
+library(tidyverse)
+library(ggpubr)
+library(plotly)
+library(htmltools)
+
+# library(stringr)
+# library(plotly)
+# library(htmlwidgets)
+# library(gridExtra)
+# library(grid)
+# library(DT)
+# library(ggiraph)
+# library(cowplot)
+# library(ggnewscale)
+# library(Polychrome)
+source("Scripts\\functions_delphi_analysis.R")
+
+forms.direct <- "Data\\Delphi round 1\\response sheets\\"
+extraction.location <- "Data\\Delphi round 1\\"
+
+```
+
+```{r vf Canopy Nativness - init, echo = F , results="asis"}
+
+ind.num = 12
+indicator_name = ind.matcher.df$indicator_name[ind.num]
+ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
+
+filtered_data <- df[df$indicator_name == ind.matcher.df$indicator_name_for_extraction[ind.num], ] %>% 
+  mutate(respondant_name = as.factor(respondant_name))
+
+```
+
+`r paste(length(unique(filtered_data$respondant_name)))` respondents.
+
+::: panel-tabset
+#### Continuous Value function
+
+```{r vf - continuous, echo = F , results="asis"}
+#| column: page
+
+continuous_vf_fig()
+
+```
+
+#### Weights
+
+```{r vf - weights, fig.width= 4, echo = F , results="asis"}
+#| column: page
+
+ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+```
+:::
+
+### Comments on data
+
+Will obviously need development, particularly RE appropriate species for the site.
+
+VF:
+
+-   Logarithmic "r" shaped relationship most popular, followed by sigmoid "s" shape - Consensus likely
+
+-   Weights: medium - high importance
+
+# Respondent comments
+
+### Considerations for indicator design
+
+See considerations and challenges in [Native Tree and Shrub Species](08_native_tree_spceis_richness.qmd)[Richness](08_native_tree_spceis_richness.qmd#Challenges)[(N)](08_native_tree_spceis_richness.qmd).
+
+Reluctance to rely on expert opinion for value function here[^16_ground-flora-1].
+
+[^16_ground-flora-1]: \[\[Richard Brown\]\]
+
+Should this indicator be based on identifying species, or more identifying where there is a "range of nice stuff"
+
+Seasonality may make it meaningless. What should be done then?
+
+Should licehns/bryophyes count towards this in e.g. rainforest zone? Oceanic mosses etc - Important for rainforest, but require more training to identify etc - Lower and non-vascular plants
+
+Training requirements RE species identification would be regionally-specific
+
+Should "open habitat" NVC community indicator plants contribute to the condition of glades?
+
+### Priority exceptions
+
+Expected species vary widely by woodland type/region/geology/topographic heterogeneity etc. Condition should relate to the expectation for the site, were it in good condition[^16_ground-flora-2], or introduce bias between site types/geography.
+
+[^16_ground-flora-2]: \[\[Louise Hackett\]\]
+
+-   Could define an "appropriate species list" in a similar way to [Native Tree and Shrub Species Richness(N)](08_native_tree_spceis_richness.qmd).
+
+    -   BSBI priority habitats indicator plant lists[^16_ground-flora-3] could support[^16_ground-flora-4].
+
+        -   Note: BSBI haven't defined thresholds for condition here, but could revisit
+
+    -   Could relate to NVC type, but this is not really what NVC is for[^16_ground-flora-5] and NVC is imperfect[^16_ground-flora-6], there are always exceptions and it needs to be used with care[^16_ground-flora-7].
+
+    -   Rainforest Indicator list for lichens and bryophytes. Plantlife has positive indicators in Rapid Rainforest Assessments
+
+-   Upland woods: may be more like to be dominated by more open ground flora, and fewer species[^16_ground-flora-8]
+
+-   Wetwoods[^16_ground-flora-9]
+
+-   Acidic woods - less diversity naturally
+
+-   Woodland creation sites[^16_ground-flora-10] -
+
+-   Closed canopy[^16_ground-flora-11] -
+
+-   Woodland with high-shading tree spcecies (e.g. hornbeam, beech)[^16_ground-flora-12]
+
+[^16_ground-flora-3]: <https://database.bsbi.org/checklists.php>
+
+[^16_ground-flora-4]: Saul Herbert
+
+[^16_ground-flora-5]: \[\[Peter Lowe\]\]
+
+[^16_ground-flora-6]: \[\[Dave Bonsall\]\]
+
+[^16_ground-flora-7]: \[\[Richard Brown\]\]
+
+[^16_ground-flora-8]: \[\[Peter Lowe\]\], \[\[Ian Moss\]\]
+
+[^16_ground-flora-9]: \[\[Liam Plummer\]\]
+
+[^16_ground-flora-10]: \[\[Dave Bonsall\]\], \[\[Kylie Jones Mattock\]\], \[\[Hannah Patterson\]\]
+
+[^16_ground-flora-11]: \[\[Dave Bonsall\]\]
+
+[^16_ground-flora-12]: \[\[Dave Bonsall\]\]
+
+Different species may have different value, which may vary by habitat type[^16_ground-flora-13].
+
+[^16_ground-flora-13]: \[\[Alasdair Firth\]\], \[\[Louise Hackett\]\]
+
+-   e.g. ancient woodland plants weight more important, common plants like vaccinium still indicative, but lower score
+
+Woodland Extent interaction: bigger woods expected to have more species expected per unit area[^16_ground-flora-14], although this could be said for most of the indicators (as they indicate better structure, capable of hosting more ground flora species)[^16_ground-flora-15].
+
+[^16_ground-flora-14]: \[\[Jim Smith-Wright\]\]
+
+[^16_ground-flora-15]: Ewan McHenry
+
+Consider building appropriate species lists that are easier to identify.
+
+### Lower priority exceptions
+
+### Concerns already covered by this or other indicators
+
+Ancient vs secondary woodland and seedbank/soil condition differences[^16_ground-flora-16]
+
+[^16_ground-flora-16]: \[\[Dave Bonsall\]\]
+
+> Here sites with reduced seedbank may just score poorly, potentially leading to management considerations RE translocations.
+
+Commercial forestry[^16_ground-flora-17]
+
+[^16_ground-flora-17]: \[\[Kylie Jones Mattock\]\]
+
+> Will just score poorly, prompting explicit trade-off between ecological condition and commercial productivity.
+
+Air and soil quality[^16_ground-flora-18]
+
+[^16_ground-flora-18]: \[\[Ian Moss\]\]
+
+> This indicator may suggest poor quality in these aspects.
+
+# Other approaches
+
+## Woodland Wildlife Toolkit
+
+Value 3: recognisable NVC community strongly characterised by ancient woodland indicators
+
+Value 2: recognisable NVC community present
+
+Value 1: no recognisable NVC community
+
+## NFI
+
+![](images/NFI%20WEC%20ground%20flora.png)
+
+## Current WT estate condition assessment
+
+DAFOR of ancient woodland and other woodland plants
+
+# References

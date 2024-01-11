@@ -1,0 +1,165 @@
+# Human damage
+
+## Justification
+
+High pollution reduces species diversity and natural processes[^18_anthro-damage-1]
+
+[^18_anthro-damage-1]: \[\[Alasdair Firth\]\]
+
+## Measuring
+
+This indicator requires significant development
+
+Attempting to capture: - Anthropogenic damage - Soil damage - Compaction, erosion - Farming spill over - Fertiliser - Spraying - Pesticide - Livestock feeding in wood - Dumping - N+ indicator plants
+
+May be better to separate out damage based on spatial scale, intensity and permanence.
+
+# Respondent value functions and weights
+
+```{r load curated data, echo = F, include = F, eval = T }
+extraction.location <- "Data\\Delphi round 1\\"
+load(paste0(extraction.location,"curated.RData"))
+```
+
+```{r libraries_data, echo = F, include = F, eval = T }
+
+# LIBARIES ---------------------------------------------------------------
+# library(readxl)
+library(tidyverse)
+library(ggpubr)
+library(plotly)
+library(htmltools)
+
+# library(stringr)
+# library(plotly)
+# library(htmlwidgets)
+# library(gridExtra)
+# library(grid)
+# library(DT)
+# library(ggiraph)
+# library(cowplot)
+# library(ggnewscale)
+# library(Polychrome)
+source("Scripts\\functions_delphi_analysis.R")
+
+forms.direct <- "Data\\Delphi round 1\\response sheets\\"
+extraction.location <- "Data\\Delphi round 1\\"
+
+```
+
+```{r vf Canopy Nativness - init, echo = F , results="asis"}
+
+ind.num = 14
+indicator_name = ind.matcher.df$indicator_name[ind.num]
+ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
+
+filtered_data <- df[df$indicator_name == ind.matcher.df$indicator_name_for_extraction[ind.num], ] %>% 
+  mutate(respondant_name = as.factor(respondant_name))
+
+```
+
+`r paste(length(unique(filtered_data$respondant_name)))` respondents.
+
+::: panel-tabset
+#### Continuous Value function
+
+```{r vf - continuous, echo = F , results="asis"}
+#| column: page
+
+continuous_vf_fig()
+
+```
+
+#### Weights
+
+```{r vf - weights, fig.width= 4, echo = F , results="asis"}
+#| column: page
+
+ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+```
+:::
+
+### Comments on data
+
+VFs: Big range, but may converge to a consensus.
+
+-   Recommend refering to the [Woodland Wildlife Toolkit] methods to contextualize
+
+Weights:
+
+-   Full range
+
+# Respondent comments
+
+### Considerations for indicator design
+
+Fertilizer spraying and wash-off from adjacent land not always obvious[^18_anthro-damage-2]
+
+[^18_anthro-damage-2]: \[\[Richard Brown\]\]
+
+May require soil/water samples
+
+Should the source of damage be identified and recorded?
+
+-   Impacts may be subtle and take years to develop
+
+### Priority exceptions
+
+Depends a lot on type of damage[^18_anthro-damage-3], some human impacts not nessesarily negative[^18_anthro-damage-4]
+
+[^18_anthro-damage-3]: \[\[Jim Smith-Wright\]\], \[\[Hannah Patterson\]\], \[\[Ian Moss\]\], \[\[Martin Hugi\]\], \[\[Louise Hackett\]\]
+
+[^18_anthro-damage-4]: \[\[Kylie Jones Mattock\]\]
+
+Nutrient enrichment indicator plants may indicate land use before planting, not ongoing threat. E.g. Planting on arable field[^18_anthro-damage-5]
+
+[^18_anthro-damage-5]: \[\[Richard Brown\]\]
+
+Ongoing/one-off/accumulating instances[^18_anthro-damage-6]
+
+[^18_anthro-damage-6]: \[\[Hannah Patterson\]\], \[\[Louise Hackett\]\]
+
+Edge may be affected more[^18_anthro-damage-7]
+
+[^18_anthro-damage-7]: \[\[Alasdair Firth\]\]
+
+Onsite vs offsite sources
+
+"Damage" caused by woodland management operations that benefit long term conservation objectives[^18_anthro-damage-8].
+
+[^18_anthro-damage-8]: \[\[Louise Hackett\]\]
+
+OPAL has produced info to help nitrogen-loving lichen ID as part of their [Air Quality Monitoring](https://www.imperial.ac.uk/media/imperial-college/research-centres-and-groups/opal/AIR-16pp-booklet_legacy.pdf)
+
+### Lower priority exceptions
+
+Amenity woodland
+
+Commercial objectives[^18_anthro-damage-9]
+
+[^18_anthro-damage-9]: \[\[Kylie Jones Mattock\]\]
+
+Secondary woodlands[^18_anthro-damage-10]
+
+[^18_anthro-damage-10]: \[\[Kylie Jones Mattock\]\]
+
+Soil disturbance may be good for natural regeneration[^18_anthro-damage-11] and ecological functioning
+
+[^18_anthro-damage-11]: \[\[Ian Moss\]\]
+
+### Concerns already covered by this or other indicators
+
+# Other approaches
+
+## Woodland Wildlife Toolkit
+
+Record evidence of nutrient enrichment and/or damaged ground on woodland walk, including patches of nettle and/or goose grass/cleavers (nutrient enrichment indicator) \>0.1 ha
+
+Note soil damage: - Deep ruts - Excessive/continuous compaction
+
+## Current WT estate condition assessment
+
+Human impacts, split by one off/continuous
+
+# References

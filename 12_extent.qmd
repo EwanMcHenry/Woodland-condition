@@ -2,7 +2,7 @@
 
 ## Justification
 
-A plot of the same size within a larger woodland habitat area will function better ecologically. More surrounding habitat provides a greater pool of potential colonisers and more room for dynamism (also see Habitat Area Hypothesis[^12_extent-1] and Minimum Patch Size).
+A plot (of a fixed size) within a larger woodland habitat area will function better ecologically. More surrounding habitat provides a greater pool of potential colonisers and more room for dynamism (also see Habitat Area Hypothesis[^12_extent-1]).
 
 [^12_extent-1]: The habitat amount hypothesis states that the total amount of habitat in a landscape determines its species richness [@fahrig2013]
 
@@ -12,7 +12,7 @@ Area of woodland habitat patch size from GIS
 
 > Alternative 1: percentage cover of woodland habitat within some distance from plots (500 m and/or 1 km?) may me more ecologically relevant.
 >
-> Alternative 2: Functional Equivelent Connected Area of habitat (ecological functional connectivity metric).
+> Alternative 2: Equivalent Connected Area of habitat (ecological functional connectivity metric).
 >
 > Q: Should other semi-natural habitat be considered?
 
@@ -55,12 +55,12 @@ ind.num = 8
 indicator_name = ind.matcher.df$indicator_name[ind.num]
 ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
 
-filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
+filtered_data <- df[df$indicator_name == ind.matcher.df$indicator_name_for_extraction[ind.num], ] %>% 
   mutate(respondant_name = as.factor(respondant_name))
 
 ```
 
-`r paste(length(unique($respondant_name)))` respondents.
+`r paste(length(unique(filtered_data$respondant_name)))` respondents.
 
 ::: panel-tabset
 #### Continuous Value function
@@ -74,7 +74,7 @@ continuous_vf_fig()
 
 #### Weights
 
-```{r vf - weights, fig.width= 4, echo = F , results="asis"}
+```{r vf - weights, echo = F , results="asis"}
 #| column: page
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
@@ -98,7 +98,7 @@ It is unclear what constitutes a "site" or "patch". Will a 20m gap mean a new "p
 
 > percentage habitat
 
-Should not undermine contribution of non-wooded priority habitat[^12_extent-2], e.g. dy driving planting on it[^12_extent-3]
+Should not undermine contribution of non-wooded priority habitat[^12_extent-2], e.g. by driving planting on it[^12_extent-3]
 
 [^12_extent-2]: \[\[Hannah Patterson\]\]
 
@@ -162,7 +162,7 @@ Large monocultures e.g. Sitka plantations[^12_extent-14]
 
 [^12_extent-14]: \[\[Hannah Patterson\]\]
 
-> May score well for this indicator (unless "semi-natural habitat" extent is spefied), but should score terribly on other indicators. Important to balance weightings accordingly.
+> May score well for this indicator (unless "semi-natural habitat" extent is specified), but should score terribly on other indicators. Important to balance weightings accordingly.
 
 Small woods can be important temporal refugia for species that are out competed in more connected woodland[^12_extent-15]
 

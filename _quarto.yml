@@ -19,6 +19,12 @@ book:
     - 10_deadwood.qmd
     - 11_avts.qmd
     - 12_extent.qmd
+    - 13_regen.qmd
+    - 14_herbivore.qmd
+    - 15_tree-heath.qmd
+    - 16_ground-flora.qmd
+    - 17_horizontal-complexity.qmd
+    - 18_anthro-damage.qmd
     
 number-depth: 0
 

@@ -1,16 +1,38 @@
 # Human damage
 
+```{css}
+.two-columns {
+    columns: 2;
+}
+```
+
 ## Justification
 
 High pollution reduces species diversity and natural processes[^18_anthro-damage-1]
 
-[^18_anthro-damage-1]: \[\[Alasdair Firth\]\]
+[^18_anthro-damage-1]: Alasdair Firth
 
 ## Measuring
 
 This indicator requires significant development
 
-Attempting to capture: - Anthropogenic damage - Soil damage - Compaction, erosion - Farming spill over - Fertiliser - Spraying - Pesticide - Livestock feeding in wood - Dumping - N+ indicator plants
+Attempting to capture:
+
+::: two-columns
+-   Anthropogenic damage
+
+-   Soil damage
+
+-   Compaction, erosion
+
+-   Farming spill over: fertiliser, spraying & pesticide
+
+-   Livestock feeding in wood with potential to cause damage
+
+-   Dumping
+
+-   N+ indicator plants
+:::
 
 May be better to separate out damage based on spatial scale, intensity and permanence.
 
@@ -96,7 +118,7 @@ Weights:
 
 Fertilizer spraying and wash-off from adjacent land not always obvious[^18_anthro-damage-2]
 
-[^18_anthro-damage-2]: \[\[Richard Brown\]\]
+[^18_anthro-damage-2]: Richard Brown
 
 May require soil/water samples
 
@@ -108,27 +130,27 @@ Should the source of damage be identified and recorded?
 
 Depends a lot on type of damage[^18_anthro-damage-3], some human impacts not nessesarily negative[^18_anthro-damage-4]
 
-[^18_anthro-damage-3]: \[\[Jim Smith-Wright\]\], \[\[Hannah Patterson\]\], \[\[Ian Moss\]\], \[\[Martin Hugi\]\], \[\[Louise Hackett\]\]
+[^18_anthro-damage-3]: Jim Smith-Wright, Hannah Patterson, Ian Moss, Martin Hugi, Louise Hackett
 
-[^18_anthro-damage-4]: \[\[Kylie Jones Mattock\]\]
+[^18_anthro-damage-4]: Kylie Jones Mattock
 
 Nutrient enrichment indicator plants may indicate land use before planting, not ongoing threat. E.g. Planting on arable field[^18_anthro-damage-5]
 
-[^18_anthro-damage-5]: \[\[Richard Brown\]\]
+[^18_anthro-damage-5]: Richard Brown
 
 Ongoing/one-off/accumulating instances[^18_anthro-damage-6]
 
-[^18_anthro-damage-6]: \[\[Hannah Patterson\]\], \[\[Louise Hackett\]\]
+[^18_anthro-damage-6]: Hannah Patterson, Louise Hackett
 
 Edge may be affected more[^18_anthro-damage-7]
 
-[^18_anthro-damage-7]: \[\[Alasdair Firth\]\]
+[^18_anthro-damage-7]: Alasdair Firth
 
 Onsite vs offsite sources
 
 "Damage" caused by woodland management operations that benefit long term conservation objectives[^18_anthro-damage-8].
 
-[^18_anthro-damage-8]: \[\[Louise Hackett\]\]
+[^18_anthro-damage-8]: Louise Hackett
 
 OPAL has produced info to help nitrogen-loving lichen ID as part of their [Air Quality Monitoring](https://www.imperial.ac.uk/media/imperial-college/research-centres-and-groups/opal/AIR-16pp-booklet_legacy.pdf)
 
@@ -138,15 +160,15 @@ Amenity woodland
 
 Commercial objectives[^18_anthro-damage-9]
 
-[^18_anthro-damage-9]: \[\[Kylie Jones Mattock\]\]
+[^18_anthro-damage-9]: Kylie Jones Mattock
 
 Secondary woodlands[^18_anthro-damage-10]
 
-[^18_anthro-damage-10]: \[\[Kylie Jones Mattock\]\]
+[^18_anthro-damage-10]: Kylie Jones Mattock
 
 Soil disturbance may be good for natural regeneration[^18_anthro-damage-11] and ecological functioning
 
-[^18_anthro-damage-11]: \[\[Ian Moss\]\]
+[^18_anthro-damage-11]: Ian Moss
 
 ### Concerns already covered by this or other indicators
 
@@ -154,7 +176,17 @@ Soil disturbance may be good for natural regeneration[^18_anthro-damage-11] and 
 
 ## Woodland Wildlife Toolkit
 
-Record evidence of nutrient enrichment and/or damaged ground on woodland walk, including patches of nettle and/or goose grass/cleavers (nutrient enrichment indicator) \>0.1 ha
+On woodland walk, record evidence of nutrient enrichment and/or damaged ground, including patches of nettle and/or goose grass/cleavers (nutrient enrichment indicator) \>0.1 ha
+
+-   Favourable: No nutrient enrichment or damaged ground
+
+-   Intermediate: \< 1 ha total nutrient enrichment and/or \< 20% damaged soil
+
+-   Poor: \> 1 ha total nutrient enrichment and/or \> 20% damaged soil
+
+> Note: the bigger the woodland, the more likley that damage/enrichment will be found and be \> 1 ha, purely because a larger area is searched. This would be better expressed as a % of the wood.
+>
+> Note: "and/or" wording in poor class is ambiguous. shoudl be "or"
 
 Note soil damage: - Deep ruts - Excessive/continuous compaction
 

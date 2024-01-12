@@ -104,7 +104,7 @@ See considerations and challenges in [Native Tree and Shrub Species](08_native_t
 
 Reluctance to rely on expert opinion for value function here[^16_ground-flora-1].
 
-[^16_ground-flora-1]: \[\[Richard Brown\]\]
+[^16_ground-flora-1]: Richard Brown
 
 Should this indicator be based on identifying species, or more identifying where there is a "range of nice stuff"
 
@@ -120,7 +120,7 @@ Should "open habitat" NVC community indicator plants contribute to the condition
 
 Expected species vary widely by woodland type/region/geology/topographic heterogeneity etc. Condition should relate to the expectation for the site, were it in good condition[^16_ground-flora-2], or introduce bias between site types/geography.
 
-[^16_ground-flora-2]: \[\[Louise Hackett\]\]
+[^16_ground-flora-2]: Louise Hackett
 
 -   Could define an "appropriate species list" in a similar way to [Native Tree and Shrub Species Richness(N)](08_native_tree_spceis_richness.qmd).
 
@@ -148,31 +148,31 @@ Expected species vary widely by woodland type/region/geology/topographic heterog
 
 [^16_ground-flora-4]: Saul Herbert
 
-[^16_ground-flora-5]: \[\[Peter Lowe\]\]
+[^16_ground-flora-5]: Peter Lowe
 
-[^16_ground-flora-6]: \[\[Dave Bonsall\]\]
+[^16_ground-flora-6]: Dave Bonsall
 
-[^16_ground-flora-7]: \[\[Richard Brown\]\]
+[^16_ground-flora-7]: Richard Brown
 
-[^16_ground-flora-8]: \[\[Peter Lowe\]\], \[\[Ian Moss\]\]
+[^16_ground-flora-8]: Peter Lowe, Ian Moss
 
-[^16_ground-flora-9]: \[\[Liam Plummer\]\]
+[^16_ground-flora-9]: Liam Plummer
 
-[^16_ground-flora-10]: \[\[Dave Bonsall\]\], \[\[Kylie Jones Mattock\]\], \[\[Hannah Patterson\]\]
+[^16_ground-flora-10]: Dave Bonsall, Kylie Jones Mattock, Hannah Patterson
 
-[^16_ground-flora-11]: \[\[Dave Bonsall\]\]
+[^16_ground-flora-11]: Dave Bonsall
 
-[^16_ground-flora-12]: \[\[Dave Bonsall\]\]
+[^16_ground-flora-12]: Dave Bonsall
 
 Different species may have different value, which may vary by habitat type[^16_ground-flora-13].
 
-[^16_ground-flora-13]: \[\[Alasdair Firth\]\], \[\[Louise Hackett\]\]
+[^16_ground-flora-13]: Alasdair Firth, Louise Hackett
 
 -   e.g. ancient woodland plants weight more important, common plants like vaccinium still indicative, but lower score
 
 Woodland Extent interaction: bigger woods expected to have more species expected per unit area[^16_ground-flora-14], although this could be said for most of the indicators (as they indicate better structure, capable of hosting more ground flora species)[^16_ground-flora-15].
 
-[^16_ground-flora-14]: \[\[Jim Smith-Wright\]\]
+[^16_ground-flora-14]: Jim Smith-Wright
 
 [^16_ground-flora-15]: Ewan McHenry
 
@@ -184,19 +184,19 @@ Consider building appropriate species lists that are easier to identify.
 
 Ancient vs secondary woodland and seedbank/soil condition differences[^16_ground-flora-16]
 
-[^16_ground-flora-16]: \[\[Dave Bonsall\]\]
+[^16_ground-flora-16]: Dave Bonsall
 
 > Here sites with reduced seedbank may just score poorly, potentially leading to management considerations RE translocations.
 
 Commercial forestry[^16_ground-flora-17]
 
-[^16_ground-flora-17]: \[\[Kylie Jones Mattock\]\]
+[^16_ground-flora-17]: Kylie Jones Mattock
 
 > Will just score poorly, prompting explicit trade-off between ecological condition and commercial productivity.
 
 Air and soil quality[^16_ground-flora-18]
 
-[^16_ground-flora-18]: \[\[Ian Moss\]\]
+[^16_ground-flora-18]: Ian Moss
 
 > This indicator may suggest poor quality in these aspects.
 

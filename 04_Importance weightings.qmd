@@ -1,16 +1,16 @@
 # Weightings
 
-Weightings define the importance of different indicators, or the amount each contributes towards a condition score, relative to other indicators (more information [here](01_general%20approach.qmd)).
+Weightings define the importance of different indicators, or the amount each contributes towards a condition score, relative to other indicators (more information and a toy example in [General approach](01_general%20approach.qmd)).
 
 > **Example:** If deadwood was considered twice as important as horizontal complexity, these indicators might have weightings of 100 and 50, respectively (on a scale of 0 - 100).
 
 ## Results summary
 
-There a lot of variation between respondents for [raw indicator weightings](#sec-raw_weights), much more than there was between actual indicators. This may have be partly because respondents varied a lot in terms of the [amount of difference between indicators](#variation%20in%20raw%20indicators). This limited what useful information could be drawn from raw weightings, and prompted an exploration of the [ranking of indicator weightings](#sec-rank_weights) by respondents and [Standardised weights](#sec-standardised_weights) (transformed so that all respondents varied the same amount between indicators).
+There a lot of variation between respondents for [raw indicator weightings](#sec-raw_weights), much more than there was between actual indicators. This may have be partly because respondents varied a lot in terms of the [amount of difference they gave between indicators](#variation%20in%20raw%20indicators). This limited what useful information could be drawn from raw weightings, and prompted an exploration of the [ranking of indicator weightings](#sec-rank_weights) by respondents and [Standardised weights](#sec-standardised_weights) (transformed so that all respondents varied the same amount between indicators).
 
-Many respondents provided estimates that were very similar between indicators. The implications of this are discussed [below](#variation%20in%20raw%20indicators).
+Many respondents provided weighitng estimates that were very similar between indicators. The implications of this are discussed [below](#variation%20in%20raw%20indicators). It may be desirable to encourage larger differences between indicators of greater and lesser importance.
 
-There were clear [patterns](#sec-patterns) of disagreement between respondents in round 1, that might be used to inform the second round of deliberation.
+There were [patterns](#sec-patterns) of disagreement between respondents in round 1, that might be used to inform the second round of deliberation.
 
 ## Recommendations for next workshop
 
@@ -38,9 +38,9 @@ Some consideration should be given to alternative or adapted methods to estimate
 
     -   Reliable information on the order of indicators could be used to guide the assignment of weightings (ideally by some formalised process).
 
-    -   Future workshop sessions for weighting estimates could be orientated more around sorting and grouping indicators by their importance. This could incorporate small-group sessions, or a methodology like the [Q-Method](#0).
+    -   Future workshop sessions for weighting estimates could be orientated more around sorting and grouping indicators by their importance. This could incorporate small-group sessions and methodologies like the [Q-sort Method](#0).
 
--   Allocating a limited number of "points" between indicators
+-   A limited number of "points" could be allocated between indicators, in order to provide some consistency between respondents
 
 The [patterns and groupings](#sec-patterns) between respondents could be used to construct workshop breakout groups. For example, groups could be designed to bring together respondents who differed most in their initial responses.
 
@@ -81,9 +81,9 @@ just.one.df <- just.one.df %>%
 
 ```
 
-## Respondents varied in the amount of difference between indicators {#variation in raw indicators}
+## Respondents varied in their difference between indicators {#sec-variation-in-raw-indicators}
 
-Respondents varied in terms of [the amount of difference]{.underline} between their raw indicator weights. The figure below shows how much variation there typically was between weightings for each respondent. Respondents with lower standard deviations weighted indicators more similarly, while those with higher tended to vary much more between indicators.
+Respondents varied in terms of [how much difference]{.underline} they gave between raw indicator weights. The figure below shows how much variation there typically was between weightings for each respondent. Respondents with lower standard deviations weighted indicators more similarly, while those with higher tended to weight indicators differently to each other.
 
 ```{r raw weights sd, echo = F , results="asis", fig.width = 6, fig.height=2, out.height= "30%", caption = "Variation in indicator weights by respondants: respondants with higher standard devidation in their answers varied more between indicators."}
 # plotly boxplot of the variation in weights given by each respondant
@@ -149,12 +149,24 @@ A lot of respondents provided weights which did not vary to a large degree betwe
 
 ## Exploration of weightings
 
-The figures below show the weightiness for each indicator given by respondents: the raw estimates as provided, the rank of those estimates by respondent, and then standardised estimates (transformed so that all respondent's answers varied the same amount)
+The figures below show the weightiness for each indicator given by respondents:
+
+-   Raw weightings
+
+> Note: these varied a lot between respondents for each indicator, much more than between the indicators themselves. This limits how useful the first round of estimated raw weightings will be to differentiate between different indicators importance.
+
+-   Standardised estimates (transformed so that all respondent's answers varied the same amount[^04_importance-weightings-1])
+
+-   The rank of those estimates by respondent
+
+[^04_importance-weightings-1]: For each respondent, their average weight was subtracted from each weight, and then divided by the standard deviation. As a result, each respondent's standardised weights centered around 0 and had a standard deviation of 1.
+
+    $$
+    (weight_i - mean(weight))/ sd(weight)
+    $$
 
 ::: panel-tabset
 ### Raw weights {#sec-raw_weights}
-
-Raw weightings varied a lot between respondents for each indicator, much more than the variation between the indicators themselves (in terms of their average). This limits how useful the first round of estimated raw weightings will be to differentiate between different indicators importance.
 
 ```{r raw weights ggiraph, fig.height= 1,echo = F , results="asis", caption = "Expert opnion indicator weights: estimates for all indicators for all respontants, with boxplots showing the median and inter-quartile range for each indicator."}
 #| column: screen-inset-shaded
@@ -234,7 +246,70 @@ ordered_levels <- just.one.df %>%
 
 ```
 
-### Ranked weights {#sec-rank_weights}
+### Standardised weights {#sec-rank_weights}
+
+Standardised weights were calculated so that all respondents varied the same amount, around the same average (0). This is useful for comparing the relative importance of indicators across respondents, while ignoring the difference between respondents in terms of how much their weightings varied. However, those differences may be important, and should not be ignored completely. There may be good reasons why some respondents though weightings should vary more than others.
+
+```{r standardised weights ggiraph, echo = F , results="asis", caption = "Standardised weights: weights given to each indicator by respondents, standardised so that all respondents varied the same amount, with boxplots showing the median and inter-quartile range for each indicator's weight."}
+#| column: screen-inset-shaded
+  # Order the levels of sheet_name by the median of rank_weight
+ordered_levels <- just.one.df %>%
+  group_by(sheet_name) %>%
+  summarise(median_standard_weight = median(weight_standardised, na.rm = TRUE)) %>%
+  arrange(-median_standard_weight) %>%
+  pull(sheet_name)
+
+# Apply the ordered levels to the sheet_name variable
+# just.one.df$sheet_name <- factor(just.one.df$sheet_name, levels = ordered_levels)
+
+ indiv.weights <- ggplot(data = just.one.df %>% 
+                            mutate(sheet_name = factor(just.one.df$sheet_name, levels = ordered_levels))) +
+    geom_point_interactive(position = position_jitter(width = 0.2, height = 0),
+                           size = 2, shape = 16,
+                           aes(x = sheet_name, y = weight_standardised,
+                               col = respondant_name,
+                               alpha = cert_weight,
+                               tooltip = paste0(respondant_name, "<br>",sheet_name, "<br>Weight = ", weight, "<br>Weight rank = ", rank_weight, "<br> Standardised weight = ", weight_standardised, "<br>Certainty = ", cert_weight),
+                               data_id = respondant_name #,
+                               # text = map(
+                               #   paste0("<b>", respondant_name, "</b><br>",
+                               #          "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"),
+                               # HTML)
+                           )) +
+    geom_boxplot(aes(x = sheet_name, y = weight_standardised), 
+             width=0.5, color="grey30", fill = NA,
+               outlier.shape = NA) +
+    scale_colour_manual(values = respondant_colours, name = "Respondant") +
+    # scale_y_continuous(limits = c(1,14)) + 
+    guides(color = F#guide_legend(ncol =1)
+           , alpha = F) +
+    labs(y = NULL, x = NULL, title = "Standardised weightings by respondant") +
+    theme_pubr()+
+    theme(plot.title = element_text(size = 12),
+          plot.subtitle = element_text(size = 12),
+          legend.title = element_text(size = 12 , face = "bold"),
+          legend.text =  element_text(size = 9),
+          axis.text.x = element_text(angle = -60, hjust = 0, size = 10),
+          axis.text.y = element_text(size = 12),
+          axis.title =  element_text(size = 12),
+          legend.box = "vertical",  # Set the legend box to vertical
+          legend.position = "right",
+          plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")
+    ) 
+  
+    girafe(
+    ggobj = indiv.weights,
+    width_svg = 10,
+    height_svg = 6, 
+    options = list(
+      opts_hover_inv(css = "stroke-opacity:0.01;"),
+      opts_hover(css = "stroke:orange;stroke-width:5;fill-opacity:1")
+    ) ) 
+    
+
+```
+
+### Ranked weights
 
 The rank of weightings from each respondent provide some useful information, particularly on which indicators are consistently considered to be most and least important
 
@@ -295,69 +370,6 @@ ordered_levels <- just.one.df %>%
       opts_hover_inv(css = "stroke-opacity:0.01;"),
       opts_hover(css = "stroke:orange;stroke-width:5;fill-opacity:1")
     ) ) 
-
-```
-
-### Standardised weights {#sec-standardised_weights}
-
-Standardised weights were calculated so that all respondents varied the same amount, around the same average (0). This is useful for comparing the relative importance of indicators across respondents, while ignoring the difference between respondents in terms of how much their weightings varied. However, those differences may be important, and should not be ignored completely. There may be good reasons why some respondents though weightings should vary more than others.
-
-```{r standardised weights ggiraph, echo = F , results="asis", caption = "Standardised weights: weights given to each indicator by respondents, standardised so that all respondents varied the same amount, with boxplots showing the median and inter-quartile range for each indicator's weight."}
-#| column: screen-inset-shaded
-  # Order the levels of sheet_name by the median of rank_weight
-ordered_levels <- just.one.df %>%
-  group_by(sheet_name) %>%
-  summarise(median_standard_weight = median(weight_standardised, na.rm = TRUE)) %>%
-  arrange(-median_standard_weight) %>%
-  pull(sheet_name)
-
-# Apply the ordered levels to the sheet_name variable
-# just.one.df$sheet_name <- factor(just.one.df$sheet_name, levels = ordered_levels)
-
- indiv.weights <- ggplot(data = just.one.df %>% 
-                            mutate(sheet_name = factor(just.one.df$sheet_name, levels = ordered_levels))) +
-    geom_point_interactive(position = position_jitter(width = 0.2, height = 0),
-                           size = 2, shape = 16,
-                           aes(x = sheet_name, y = weight_standardised,
-                               col = respondant_name,
-                               alpha = cert_weight,
-                               tooltip = paste0(respondant_name, "<br>",sheet_name, "<br>Weight = ", weight, "<br>Weight rank = ", rank_weight, "<br> Standardised weight = ", weight_standardised, "<br>Certainty = ", cert_weight),
-                               data_id = respondant_name #,
-                               # text = map(
-                               #   paste0("<b>", respondant_name, "</b><br>",
-                               #          "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"),
-                               # HTML)
-                           )) +
-    geom_boxplot(aes(x = sheet_name, y = weight_standardised), 
-             width=0.5, color="grey30", fill = NA,
-               outlier.shape = NA) +
-    scale_colour_manual(values = respondant_colours, name = "Respondant") +
-    # scale_y_continuous(limits = c(1,14)) + 
-    guides(color = F#guide_legend(ncol =1)
-           , alpha = F) +
-    labs(y = NULL, x = NULL, title = "Standardised weightings by respondant") +
-    theme_pubr()+
-    theme(plot.title = element_text(size = 12),
-          plot.subtitle = element_text(size = 12),
-          legend.title = element_text(size = 12 , face = "bold"),
-          legend.text =  element_text(size = 9),
-          axis.text.x = element_text(angle = -60, hjust = 0, size = 10),
-          axis.text.y = element_text(size = 12),
-          axis.title =  element_text(size = 12),
-          legend.box = "vertical",  # Set the legend box to vertical
-          legend.position = "right",
-          plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")
-    ) 
-  
-    girafe(
-    ggobj = indiv.weights,
-    width_svg = 10,
-    height_svg = 6, 
-    options = list(
-      opts_hover_inv(css = "stroke-opacity:0.01;"),
-      opts_hover(css = "stroke:orange;stroke-width:5;fill-opacity:1")
-    ) ) 
-    
 
 ```
 

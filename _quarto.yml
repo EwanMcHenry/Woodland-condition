@@ -25,7 +25,7 @@ book:
     - 16_ground-flora.qmd
     - 17_horizontal-complexity.qmd
     - 18_anthro-damage.qmd
-    
+
 number-depth: 0
 
 bibliography: references.bib

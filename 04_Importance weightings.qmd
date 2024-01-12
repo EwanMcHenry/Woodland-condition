@@ -44,10 +44,7 @@ Some consideration should be given to alternative or adapted methods to estimate
 
 The [patterns and groupings](#sec-patterns) between respondents could be used to construct workshop breakout groups. For example, groups could be designed to bring together respondents who differed most in their initial responses.
 
-```{r load curated data, echo = F, include = F, eval = T }
-extraction.location <- "Data\\Delphi round 1\\"
-load(paste0(extraction.location,"curated.RData"))
-```
+
 
 ```{r libraries_data, echo = F, include = F, eval = T }
 
@@ -72,6 +69,7 @@ source("Scripts\\functions_delphi_analysis.R")
 
 forms.direct <- "Data\\Delphi round 1\\response sheets\\"
 extraction.location <- "Data\\Delphi round 1\\"
+load(paste0(extraction.location,"curated.RData"))
 
 # add reverce rank of wieghts by each respondant to just.one.df
 just.one.df <- just.one.df %>% 
@@ -92,11 +90,11 @@ Respondents varied in terms of [how much difference]{.underline} they gave betwe
 respondant.sd <- just.one.df %>%
   dplyr::select(respondant_name, weight) %>%
   group_by(respondant_name) %>%
-  summarise(sd = sd(weight)) %>%
-  arrange(desc(sd))
+  summarise(sd_weight_respondant = sd(weight)) %>%
+  arrange(desc(sd_weight_respondant))
 
 # ggplot horizontal boxplot of the standard deviation of the weights given by each respondant
-respondant.sd.plot <- ggplot(respondant.sd, aes(y = sd, x = 0)) +
+p_respondant_sd <- ggplot(respondant.sd, aes(y = sd_weight_respondant, x = 0)) +
   geom_boxplot(width = 0.5, color="grey60", fill = NA,
                outlier.shape = NA) +
   geom_point_interactive(position = position_jitter(width = 0.2, height = 0),
@@ -126,7 +124,7 @@ respondant.sd.plot <- ggplot(respondant.sd, aes(y = sd, x = 0)) +
   coord_flip() 
 
     girafe(
-    ggobj = respondant.sd.plot,
+    ggobj = p_respondant_sd,
     width_svg = 12,
     height_svg = 4,
     options = list(

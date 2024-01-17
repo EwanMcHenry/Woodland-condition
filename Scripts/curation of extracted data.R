@@ -41,8 +41,11 @@ df <- data.frame(
   cert_weight = rep(cert_weight, sapply(expert.data$value.points, nrow)),
   
   stringsAsFactors = FALSE
-) %>% merge(., ind.matcher.df, by.x = "indicator_name", by.y = "indicator_name_for_extraction", all.x = T) # this is wrong -- its sheet name.. but its fine
+) %>% merge(., ind.matcher.df, by.x = "indicator_name", by.y = "indicator_name_for_extraction", all.x = T) %>%   # this is wrong -- its sheet name.. but its fine
+  # remove indicator_name.y
+  dplyr::select(-indicator_name.y)
 
+  
 # working here - need to get sheet name formatted right for the weights plots
 df <- df %>% 
   mutate(sheet_name = factor(sheet_name, levels = unique(sheet_name)[ order(unique(indicator_num ))] ))
@@ -71,6 +74,7 @@ weight.rank <-  df[!duplicated(paste0(df$indicator_name, df$respondant_name)),] 
   group_by(respondant_name) %>%
   mutate(weight_rank = rank(-weight)) %>% 
   dplyr::select(c("indicator_name", "respondant_name", "weight_rank"))
+
 df <- df %>% right_join(weight.rank, by = c("indicator_name", "respondant_name"))
 
 df$value.dec = df$value/100 # a decimal version of value to work in the later binomial gams
@@ -78,13 +82,21 @@ df$value.dec = df$value/100 # a decimal version of value to work in the later bi
 
 ## version with sinlge entry for each indicator:respondant ----
 just.one.df <- df[!duplicated(paste0(df$sheet_name, df$respondant_name)),
-                  c("indicator_name", "respondant_name", "cert_val_funct", "cert_weight", "sheet_name", "weight")] %>% 
+                  c("indicator_name", "respondant_name", "cert_val_funct", "cert_weight", "sheet_name", "weight","indicator_num")] %>% 
   mutate(respondant_name = as.factor(respondant_name),
          indicator_name = as.factor(indicator_name),
          sheet_name = as.factor(sheet_name)
   )
 just.one.df$mean_repond_cert_vf <- ave(just.one.df$cert_val_funct, just.one.df$respondant_name, FUN = function(x) mean(x, na.rm = TRUE))
 just.one.df$mean_repond_cert_wt <- ave(just.one.df$cert_weight, just.one.df$respondant_name, FUN = function(x) mean(x, na.rm = TRUE))
+
+# add reverce rank of wieghts by each respondant to just.one.df
+just.one.df <- just.one.df %>% 
+  group_by(respondant_name) %>% 
+  mutate(rank_weight = rank(-weight, ties.method = "min")) %>% 
+  ungroup()
+
+
 #-----------------------------------------------------
 
 # completed df ----

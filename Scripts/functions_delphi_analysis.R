@@ -1,9 +1,68 @@
 library(ggnewscale)
 library(ggiraph)
 library(cowplot)
+library(factoextra)
+library(FactoMineR)
+library(dplyr)
+library(tidyr)
+library(ggrepel)
 
 
-# function to plot continuous delphi results
+
+# interactive PCA plot -------------------------
+generate_interactive_PCA <- function(data, weight_variable) {
+  # Select relevant columns and spread the data  
+  weights.mat <- data %>%
+    dplyr::select(respondant_name, sheet_name, !!sym(weight_variable)) %>%
+    spread(sheet_name, !!sym(weight_variable)) %>%
+    # Make respondant_name the row names     
+    column_to_rownames(var = "respondant_name") %>%
+    na.omit() %>% # Filter out rows with all NA     
+    as.matrix()  
+  
+  # Generate PCA   
+  pca <- PCA(weights.mat, graph = F)  
+  
+  # Create PCA biplot
+  biplot <- fviz_pca_biplot(pca, repel = TRUE,
+                            col.var = "contrib", # Color by contributions to the PC
+                            gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+                            col.ind = "#696969",  # Individuals color
+                            geom.ind = "point",
+                            col.quanti.sup = "black",
+                            col.ind.sup = "black",
+                            col.var.sup = "black",
+                            pointsize = 1,
+                            title = "",
+                            axes = c(1, 2),
+                            ellipse.level = 0.95,
+                            labelsize = 3,
+                            legend.title = "",
+                            legend.position = "none",
+                            legend.justification = "none",
+                            legend.direction = "none",
+                            legend.box = "none",
+                            repel.max.iter = 1000,
+                            repel.strength = 5,
+                            repel.seed = 123,
+                            ggtheme = theme_pubr())
+  
+  # Add labels using ggrepel
+  biplot + geom_text_repel(data = as.data.frame(pca$ind$coord),
+                           aes(x = Dim.1, y = Dim.2, label = row.names(pca$ind$coord)),
+                           box.padding = 0.5,
+                           point.padding = 0.5,
+                           segment.color = "grey",
+                           segment.size = 0.5,
+                           segment.alpha = 0.5,
+                           size = 3,
+                           force = 2
+  )
+}
+
+
+
+# function to plot continuous delphi results ------------
 continuous_vf_fig <- function(line.col = NA){
   plot <- ggplot_gam_resp_vf(indicator_name = indicator_name,
                              x.lab = ind.axis.title, gam.col = line.col)
@@ -21,7 +80,7 @@ continuous_vf_fig <- function(line.col = NA){
 
 
 
-# FUNCTION - PLOT RESPONDANTS' continuous INDICATOR VFs ----
+# FUNCTION - PLOT RESPONDANTS' continuous INDICATOR VFs ------------
 ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.matcher.df$ind.axis.title[i], pal = respondant_colours){
 
   # PREDICT TREND ----
@@ -69,7 +128,7 @@ ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.ma
     theme(plot.title = element_text(size = 12),
           plot.subtitle = element_text(size = 12),
           legend.title = element_text(size = 12 , face = "bold"),
-          legend.text =  element_text(size = 12),
+          legend.text =  element_text(size = 9),
           axis.text.x = element_text(size = 12),
           axis.text.y = element_text(size = 12),
           axis.title =  element_text(size = 12),
@@ -116,7 +175,7 @@ ggplot_resp_cat_vf <- function(indicator_name, x.lab = ind.matcher.df$ind.axis.t
           axis.text.x = element_text(size = 12),
           axis.text.y = element_text(size = 12),
           axis.title =  element_text(size = 12),
-          legend.position = "right",
+          legend.position = "none",
           plot.margin = margin(0.5, 1, 0.5, 1, "cm")
     ) 
   
@@ -126,39 +185,79 @@ ggplot_resp_cat_vf <- function(indicator_name, x.lab = ind.matcher.df$ind.axis.t
 # FUNCTION - PLOT RESPONDANTS' WEIGHTS - FOR INDICATOR  ----
 ggplot_resp_weight_ind <- function(indicator_name, 
                                    indicator_name_for_extraction =  ind.matcher.df$indicator_name_for_extraction[ind.num], 
-                                   this.ind.num = ind.num, pal = respondant_colours){
-  # plot weights by respondant for this indicator
+                                   this.ind.num = ind.num, pal = respondant_colours,
+                                   weight_variable = "weight"){
+  # plot by respondant for this indicator
+  ### weight_variable = weight or weight_standardised
   
   #filter data of one weight for each respondant:indicator
-  weights_filtered_data <- df[ !duplicated(paste0(df$respondant_name, df$indicator_name)), ] %>% 
+  weights_filtered_data <- just.one.df %>% #df[ !duplicated(paste0(df$respondant_name, df$indicator_name)), ] %>% 
     mutate(respondant_name = as.factor(respondant_name),
-           this.ind = (indicator_num == this.ind.num))
-  # Filter the data for the selected indicator
-  filtered_data <- weights_filtered_data[weights_filtered_data$indicator_name == indicator_name_for_extraction, ]
+           this.ind = (indicator_num == this.ind.num)
+           ) %>%
+    # add weights standardised by respondant
+    group_by(respondant_name) %>%
+    mutate(weight_standardised = (weight - mean(weight, na.rm = T))/sd(weight, na.rm = T),
+           ) %>% 
+    ungroup()
   
-  # PLOT weights for this ind ----
+      # arrange sheet_name levels by the median of weight_variable - for plot
+  weights_filtered_data$sheet_name <- factor(weights_filtered_data$sheet_name, 
+                                                 levels =   weights_filtered_data %>%
+                                                   group_by(sheet_name) %>%
+                                                   summarise(med_weight = median(get(weight_variable), na.rm = T)) %>%
+                                                   arrange(-med_weight) %>%
+                                                   select(sheet_name) %>%
+                                                   unlist()
+  )
+  
+  # Filter the data for the selected indicator
+  filtered_data <- weights_filtered_data[weights_filtered_data$indicator_name == indicator_name_for_extraction, ] 
+    # arrange 
+  
+ylim <- min(c(0,min(weights_filtered_data[,weight_variable], na.rm = T)), na.rm = T)
+ylim[2] <- max(weights_filtered_data[,weight_variable], na.rm = T)
+  
+    # setup for some lines to help read the plots
+    this.indicator.lines = data.frame(
+      y = rep(ylim, each = length(weights_filtered_data$sheet_name %>% unique())),
+      sheet_name = rep(weights_filtered_data$sheet_name %>% unique(), times = 2) %>% 
+        as.factor(),
+      ind.num = rep(weights_filtered_data$indicator_num %>% unique(), times = 2) 
+    )
+  this.indicator.lines$this.ind <- this.ind.num == this.indicator.lines$ind.num 
+    
+  
+  # PLOT weight_variable for this ind ----
   plot <- ggplot(filtered_data) +
-    geom_boxplot(aes(x = 0, y = weight), outlier.shape = NA) +
+    geom_boxplot(aes(x = 0, y = get(weight_variable)), outlier.shape = NA) +
+    # geom_boxplot(aes(x = 0, y = weight), outlier.shape = NA) +
+    
     stat_summary(data = filtered_data,
-                 aes(x = 0, y = weight),
-                 geom = "point", fun = mean,
+                 aes(x = 0, 
+                     # y = weight),
+                     y = get(weight_variable)),
+  geom = "point", fun = mean,
                  color = "red", shape = 3, size = 5) +
-    ggiraph::geom_jitter_interactive(aes(x = 0, y = weight, 
+    ggiraph::geom_jitter_interactive(aes(x = 0, 
+                                         #y = weight, 
+                                         y = get(weight_variable),
                                 color = respondant_name,
                                 tooltip = respondant_name,
                                 data_id = respondant_name,
                                 text = map(
                                   paste0("<b>", `respondant_name`, "</b><br>",
                                          "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>",
-                                         "<b>Weight rank: </b>", weight_rank),
+                                         "<b>Weight rank: </b>", rank_weight,
+                                         "<br> Standardised weight = ", weight_standardised %>% round(digits = 2)),
                                   HTML),
                                 alpha = cert_weight), 
                             size = 4, shape = 16,
                             position=position_jitter(width=.1, height=0),
                             show_guide = FALSE) +
     scale_colour_manual(values = pal, name = "Respondant") +
-    scale_y_continuous(limits = c(0,100)) +
-    labs(y = "Weight",
+    scale_y_continuous(limits = ylim) +
+    labs(y = weight_variable,
          colour = "Respondant", title = filtered_data$sheet_name) +
     guides(alpha = F) +
     theme_pubr()+
@@ -172,18 +271,11 @@ ggplot_resp_weight_ind <- function(indicator_name,
           axis.text.x=element_blank(),
           axis.ticks.x=element_blank(),
           legend.box = "vertical",  # Set the legend box to vertical
-          legend.position = "right",
+          legend.position = "none",
           plot.margin = margin(0.5, 1, 0.5, 1, "cm")
     ) 
   
-  # PLOT all indicator weights - for all respondants, by indicator, interactive  
-  this.indicator.lines = data.frame(
-    y = rep(c(0,100), each = length(weights_filtered_data$sheet_name %>% unique())),
-    sheet_name = rep(weights_filtered_data$sheet_name %>% unique(), times = 2) %>% 
-      as.factor(),
-    ind.num = rep(weights_filtered_data$indicator_num %>% unique(), times = 2) 
-  )
-  this.indicator.lines$this.ind <- this.ind.num == this.indicator.lines$ind.num 
+  # PLOT all indicator weights - for all respondants, by indicator, interactive 
   
   indiv.weights <- ggplot() +
     geom_line(data = this.indicator.lines,
@@ -196,9 +288,17 @@ ggplot_resp_weight_ind <- function(indicator_name,
     geom_point_interactive(data = weights_filtered_data, 
                            position = position_jitter(width = 0.2, height = 0),
                            size = 2, shape = 16,
-                           aes(x = sheet_name, y = weight,
+                           aes(x = sheet_name, 
+                               #y = weight,
+                               y = get(weight_variable),
                                col = weights_filtered_data$respondant_name,
-                               tooltip = respondant_name,
+                               tooltip =  paste0(
+                                 respondant_name, 
+                                 "<br>",sheet_name, 
+                                 "<br>Weight = ", weight, 
+                                 "<br>Weight rank = ", rank_weight, 
+                                 "<br> Standardised weight = ", weight_standardised %>% round(), 
+                                 "<br>Certainty = ", cert_weight),
                                data_id = respondant_name #,
                                # text = map(
                                #   paste0("<b>", respondant_name, "</b><br>",
@@ -206,7 +306,7 @@ ggplot_resp_weight_ind <- function(indicator_name,
                                # HTML)
                            )) +
     scale_colour_manual(values = pal, name = "Respondant") +
-    scale_y_continuous(limits = c(0,100)) +
+    scale_y_continuous(limits = ylim) +
     guides(color = guide_legend(ncol =1)) +
     labs(y = NULL, x = NULL, title = "Comparison to other indicators") +
     theme_pubr()+
@@ -218,23 +318,24 @@ ggplot_resp_weight_ind <- function(indicator_name,
           axis.text.y = element_text(size = 12),
           axis.title =  element_text(size = 12),
           legend.box = "vertical",  # Set the legend box to vertical
-          legend.position = "right",
+          legend.position = "none",
           plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")
     ) 
   
   plot_grid <-   plot_grid(plot, indiv.weights, rel_widths = c(1, 2), ncol = 2, align = "h", axis = "l")
 
-  ggsave(filename = paste0("Figs//ind_",
-                           formatC(ind.num, width = 2, format = "d", flag = "0"),
-                           "_", indicator_name, "weights.png"),
-         plot = plot_grid,
-         width = 300, height = 150, units = "mm")
+
+  # ggsave(filename = paste0("Figs//ind_",
+  #                          formatC(ind.num, width = 2, format = "d", flag = "0"),
+  #                          "_", indicator_name, "weights.png"),
+  #        plot = plot_grid,
+  #        width = 300, height = 150, units = "mm")
   
 
   girafe(
     ggobj = plot_grid,
     width_svg = 10,
-    height_svg = 5, 
+    height_svg = 8, 
     options = list(
       opts_hover_inv(css = "stroke-opacity:0.01;"),
       opts_hover(css = "stroke:orange;stroke-width:5;fill-opacity:1")

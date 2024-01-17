@@ -50,9 +50,24 @@ respondant_colours <- glasbey.colors(nlevels(respondants_with_something)+1)[-1] 
 
 ```
 
-This document explores `r has_completed$indicator_name %>% unique() %>% length()` indicators of woodland ecological condition: their effective measurement and how those measurements might be used to assess the ecological condition of a woodland site, based upon evidence from the literature and the expert opinion, gathered from Woodland Trust staff.
+Hi, a lot of the figures in this book are interactive. You can hover to get more info, and for some you can filter out different data etc. The book explores `r has_completed$indicator_name %>% unique() %>% length()` indicators of woodland ecological condition: their effective measurement and how those measurements might be used to assess the ecological condition of a woodland site, based upon evidence from the literature and the expert opinion, gathered from Woodland Trust staff.
 
 The proposed method takes inspiration from many existing international projects that use woodland structural indicators to assess the ecological condition of sites and provide evidence across national scales to inform management and policy.
+
+### General book structure
+
+1.  [Introduction (this page)](index.qmd)
+2.  [An explanation of the general approach to estimate condition](01_general%20approach.qmd)
+3.  [The methods to gather and analyse evidence, particularly expert opinion](02_methods.qmd)
+4.  An exploration of the [importance weightings](04_Importance%20weightings.qmd) for each indicator
+5.  A series of pages for each indicator in turn exploring:
+    1.  Justification of its inclusion
+    2.  A proposed measurement method
+    3.  An exploration of value functions and weightings
+    4.  Further considerations for indicator development
+    5.  Exceptions where a general approach may require adaptation.
+        -   Indicatively categorised as "priority", "lower priority", and exceptions dealt with by already/with adaption/by other indicators. Some reasoning is typically given for categorisation.
+    6.  Approaches to this indicator from other organisations
 
 ## A Definition
 

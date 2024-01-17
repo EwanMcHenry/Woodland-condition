@@ -66,16 +66,22 @@ filtered_data <- df[df$indicator_name == ind.matcher.df$indicator_name_for_extra
 #### Continuous Value function
 
 ```{r vf - continuous, echo = F , results="asis"}
-#| column: page
 
 continuous_vf_fig()
+
+```
+
+#### Standardised weights
+
+```{r std weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weight_standardised")
 
 ```
 
 #### Weights
 
 ```{r vf - weights, echo = F , results="asis"}
-#| column: page
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 
@@ -100,23 +106,23 @@ It is unclear what constitutes a "site" or "patch". Will a 20m gap mean a new "p
 
 Should not undermine contribution of non-wooded priority habitat[^12_extent-2], e.g. by driving planting on it[^12_extent-3]
 
-[^12_extent-2]: \[\[Hannah Patterson\]\]
+[^12_extent-2]: Hannah Patterson
 
-[^12_extent-3]: \[\[Kylie Jones Mattock\]\]
+[^12_extent-3]: Kylie Jones Mattock
 
 Feeling that 50 ha is too small a maximum[^12_extent-4]
 
-[^12_extent-4]: \[\[Peter Lowe\]\], \[\[Alasdair Firth\]\]
+[^12_extent-4]: Peter Lowe, Alasdair Firth
 
 This may be best viewed as "Landscape context"[^12_extent-5]
 
-[^12_extent-5]: \[\[Richard Brown\]\]
+[^12_extent-5]: Richard Brown
 
 ### Priority exceptions
 
-Shape, connectivity and landscape structure will interact with this[^12_extent-6]
+Shape, connectivity, patch size, edge area and landscape structure will interact with this[^12_extent-6]
 
-[^12_extent-6]: \[\[Chris Reid\]\], \[\[Kylie Jones Mattock\]\], \[\[Liam Plummer\]\], \[\[Alasdair Firth\]\]
+[^12_extent-6]: Chris Reid, Kylie Jones Mattock, Liam Plummer, Alasdair Firth, Bob Epsom, David Venables
 
 landscape:
 
@@ -129,48 +135,55 @@ landscape:
 
         </div>
 -   Importance greater in landscapes with low habitat: more is "required" of the site to sustain itself[^12_extent-9].
+-   Wet woodland - often small and OK condition[^12_extent-10].
 
-[^12_extent-7]: \[\[Saul Herbert\]\]
+[^12_extent-7]: Saul Herbert, David Logan
 
 [^12_extent-8]: Ewan McHenry
 
-[^12_extent-9]: \[\[Liam Plummer\]\]
+[^12_extent-9]: Liam Plummer
 
-Urban woods surrounded and unable to expand, these might be constantly stuck in "Poor" condition because of this indicator: suggested lower importance here[^12_extent-10]
+[^12_extent-10]: Dean Kirkland, David Logan
 
-[^12_extent-10]: \[\[Hannah Patterson\]\]
+Urban woods surrounded and unable to expand, these might be constantly stuck in "Poor" condition because of this indicator: suggested lower importance here[^12_extent-11]
+
+[^12_extent-11]: Hannah Patterson
 
 > They need to be able to attain good condition based on other indicators.
 
-Small woods within high-quality open habitat mosaic or upland peat[^12_extent-11]
+Small woods within high-quality open habitat mosaic or upland peat[^12_extent-12]
 
-[^12_extent-11]: \[\[Kylie Jones Mattock\]\]
+[^12_extent-12]: Kylie Jones Mattock, David Logan
 
 > Could this be dealt with by measuring percentage woodland cover within some relatively limited dispersal distance e.g. 500m?
 
+Higher importance where woodland has been lost in the landscape in recent years[^12_extent-13]
+
+[^12_extent-13]: Rhiannon Hoy
+
 ### Lower priority exceptions
 
-Farmland woods, hedges and edges[^12_extent-12]
+Farmland woods, hedges and edges[^12_extent-14]
 
-[^12_extent-12]: \[\[Kylie Jones Mattock\]\]
+[^12_extent-14]: Kylie Jones Mattock
 
-> These would just score poorly for this particular indicator[^12_extent-13]
+> These would just score poorly for this particular indicator[^12_extent-15]
 
-[^12_extent-13]: \[\[Ewan McHenry\]\]
+[^12_extent-15]: Ewan McHenry
 
-Large monocultures e.g. Sitka plantations[^12_extent-14]
+Large monocultures e.g. Sitka plantations[^12_extent-16]
 
-[^12_extent-14]: \[\[Hannah Patterson\]\]
+[^12_extent-16]: Hannah Patterson
 
 > May score well for this indicator (unless "semi-natural habitat" extent is specified), but should score terribly on other indicators. Important to balance weightings accordingly.
 
-Small woods can be important temporal refugia for species that are out competed in more connected woodland[^12_extent-15]
+Small woods can be important temporal refugia for species that are out competed in more connected woodland[^12_extent-17]
 
-[^12_extent-15]: \[\[Ewan McHenry\]\], \[\[Jim Smith-Wright\]\]
+[^12_extent-17]: Ewan McHenry, Jim Smith-Wright
 
-> Q: When does a wood becomes so small that it wouldn't be reasonable to see all indicators well represented? - Or when it could be a component of indicators in a landscape?[^12_extent-16]
+> Q: When does a wood becomes so small that it wouldn't be reasonable to see all indicators well represented? - Or when it could be a component of indicators in a landscape?[^12_extent-18]
 
-[^12_extent-16]: \[\[Saul Herbert\]\]
+[^12_extent-18]: Saul Herbert
 
 # Other approaches
 

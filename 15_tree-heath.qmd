@@ -14,7 +14,7 @@ Should be recorded separately in non-natives and invasive plants
 
 Condition score of 0 if high-risk pest/disease is present,
 
-![](images/Tree health 2023-11-14 16.12.01.excalidraw.png)
+![](images/Tree%20health%202023-11-14%2016.12.01.excalidraw.png)
 
 # Respondent value functions and weights
 
@@ -66,16 +66,22 @@ filtered_data <- df[df$indicator_name == ind.matcher.df$indicator_name_for_extra
 #### Continuous Value function
 
 ```{r vf - continuous, echo = F , results="asis"}
-#| column: page
 
 continuous_vf_fig()
+
+```
+
+#### Standardised weights
+
+```{r std weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weight_standardised")
 
 ```
 
 #### Weights
 
 ```{r vf - weights, fig.width= 4, echo = F , results="asis"}
-#| column: page
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 
@@ -84,13 +90,11 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ### Comments on data
 
-VFs:\
-- A lot of variation
+VFs:
+
+-   A lot of variation
 
 > Refer to [Woodland Wildlife Toolkit] approach when reviewing
-
-Weights:\
-- full range of variation
 
 # Respondent comments
 
@@ -98,7 +102,7 @@ Weights:\
 
 Measuring basal area is a relatively tedious desk job, difficult to do quickly in the field. Suggest DAFOR instead[^15_tree-heath-1].
 
-[^15_tree-heath-1]: \[\[Richard Brown\]\]
+[^15_tree-heath-1]: Richard Brown
 
 > They are quire broad basal area categories, high precision may not be necessary.
 >
@@ -108,71 +112,73 @@ Measuring basal area is a relatively tedious desk job, difficult to do quickly i
 
 Landscape - e.g. ash dieback on chalk[^15_tree-heath-2].
 
-[^15_tree-heath-2]: \[\[Dave Bonsall\]\]
+[^15_tree-heath-2]: Dave Bonsall
 
 > -   [ ] Follow up; unsure what is meant here[^15_tree-heath-3].
 
-[^15_tree-heath-3]: \[\[Ewan McHenry\]\]
+[^15_tree-heath-3]: Ewan McHenry
+
+Landscapes susceptible to outbreak, where affected species abundant (ash, chestnut)[^15_tree-heath-4]
+
+[^15_tree-heath-4]: Bob Epsom
 
 ### Lower priority exceptions
 
 ### Concerns already covered by this or other indicators
 
-Low amounts could break up a single-species stand to increase structural complexity[^15_tree-heath-4], deadwood accumulation[^15_tree-heath-5] and nutrient cycling[^15_tree-heath-6]
+Low amounts could break up a single-species stand to increase structural complexity[^15_tree-heath-5]
 
-[^15_tree-heath-4]: \[\[Dave Bonsall\]\]
-
-[^15_tree-heath-5]: \[\[Kylie Jones Mattock\]\]
-
-[^15_tree-heath-6]: \[\[Jim Smith-Wright\]\]
+[^15_tree-heath-5]: Dave Bonsall, David Venables
 
 > This may be best dealt with via indicators that directly capture those aspects.
 
-Potential conflict with deadwood, which may be generated via pests and disease[^15_tree-heath-7]. Tree mortality may be particuarlly important where deadwood is scarce[^15_tree-heath-8]
+Potential conflict with deadwood[^15_tree-heath-6] and nutrient cycling[^15_tree-heath-7]. Tree mortality may be particularly important where deadwood is scarce[^15_tree-heath-8]
 
-[^15_tree-heath-7]: \[\[Richard Brown\]\]
+[^15_tree-heath-6]: Richard Brown, Kylie Jones Mattock, David Venables
 
-[^15_tree-heath-8]: \[\[Kylie Jones Mattock\]\]
+[^15_tree-heath-7]: Jim Smith-Wright
 
-> This should really be dealt with independently using the deadwood indicator.
+[^15_tree-heath-8]: Kylie Jones Mattock
+
+> This should probably be dealt with independently using the deadwood indicator.
 
 Interaction with Native Tree and Shrub Species Richness(N):
 
 -   a little bit of disease could be good to break up single species stands[^15_tree-heath-9]
 
-[^15_tree-heath-9]: \[\[Dave Bonsall\]\]
+[^15_tree-heath-9]: Dave Bonsall
 
 > May be best covered with e.g. Vertical Structure and other indicators.
 
 -   A diverse wood will be more resilient to disease[^15_tree-heath-10], less important with higher species diversity[^15_tree-heath-11]
 
-[^15_tree-heath-10]: \[\[Liam Plummer\]\], \[\[Jim Smith-Wright\]\], \[\[Martin Hugi\]\]
+[^15_tree-heath-10]: Liam Plummer, Jim Smith-Wright, Martin Hugi
 
-[^15_tree-heath-11]: \[\[Hannah Patterson\]\], \[\[Ian Moss\]\], \[\[Martin Hugi\]\]
+[^15_tree-heath-11]: Hannah Patterson, Ian Moss, Martin Hugi
 
 > It would be expected to score better for this indicator then (as it is expected to have less % of disease). But could consider lowering importance with increasing tree SR.
 
 Disease in e.g. Invasives and non-native over-canopy may be good[^15_tree-heath-12], but may require notification.
 
-[^15_tree-heath-12]: \[\[Kylie Jones Mattock\]\]
+[^15_tree-heath-12]: Kylie Jones Mattock
 
 > Should be record separately, but have no impact on ecological condition
 
 Will depend on virulence and specificity of the pest/pathogen[^15_tree-heath-13]
 
-[^15_tree-heath-13]: \[\[Ian Moss\]\]
+[^15_tree-heath-13]: Ian Moss
 
 > Pathogen risk level is recorded and affects scoring
 
 # Other approaches
 
-## Woodland Wildlife Toolkit  {sec-wwt_health=""}
+## Woodland Wildlife Toolkit {sec-wwt_health=""}
 
 Value 3: Rapid mortality in \<10% of basal area AND no pests or diseases AND no crown dieback
 
 Value 2: 10-25% basal area rapid mortality
 
--    OR 0-10% with crown dieback/ low risk pests/disease
+-   OR 0-10% with crown dieback/ low risk pests/disease
 
 Value 1: 25- 100% rapid mortality of basal area
 
@@ -188,7 +194,7 @@ DAFOR notable and other pests/diseases
 
 -   Noted to work very well[^15_tree-heath-14]
 
-[^15_tree-heath-14]: \[\[Richard Brown\]\]
+[^15_tree-heath-14]: Richard Brown
 
 > Should consider DOMIN instead of DAFOR
 

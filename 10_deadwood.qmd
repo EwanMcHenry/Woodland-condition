@@ -4,7 +4,7 @@
 
 Deadwood provides habitat for a range of native species. Takes a lot and a wide range of types and stages of decay to maximise value[^10_deadwood-1]
 
-[^10_deadwood-1]: \[\[Saul Herbert\]\]
+[^10_deadwood-1]: Saul Herbert
 
 ## Measuring
 
@@ -74,16 +74,22 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 #### Continuous Value function
 
 ```{r vf - continuous, echo = F , results="asis"}
-#| column: page
 
 continuous_vf_fig()
+
+```
+
+#### Standardised weights
+
+```{r std weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weight_standardised")
 
 ```
 
 #### Weights
 
 ```{r vf - weights, fig.width= 4, echo = F , results="asis"}
-#| column: page
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 
@@ -105,7 +111,7 @@ Weights:\
 
 Potential clustering of deadwood because of windfall etc could affect plot scoring[^10_deadwood-2].
 
-[^10_deadwood-2]: \[\[Jim Smith-Wright\]\]
+[^10_deadwood-2]: Jim Smith-Wright
 
 Deadwood volume estimation is already an UKWAS requirement.
 
@@ -129,81 +135,87 @@ Woodland type
 
 -   Woodpasture/ parkland
 
-    -   Potentially more deadwood expected for favourable quality[^10_deadwood-6]. But could also be more important feature (higher weighting).
+    -   Potentially more deadwood expected for favorable quality[^10_deadwood-6].
+
+    -   Could also be more important feature (higher weighting).
 
     -   May need larger/more plots[^10_deadwood-7].
 
-[^10_deadwood-3]: \[\[Chris Reid\]\], \[\[Kylie Jones Mattock\]\],\[\[Hannah Patterson\]\], \[\[Ian Moss\]\]
+[^10_deadwood-3]: Chris Reid, Kylie Jones Mattock, Hannah Patterson, Ian Moss, Daniel Aitken, David Logan, Karen Hornigold, Rhiannon Hoy, Sonia Lorenzo-Martin
 
-[^10_deadwood-4]: \[\[Chris Reid\]\]
+[^10_deadwood-4]: Chris Reid
 
-[^10_deadwood-5]: \[\[Hannah Patterson\]\], \[\[Liam Plummer\]\], \[\[Louise Hackett\]\]
+[^10_deadwood-5]: Hannah Patterson, Liam Plummer, Louise Hackett, Sonia Lorenzo-Martin
 
-[^10_deadwood-6]: \[Chris Reid\]
+[^10_deadwood-6]: Chris Reid, Dean Kirkland
 
-[^10_deadwood-7]: \[Liam Plummer\]
+[^10_deadwood-7]: Liam Plummer, Karen Hornigold
 
-Cause is important context, e.g. If from disease [^10_deadwood-8] or large-scale windblow event[^10_deadwood-9]
+Cause is important context, e.g. If from disease [^10_deadwood-8] or large-scale windblown event[^10_deadwood-9]
 
-[^10_deadwood-8]: \[\[Peter Lowe\]\]
+[^10_deadwood-8]: Peter Lowe
 
-[^10_deadwood-9]: \[\[Kylie Jones Mattock\]\]
+[^10_deadwood-9]: Kylie Jones Mattock
 
 Type of deadwood is important for its value
 
 -   Hard/softwood[^10_deadwood-10], shaded/open[^10_deadwood-11], species/nativeness of tree[^10_deadwood-12], hollowing, submerged/wet - On living/deadwood interface- important for saproxylics[^10_deadwood-13]
 
-[^10_deadwood-10]: \[\[Alasdair Firth\]\], \[\[Hannah Patterson\]\]
+[^10_deadwood-10]: Alasdair Firth, Hannah Patterson
 
-[^10_deadwood-11]: \[\[Saul Herbert\]\]
+[^10_deadwood-11]: Saul Herbert
 
-[^10_deadwood-12]: \[\[Kylie Jones Mattock\]\]
+[^10_deadwood-12]: Kylie Jones Mattock
 
-[^10_deadwood-13]: \[\[Louise Hackett\]\]
+[^10_deadwood-13]: Louise Hackett
 
 ### Lower priority exceptions
 
 AWR sites where all wood is harvested[^10_deadwood-14] and coppice[^10_deadwood-15]
 
-[^10_deadwood-14]: \[\[Dave Bonsall\]\]
+[^10_deadwood-14]: Dave Bonsall
 
-[^10_deadwood-15]: \[\[Peter Lowe\]\], \[\[Dave Bonsall\]\], \[\[Kylie Jones Mattock\]\]
+[^10_deadwood-15]: Peter Lowe, Dave Bonsall, Kylie Jones Mattock, Bob Epsom
 
 > May just accept lower condition score here, or alter management to retain deadwood.
 
 Note the high diameter threshold for deadwood to be counted[^10_deadwood-16]
 
-[^10_deadwood-16]: \[\[Jim Smith-Wright\]\]
+[^10_deadwood-16]: Jim Smith-Wright
 
 Some nutrient sensitive areas may be undesirable[^10_deadwood-17]
 
-[^10_deadwood-17]: \[\[Jim Smith-Wright\]\]
+[^10_deadwood-17]: Jim Smith-Wright
 
 Higher importance to maintain where there has been historic continuity, compared to establishment of deadwood[^10_deadwood-18].
 
-[^10_deadwood-18]: \[Alasdair Firth\]
+[^10_deadwood-18]: Alasdair Firth
 
 May take a long time to accumulate, potentially making progress seem impossible[^10_deadwood-19].
 
-[^10_deadwood-19]: \[\[Louise Hackett\]\]
+[^10_deadwood-19]: Louise Hackett
 
 ### Concerns already covered by this or other indicators
 
 Excessive deadwood volume may indicate poor condition[^10_deadwood-20], in PAWs it may restrict ground flora and regeneration[^10_deadwood-21]
 
-[^10_deadwood-20]: \[\[Alasdair Firth\]\]
+[^10_deadwood-20]: Alasdair Firth
 
-[^10_deadwood-21]: \[\[Hannah Patterson\]\]
+[^10_deadwood-21]: Hannah Patterson
 
 > This should be covered by other indicators (e.g. regeneration). Possibly noting the presumed cause there (i.e. suppressed by excessive deadwood).
 
 May represent high fuel load in extreme cases[^10_deadwood-22] and a fire risk in sites with a lot of public access.
 
-[^10_deadwood-22]: \[\[Peter Lowe\]\], \[\[Kylie Jones Mattock\]\]
+[^10_deadwood-22]: Peter Lowe, Kylie Jones Mattock, David Venables
 
-> This should be an explicit trade-off between fire risk and the ecological value of deadwood. The indicator should not discourage/be apathetic towards fire risk management options that also promote good quality deadwood[^10_deadwood-23]
+> This should be an explicit trade-off between fire risk and the ecological value of deadwood. The indicator should not discourage/be apathetic towards fire risk management options that also promote good quality deadwood. A stat such as "95% of urban woods don't have enough deadwood due to fire-burning" could be part of e.g. a public awareness campaign.
 
-[^10_deadwood-23]: \[\[Ewan McHenry\]\]
+Where this restricts access/safety[^10_deadwood-23]
+
+[^10_deadwood-23]: David Venables
+
+> An explicit trade-off is made here
 
 # Other approaches
 
@@ -221,11 +233,11 @@ Record on woodland walk and in plots
 
 Estimated deadwood volume
 
--   Favourable: \>80 m<sup>3</sup> ha<sup>-1</sup>
+-   Favorable: \>80 m<sup>3</sup> ha<sup>-1</sup>
 
 -   Intermediate: 20 - 80 m<sup>3</sup> ha<sup>-1</sup>
 
--   Unfavourable: \< 20 m<sup>3</sup> ha<sup>-1</sup>
+-   Unfavorable: \< 20 m<sup>3</sup> ha<sup>-1</sup>
 
 ## Current WT estate condition assessment
 

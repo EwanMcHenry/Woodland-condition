@@ -3,9 +3,11 @@ project:
 
 book:
   title: "Woodland Condition Assessment - Expert Opinion"
-  author: "Ewan McHenry, Martin Hügi, Saul Herbert and Christen Reid"
+  author: "Ewan McHenry, Martin Hügi, Saul Herbert and Christine Reid"
   date: today
+  search: true
   date-format: "D MMM, YYYY"
+  downloads: [pdf, epub]
   chapters:
     - index.qmd
     - 01_general approach.qmd
@@ -35,6 +37,9 @@ format:
     theme: cosmo
     fig-width: 6
     fig-asp: 0.618
+    reference-location: margin
+
+
   pdf:
     documentclass: scrreprt
 
@@ -43,3 +48,6 @@ editor: visual
 execute:
   echo: false
   warning: false
+
+css: style.css
+

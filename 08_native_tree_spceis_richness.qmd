@@ -28,9 +28,9 @@ A list of site-appropriate species should be defined prior to surveying in a way
 
 ### Detectability of species
 
-Even if an appropriate species is present at a site, we cannot expect to detect it perfectly within every plot. There is always a risk that one or more species is missed, regardess of whether we use survey plots or woodland walks. This risk should be acknowledged and accounted for. If our sampling design uses random representative, replicated plots it will allow us to do this by using well-established ecological methods ( I suggest [Occupancy Modelling techniques](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6362448/#:~:text=Multispecies%20occupancy%20models%20can%20estimate,while%20accounting%20for%20imperfect%20detection.) ideally, or [Species Accumulation Curves](https://en.wikipedia.org/wiki/Species_discovery_curve)).
+Even if an appropriate species is present at a site, we cannot expect to detect it perfectly within every plot. There is always a risk that one or more species is missed, regardless of whether we use survey plots or woodland walks. This risk should be acknowledged and accounted for. If our sampling design uses random representative, replicated plots it will allow us to do this by using well-established ecological methods ( I suggest [Occupancy Modelling techniques](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6362448/#:~:text=Multispecies%20occupancy%20models%20can%20estimate,while%20accounting%20for%20imperfect%20detection.) ideally, or [Species Accumulation Curves](https://en.wikipedia.org/wiki/Species_discovery_curve)).
 
-Plot size, sampling effort etc will affect detection probability and the number of species expected to be recorded, even if they are present at the site. Availible habitat area surrounding a plot will also inclufence the number of species expected to occupy it, but this effect is distinct from the impact of sampling-area on the number of species **detected** [@matthews2016].
+Plot size, sampling effort etc will affect detection probability and the number of species expected to be recorded, even if they are present at the site. Available habitat area surrounding a plot will also influence the number of species expected to occupy it, but this effect is distinct from the impact of sampling-area on the number of species **detected** [@matthews2016].
 
 # Respondent value functions and weights
 
@@ -84,8 +84,6 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 #### Continuous Value function
 
 ```{r vf - continuous, echo = F , results="asis"}
-#| column: page
-
 continuous_vf_fig()
 
 ```
@@ -93,7 +91,6 @@ continuous_vf_fig()
 #### Categorised value function
 
 ```{r vf - categorical, echo = F , results="asis"}
-#| column: page
 
 categorised_vf_fig()
 
@@ -106,10 +103,17 @@ categorised_vf_fig()
 
 ```
 
+#### Standardised weights
+
+```{r std weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weight_standardised")
+
+```
+
 #### Weights
 
 ```{r vf - weights, echo = F , results="asis"}
-#| column: page
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 
@@ -126,9 +130,9 @@ VFs:
 
 -   Different ideas as to the shape of that relationship: linear[^08_native_tree_spceis_richness-1], vs sigmoid, S-shaped relationship[^08_native_tree_spceis_richness-2].
 
-[^08_native_tree_spceis_richness-1]: \[\[Saul Herbert\]\]
+[^08_native_tree_spceis_richness-1]: e.g. Saul Herbert
 
-[^08_native_tree_spceis_richness-2]: \[\[Liam Plummer\]\]
+[^08_native_tree_spceis_richness-2]: e.g. Liam Plummer
 
 Weightings
 
@@ -150,61 +154,77 @@ Woodland type
 
 -   Planted woodland creation - may have a more even mix of species than expected elsewhere[^08_native_tree_spceis_richness-6], but natural colonisation may be dominated by pioneering species[^08_native_tree_spceis_richness-7]
 
--   Coppice[^08_native_tree_spceis_richness-8]
+-   Wood pasture[^08_native_tree_spceis_richness-8]
 
-[^08_native_tree_spceis_richness-3]: \[\[Kylie Jones Mattock\]\]
+-   Coppice[^08_native_tree_spceis_richness-9]
 
-[^08_native_tree_spceis_richness-4]: \[\[Peter Lowe\]\], \[\[Chris Reid\]\], \[\[Kylie Jones Mattock\]\], \[\[Liam Plummer\]\]
+[^08_native_tree_spceis_richness-3]: Kylie Jones Mattock
 
-[^08_native_tree_spceis_richness-5]: \[\[Chris Reid\]\]
+[^08_native_tree_spceis_richness-4]: Peter Lowe, Chris Reid, Kylie Jones Mattock, Liam Plummer
 
-[^08_native_tree_spceis_richness-6]: \[\[Dave Bonsall\]\]
+[^08_native_tree_spceis_richness-5]: Chris Reid, David Logan, Dean Kirkland, Karen Hornigold, Sonia Lorenzo-Martin
 
-[^08_native_tree_spceis_richness-7]: \[\[Saul Herbert\]\]
+[^08_native_tree_spceis_richness-6]: Dave Bonsall
 
-[^08_native_tree_spceis_richness-8]: \[\[Dave Bonsall\]\], \[\[Peter Lowe\]\]
+[^08_native_tree_spceis_richness-7]: Saul Herbert
+
+[^08_native_tree_spceis_richness-8]: David Logan, Dean Kirkland, Nick Reed-Beale, Sonia Lorenzo-Martin
+
+[^08_native_tree_spceis_richness-9]: Dave Bonsall, Peter Lowe, Bob Epsom
 
 > Note: all these wood type exceptions could potentially be dealt with by using a suitable list of appropriate/expected species
 
-Topography: flat, homogeneous ground will have lower expected tree species diversity[^08_native_tree_spceis_richness-9]
+Topography: flat, homogeneous ground will have lower expected tree species diversity[^08_native_tree_spceis_richness-10]
 
-[^08_native_tree_spceis_richness-9]: \[\[Alasdair Firth\]\]
+[^08_native_tree_spceis_richness-10]: Alasdair Firth
 
-Different species may have different wildlife value e.g. oak[^08_native_tree_spceis_richness-10]
+Different species may have different wildlife value e.g. oak[^08_native_tree_spceis_richness-11]
 
-[^08_native_tree_spceis_richness-10]: \[\[Jim Smith-Wright\]\]
+[^08_native_tree_spceis_richness-11]: Jim Smith-Wright
 
-Functional traits: Presence/number of different functional groups of trees (e.g. nectar sources) may be more important than species number[^08_native_tree_spceis_richness-11]
+Functional traits: Presence/number of different functional groups of trees (e.g. nectar sources) may be more important than species number[^08_native_tree_spceis_richness-12]
 
-[^08_native_tree_spceis_richness-11]: \[\[Jim Smith-Wright\]\]
+[^08_native_tree_spceis_richness-12]: Jim Smith-Wright
 
-Scale/landscape context: a small wood plot with a few species that are otherwise rare in the landscape, or provide other landscape-scale functioning[^08_native_tree_spceis_richness-12]
+Scale/landscape context: a small wood plot with a few species that are otherwise rare in the landscape, or provide other landscape-scale functioning[^08_native_tree_spceis_richness-13]
 
-[^08_native_tree_spceis_richness-12]: \[\[Alasdair Firth\]\]
+[^08_native_tree_spceis_richness-13]: Alasdair Firth
 
 Avoid driving inappropriate species diversification e.g. :
 
--   Inappropriate supplementary planting within Ancient woodland sites to boost species richness[^08_native_tree_spceis_richness-13].
+-   Inappropriate supplementary planting within Ancient woodland sites to boost species richness[^08_native_tree_spceis_richness-14].
 
--   Where simplified structure is part of management for target species
+-   Where simplified species structure is part of management for target species/community[^08_native_tree_spceis_richness-15]
 
--   Where specific but relatively simplified habitat enhances biodiversity at larger scales[^08_native_tree_spceis_richness-14].
+-   Where specific but relatively simplified habitat enhances biodiversity at larger scales[^08_native_tree_spceis_richness-16].
 
-[^08_native_tree_spceis_richness-13]: \[\[Andy Sharky\]\]
+-   Where inappropriate for landscape/designation[^08_native_tree_spceis_richness-17]
 
-[^08_native_tree_spceis_richness-14]: Peter Lowe
+[^08_native_tree_spceis_richness-14]: Andy Sharky
+
+[^08_native_tree_spceis_richness-15]: Daniel Aitken
+
+[^08_native_tree_spceis_richness-16]: Peter Lowe
+
+[^08_native_tree_spceis_richness-17]: David Venables
 
 ### Lower priority exceptions
 
-Arboretums[^08_native_tree_spceis_richness-15]
+Arboretums[^08_native_tree_spceis_richness-18]
 
-[^08_native_tree_spceis_richness-15]: \[\[Kylie Jones Mattock\]\]
+[^08_native_tree_spceis_richness-18]: Kylie Jones Mattock
 
 ### Concerns already covered by this or other indicators
 
-Plantations[^08_native_tree_spceis_richness-16]
+Isolated woods where species pool is limited in landscape[^08_native_tree_spceis_richness-19]
 
-[^08_native_tree_spceis_richness-16]: \[\[Kylie Jones Mattock\]\]
+[^08_native_tree_spceis_richness-19]: Bob Epsom
+
+> Would just score poor, prompting considerations RE supplementary planting etc.
+
+Plantations[^08_native_tree_spceis_richness-20]
+
+[^08_native_tree_spceis_richness-20]: Kylie Jones Mattock
 
 > Mono-cultures will just score poorly
 
@@ -214,11 +234,11 @@ Plantations[^08_native_tree_spceis_richness-16]
 
 Record main tree and shrub species present in the upper canopy (\>5m) within plots
 
--   3: \>= 5 spp
+-   3: \>= 5 species
 
--   2: 3-4 spp
+-   2: 3-4 species
 
--   1: 0-2 spp
+-   1: 0-2 species
 
 ## NFI
 

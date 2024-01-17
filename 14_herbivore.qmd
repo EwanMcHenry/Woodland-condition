@@ -4,7 +4,7 @@
 
 High herbivore impact is damaging for most woods[^14_herbivore-1].
 
-[^14_herbivore-1]: \[\[Chris Reid\]\], \[\[Dave Bonsall\]\], \[\[Richard Brown\]\]
+[^14_herbivore-1]: Chris Reid, Dave Bonsall, Richard Brown
 
 ## Measuring
 
@@ -16,9 +16,6 @@ High herbivore impact is damaging for most woods[^14_herbivore-1].
 
 -   Estimate the percentage of the last 12 months potential growth removed by herbivory
 
-```{=html}
-<!-- -->
-```
 -   For palatable and unpalatable species separately.
 
     -   Unpalatable species: Sitka, hard conifers, birch and alder
@@ -37,11 +34,11 @@ Tick boxes on: - Visible browse line - Poaching/trampling - Significant deer tra
 
 Notes on status of fence, type of grazer, grazing history (if known) etc.
 
-![](images/Herbivore Imapct 2023-11-14 15.44.46.excalidraw.png)
+![](images/Herbivore%20Imapct%202023-11-14%2015.44.46.excalidraw.png)
 
 This information will then be used to categorise the level of herbivore impact
 
-![](images/Herbivore Imapct 2023-11-06 16.22.12.excalidraw.png)
+![](images/Herbivore%20Imapct%202023-11-06%2016.22.12.excalidraw.png)
 
 ## Challenges
 
@@ -53,7 +50,7 @@ Seasonality
 
 -   Summer assessment of this years growth + part of last year's is difficult. Easiest in March - April, before bud-burst,
 
-    -   But then other indicators e.g. \[\[Ground Flora\]\] will be more difficult
+    -   But then other indicators e.g. Ground Flora will be more difficult
 
 # Respondent value functions and weights
 
@@ -112,10 +109,17 @@ filtered_data <- df[df$indicator_name == ind.matcher.df$indicator_name_for_extra
 `r paste(length(unique(filtered_data$respondant_name)))` respondents.
 
 ::: panel-tabset
+#### Standardised weights
+
+```{r std weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weight_standardised")
+
+```
+
 #### Weights
 
 ```{r vf - weights, fig.width= 4, echo = F , results="asis"}
-#| column: page
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 
@@ -142,25 +146,27 @@ Woodland types
 
 -   Upland oak woodlands[^14_herbivore-4]
 
-[^14_herbivore-2]: \[\[Liam Plummer\]\]
+[^14_herbivore-2]: Liam Plummer
 
-[^14_herbivore-3]: \[\[Saul Herbert\]\], \[\[Richard Brown\]\], \[\[Kylie Jones Mattock\]\], \[\[Jim Smith-Wright\]\]
+[^14_herbivore-3]: Saul Herbert, Richard Brown, Kylie Jones Mattock, Jim Smith-Wright, David Venables, Nick Reed-Beale
 
-[^14_herbivore-4]: \[\[Kylie Jones Mattock\]\]
+[^14_herbivore-4]: Kylie Jones Mattock
 
 > Follow up: is herbivore impact thought to be worse here or less impactful?
 
 Spatially patchy[^14_herbivore-5]: often concentrated to the best parts of woodland. Even if it is just these high value areas that are affected , condition should be low[^14_herbivore-6]
 
-[^14_herbivore-5]: \[\[Louise Hackett\]\]
+[^14_herbivore-5]: Louise Hackett
 
-[^14_herbivore-6]: \[\[Hannah Patterson\]\]
+[^14_herbivore-6]: Hannah Patterson
+
+Should also capture grey squirrel bark stripping.
 
 ### Lower priority exceptions
 
 Pulses of herbivory may be beneficial[^14_herbivore-7]
 
-[^14_herbivore-7]: \[\[Jim Smith-Wright\]\]
+[^14_herbivore-7]: Jim Smith-Wright
 
 -   Intermittent heavy browsing could aid veteranisation
 
@@ -170,25 +176,33 @@ Quality of grazing available may impact holding capacity of the land: as e.g. re
 
 [^14_herbivore-8]: Peter Lowe
 
+Landscapes with no herbivore impacts[^14_herbivore-9]
+
+[^14_herbivore-9]: Bob Epsom
+
+> Could have lower importance here
+
 ### Concerns already covered by this or other indicators
 
-Rainforest etc: zero browsing very detrimental to saprophytic and lichen biodiversity
+Rainforest etc: zero browsing very detrimental to saprophytic and lichen biodiversity[^14_herbivore-10]
 
-> Any potentially negative impacts of too little browsing should be captured with other attributes, e.g. Ground flora, canopy cover, age structure, Vertical Structure.
+[^14_herbivore-10]: Oliver Moore, Daniel Aitken
+
+> Any potentially negative impacts of too little browsing should be captured with other attributes, e.g. Ground flora, canopy cover, age structure, Vertical Structure. However, zero herbivory will be an early-warning for this, so should be recorded.
 >
 > -   [ ] follow up with Oliver Moore
 
-Need to include boar/feral pig impact[^14_herbivore-9]
+Need to include boar/feral pig impact[^14_herbivore-11]
 
-[^14_herbivore-9]: \[\[Richard Brown\]\]
+[^14_herbivore-11]: Richard Brown
 
 > Dealt with by trampling/poaching notes?
 
 Trampling may be quickest to change following management
 
-Type of browser is important: Sheep can be very bad (non-native, selective), cattle at right density can be good[^14_herbivore-10]
+Type of browser is important: Sheep can be very bad (non-native, selective), cattle at right density can be good[^14_herbivore-12]
 
-[^14_herbivore-10]: \[\[Martin Hugi\]\]
+[^14_herbivore-12]: Martin Hugi
 
 > Added notes to allow this to be recorded
 
@@ -204,7 +218,7 @@ HIA is part of \[Woodland Grazing Toolbox\](<https://forestry.gov.scot/publicati
 
 Plantlife [Rapid Rainforest Assessment](https://www.plantlife.org.uk/wp-content/uploads/2023/03/Rapid-Rainforest-Assessment-GUIDANCE.pdf) addresses "Good level" of browsing for temperate rainforest
 
-## Woodland Wildlife Toolkit 
+## Woodland Wildlife Toolkit
 
 During woodland walk, note prevalence of significant damage
 

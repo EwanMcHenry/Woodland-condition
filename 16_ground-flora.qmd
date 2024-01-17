@@ -2,7 +2,7 @@
 
 ## Justification
 
-The presence of an appropraite and rich community of ground flora species is a biodiverisity indicator.
+The presence of an appropriate and rich community of ground flora species is a biodiversity indicator.
 
 -   Highlights what is/isn't there and may require management
 
@@ -70,16 +70,22 @@ filtered_data <- df[df$indicator_name == ind.matcher.df$indicator_name_for_extra
 #### Continuous Value function
 
 ```{r vf - continuous, echo = F , results="asis"}
-#| column: page
 
 continuous_vf_fig()
+
+```
+
+#### Standardised weights
+
+```{r std weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weight_standardised")
 
 ```
 
 #### Weights
 
 ```{r vf - weights, fig.width= 4, echo = F , results="asis"}
-#| column: page
 
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 
@@ -100,7 +106,7 @@ VF:
 
 ### Considerations for indicator design
 
-See considerations and challenges in [Native Tree and Shrub Species](08_native_tree_spceis_richness.qmd)[Richness](08_native_tree_spceis_richness.qmd#Challenges)[(N)](08_native_tree_spceis_richness.qmd).
+See considerations and challenges in [Native Tree and Shrub Species Richness(N)](08_native_tree_spceis_richness.qmd).
 
 Reluctance to rely on expert opinion for value function here[^16_ground-flora-1].
 
@@ -110,7 +116,7 @@ Should this indicator be based on identifying species, or more identifying where
 
 Seasonality may make it meaningless. What should be done then?
 
-Should licehns/bryophyes count towards this in e.g. rainforest zone? Oceanic mosses etc - Important for rainforest, but require more training to identify etc - Lower and non-vascular plants
+Should lichens/bryophytes count towards this in e.g. rainforest zone? Oceanic mosses etc - Important for rainforest, but require more training to identify etc - Lower and non-vascular plants
 
 Training requirements RE species identification would be regionally-specific
 
@@ -118,9 +124,9 @@ Should "open habitat" NVC community indicator plants contribute to the condition
 
 ### Priority exceptions
 
-Expected species vary widely by woodland type/region/geology/topographic heterogeneity etc. Condition should relate to the expectation for the site, were it in good condition[^16_ground-flora-2], or introduce bias between site types/geography.
+Expected species vary widely by woodland type/region/geology/soil/topographic heterogeneity/hydrology etc. Condition should relate to the expectation for the site, were it in good condition[^16_ground-flora-2], or introduce bias between site types/geography.
 
-[^16_ground-flora-2]: Louise Hackett
+[^16_ground-flora-2]: Louise Hackett, Bob Epsom, David Venables
 
 -   Could define an "appropriate species list" in a similar way to [Native Tree and Shrub Species Richness(N)](08_native_tree_spceis_richness.qmd).
 
@@ -136,13 +142,17 @@ Expected species vary widely by woodland type/region/geology/topographic heterog
 
 -   Wetwoods[^16_ground-flora-9]
 
+-   Woodpasture[^16_ground-flora-10]
+
 -   Acidic woods - less diversity naturally
 
--   Woodland creation sites[^16_ground-flora-10] -
+-   Woodland creation sites, few woodland species to begin with[^16_ground-flora-11]
 
--   Closed canopy[^16_ground-flora-11] -
+    -   May have high diversity to begin with, with open group species communities that change as woodland develops[^16_ground-flora-12]
 
--   Woodland with high-shading tree spcecies (e.g. hornbeam, beech)[^16_ground-flora-12]
+-   Closed canopy[^16_ground-flora-13] -
+
+-   Woodland with high-shading tree species (e.g. hornbeam, beech)[^16_ground-flora-14]
 
 [^16_ground-flora-3]: <https://database.bsbi.org/checklists.php>
 
@@ -156,49 +166,77 @@ Expected species vary widely by woodland type/region/geology/topographic heterog
 
 [^16_ground-flora-8]: Peter Lowe, Ian Moss
 
-[^16_ground-flora-9]: Liam Plummer
+[^16_ground-flora-9]: Liam Plummer, Sonia Lorenzo-Martin
 
-[^16_ground-flora-10]: Dave Bonsall, Kylie Jones Mattock, Hannah Patterson
+[^16_ground-flora-10]: Bob Epsom
 
-[^16_ground-flora-11]: Dave Bonsall
+[^16_ground-flora-11]: Dave Bonsall, Kylie Jones Mattock, Hannah Patterson, Bob Epsom, Dean Kirkland, Sonia Lorenzo-Martin
 
-[^16_ground-flora-12]: Dave Bonsall
+[^16_ground-flora-12]: David Logan
 
-Different species may have different value, which may vary by habitat type[^16_ground-flora-13].
+[^16_ground-flora-13]: Dave Bonsall
 
-[^16_ground-flora-13]: Alasdair Firth, Louise Hackett
+[^16_ground-flora-14]: Dave Bonsall
+
+Different species may have different value, which may vary by habitat type[^16_ground-flora-15].
+
+[^16_ground-flora-15]: Alasdair Firth, Louise Hackett
 
 -   e.g. ancient woodland plants weight more important, common plants like vaccinium still indicative, but lower score
 
-Woodland Extent interaction: bigger woods expected to have more species expected per unit area[^16_ground-flora-14], although this could be said for most of the indicators (as they indicate better structure, capable of hosting more ground flora species)[^16_ground-flora-15].
+Woodland Extent interaction: bigger woods expected to have more species expected per unit area[^16_ground-flora-16], although this could be said for most of the indicators (as they indicate better structure, capable of hosting more ground flora species)[^16_ground-flora-17].
 
-[^16_ground-flora-14]: Jim Smith-Wright
+[^16_ground-flora-16]: Jim Smith-Wright
 
-[^16_ground-flora-15]: Ewan McHenry
+[^16_ground-flora-17]: Ewan McHenry
 
 Consider building appropriate species lists that are easier to identify.
+
+Historic management[^16_ground-flora-18]
+
+[^16_ground-flora-18]: David Venables
+
+Season[^16_ground-flora-19]
+
+[^16_ground-flora-19]: David Venables
+
+Monocultures- e.g. bluebell carpets suppressing other flora[^16_ground-flora-20]
+
+[^16_ground-flora-20]: Rhiannon Hoy
 
 ### Lower priority exceptions
 
 ### Concerns already covered by this or other indicators
 
-Ancient vs secondary woodland and seedbank/soil condition differences[^16_ground-flora-16]
+Ancient vs secondary woodland and seed bank/soil condition differences[^16_ground-flora-21]
 
-[^16_ground-flora-16]: Dave Bonsall
+[^16_ground-flora-21]: Dave Bonsall
 
-> Here sites with reduced seedbank may just score poorly, potentially leading to management considerations RE translocations.
+> Here sites with reduced seed bank may just score poorly, potentially leading to management considerations RE translocations.
 
-Commercial forestry[^16_ground-flora-17]
+Commercial forestry[^16_ground-flora-22]
 
-[^16_ground-flora-17]: Kylie Jones Mattock
+[^16_ground-flora-22]: Kylie Jones Mattock
 
 > Will just score poorly, prompting explicit trade-off between ecological condition and commercial productivity.
 
-Air and soil quality[^16_ground-flora-18]
+Air and soil quality[^16_ground-flora-23]
 
-[^16_ground-flora-18]: Ian Moss
+[^16_ground-flora-23]: Ian Moss
 
 > This indicator may suggest poor quality in these aspects.
+
+Light conditions[^16_ground-flora-24]
+
+[^16_ground-flora-24]: David Venables, Rhiannon Hoy
+
+> If light is restrictive, this should inform management decisions
+
+Browsing pressure[^16_ground-flora-25]
+
+[^16_ground-flora-25]: David Venables
+
+> If browsing impacting, should inform managment
 
 # Other approaches
 

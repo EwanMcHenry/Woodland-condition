@@ -27,6 +27,7 @@ forms.direct <- "Data\\Delphi round 1\\response sheets\\"
 extraction.location <- "Data\\Delphi round 1\\"
 
 ```
+
 Expert opinion on the value function and weighting for each indicator was elicited using the Delphi method.
 
 ## The Delphi method

@@ -50,7 +50,7 @@ ind.table <- ind.matcher.df [,1:2]
 ind.table$diff <- c(1, 1, 1, 2, 1, 
                     1, 1, 2, 1, 1,
                     1, 3, 2, 3)
-names(ind.table) <- c("Indicator", "Description", "Difficulty of measurement")
+names(ind.table) <- c("Indicator", "Description", "Difficulty of indicator design")
 
 ind.table %>% 
    datatable(extensions = c('FixedColumns',"FixedHeader"),
@@ -72,35 +72,33 @@ ind.table %>%
 
 ## Calculating WEC from indicator measurements {#sec-ind_calc_approach}
 
-**Indicator condition scores** at sites/plots will be calculated from their measurements by applying **value functions** (descriptions of "what good looks like" ) and **importance weightings**. All individual **indicator condition scores** will then be aggregated to give an overall **site condition score**.
+**Indicator condition scores** at sites/plots will be calculated from their measurements (1) by applying **value functions** (descriptions of "what good looks like" ) and **importance weightings** (2). All individual **indicator condition scores** (3) will then be aggregated (4) to give an overall **site condition score**.
 
-![](_book/Figs/indicator_measure_to_values.png){fig-align="center" width="6in"}
+Site condition scores can be compared against **thresholds** (5) to assign a **favorability status** to each site, plot or indicator (this can also be done for **indicator condition scores**).
 
-Site condition scores can be compared against **thresholds** to assign a **favorability status** to each site, plot or indicator (this can also be done for **indicator condition scores**).
+![](images/General approach combo.excalidraw.png)
 
--   Site- and plot-level favorability statuses can be used to evidence statements such as "60% of our sites are in favorable ecological condition".
+Site/plot-level favorability statuses can support statements such as "60% of our sites are in favorable ecological condition".
 
--   Indicator-level favourability statuses can support statements such as "60% of sites are favorable for tree age distribution, while only 20% have favorable deadwood"
+Indicator-level favourability statuses can support statements such as "60% of sites are favorable for tree age distribution, while only 20% have favorable deadwood"
 
-![Indicator score will be aggregated to a site/plot condition score, which will be used to assign favourability status](_book/Figs/aggregate_thresholds.png){fig-align="center" width="6in"}
+The condition scores allow small changes/differences to be tracked through time and between sites, even when favorability status does not change. This provides an early-warnign/indicator of change, while supporting statements such as "90% of the woods in our care have improved in condition in the last five years".
 
-The benefit of including condition score as well as status is that allows us to track small changes through time and between sites, even when it's favorability status category does not change. This allows us to evidence statements such as "90% of the woods in our care have improved in condition in the last five years".
-
-![A continuous condition score allows small improvements in condition to be tracked, even when there a favourability classification does not change](_book/Figs/favorability%20through%20time.png){fig-align="center" width="6in"}
+![A continuous condition score allows small improvements in condition to be tracked, even when there a favourability classification does not change](images/Pasted%20image%2020231010102517.png){fig-align="center" width="450"}
 
 ### Assigning favourability status thresholds
 
 The decision of which initial thresholds to set should ideally be deferred until data has been collected for more than *c.* 20 sites (*c.* 50 preferred) of different types. This would allow thresholds to be calibrated using real sites, and made context-specific where appropriate (e.g. by assigning different thresholds based on attributes such as woodland age).
 
-## Value functions and weightings {sec-value_functions_and_weightings}
+## Value functions and weightings {#sec-value_functions_and_weightings}
 
-Value functions and weightings are quantitative descriptions of how woodland ecological condition relates to indicator measurements. Their reliability is crucial, as they will fundamentally define what "Good" ecological condition is, as we understand it. They must therefore be based on reliable ecological evidence and be open to scrutiny/adaptation[^01_general-approach-1]. Here, they will be estimated through a synthesis of systematically collected expert opinion (using a Delphi method) and published evidence (peer reviewed and grey literature).
+Value functions and weightings are quantitative descriptions of what woodland ecological condition is, insofar as it relates to indicator measurements. Their reliability is crucial, as they will fundamentally define what "Good" ecological condition is, as we understand it. They must therefore be based on reliable ecological evidence and be open to scrutiny/adaptation[^01_general-approach-1]. Here, they will initially be established through a synthesis of systematically collected expert opinion (using a Delphi method) and published evidence (peer reviewed and grey literature). They should however, undergo periodic review.
 
 [^01_general-approach-1]: Note that as long as indicator measurement methods are consistent/comparable, adapting weightings/value functions in light of new evidence and retrospectively recalculating condition scores will be relatively simple
 
 ### Weightings: How important each indicator is
 
-Weightings describe the importance of indicators to ecological condition, relative to each other. For example, if deadwood was considered twice as important as horizontal complexity, these indicators might have weightings of 100 and 50, respectively (on a scale of 0 - 100).
+Weightings quantify the importance of indicators to ecological condition, relative to each other. For example, if deadwood was considered twice as important as horizontal complexity, these indicators might have weightings of 100 and 50, respectively (on a scale of 0 - 100).
 
 Note: The NFI WEC and the Woodland Wildlife Toolkit do not explicitly use weightings (thus all indicators are equally weighted). Failure to use indicators has been identified as one of the ten common mistakes in designing biodiversity indicators for forest policy[@failing2003].
 
@@ -108,31 +106,31 @@ Note: The NFI WEC and the Woodland Wildlife Toolkit do not explicitly use weight
 
 **Value functions describe the shape of the relationship between indicator measurements and ecological condition** (when all else is equal).
 
-Value functions can be continuous or categorical (e.g. Low, medium, high), but categories must have relative values assigned to them (e.g. 0, 30, 100).
+They can be continuous or categorical (e.g. Low, medium, high), but categories must have values assigned to them (e.g. 0, 30, 100).
 
-![](_book/Figs/categorical%20and%20continuous%20vfs.png){fig-align="center" width="6in"}
+![](images/Woodland%20Condition%20Assessment%20project%202023-10-10%2011.15.31.excalidraw.png){fig-align="center" width="500"}
 
-Value functions can be as complex as is needed (but ideally not more so) e.g:
+They can be as complex as is needed (but ideally not more so) e.g:
 
 -   Value may change more quickly over some parts of an indicator's range, or reach a maximum/minimum beyond which no further significant change occurs.
 
-    ![](_book/Figs/continuous%20vf01.png){fig-align="center" width="3in"}
+    ![](images/Woodland%20Condition%20Assessment%20project%202023-10-10%2015.15.13.excalidraw.png){fig-align="center" width="250"}
 
 -   An optimum may exist for an indicator, where extremely high or low measurements indicate reduced value.
 
-    ![](_book/Figs/continuous%20vf02.png){fig-align="center" width="3in"}
+    ![](images/Woodland%20Condition%20Assessment%20project%202023-10-10%2011.27.54.excalidraw.png){fig-align="center" width="250"}
 
 -   Value may be context dependent
 
-    ![](_book/Figs/continuous%20vf03.png){fig-align="center" width="6in"}
+    ![](images/Woodland%20Condition%20Assessment%20project%202023-10-10%2011.31.26.excalidraw.png){fig-align="center" width="500"}
 
 Value could also relate to the diversity between measurements (e.g. Variation in canopy height between plots within a site).
 
-Note: Improvement beyond an indicator's maximum ecological value is theoretically possible (in terms of biodiversity), but beyond the conservation management tools and decision making at our disposal.
+Note: Improvement beyond an indicator's maximum ecological value can be theoretically possible (in terms of biodiversity), but beyond the conservation management tools and decision making at our disposal.
 
 # Toy Example
 
-Here we will calculate condition for two simplified woodlands, that only consider two indicators (Tree Size Distribution and Canopy nativeness), exploring the impact of a few different scenarios of weightings and value functions. Condition score is calculated in each case, out of a maximum of 200 (100 for each of 2 indicators), and re-scaled to be out of 100. The real condition score will be calculated in a very similar way, but with 14 indicators.
+Here we will calculate condition for two simplified woodlands, that only consider two indicators (Tree Size Distribution and Canopy nativeness), exploring the impact of a few different scenarios of weightings and value functions. Condition score is calculated in each case, out of a maximum of 200 (100 for each of 2 indicators), and re-scaled to be out of 100 (for communication). The real condition score will be calculated in a very similar way, but with 14 indicators.
 
 Woodland 1 (red) has: 100% native canopy and only 2 age classes present.
 
@@ -142,17 +140,19 @@ Woodland 2 (black) has: 50% native canopy and 3 age classes present.
 
 ### Scenario 1
 
+Here the value function for canopy nativness means that both woods score highly for that indicator, and it is the most important. Although there are different scores for age class, this doesn't affect the overall condition score much. Both woods end up with very similar condition scores.
+
 ![](images/toy%20-s%2001.png)
 
 ### Scenario 2: changed value function
 
-More native canopy needed for "good" condition for that indicator
+Now more native canopy needed for "good" condition for that indicator, but it remains very important. As a result the condition score for woodland 2 is now much lower than for woodland 1.
 
 ![](images/toy%20-s%2002.png)
 
 ### Scenario 3: changed weights
 
-Valuing age class diversity more than canopy nativeness, and reducing the difference in importance between them.
+Here the weights have changed so that age class diversity is more important than canopy nativeness, but not by as much. Woodland 1 is still the highest scoring (it has a much higher score for canopy nativness), but its lower age class diversity is having a bigger impact here. Woodland 2's score has increased a lot, because its better age class diversity is considered more important.
 
 ![](images/toy%20-s%2003.png)
 

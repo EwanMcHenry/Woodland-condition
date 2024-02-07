@@ -11,8 +11,6 @@ book:
   chapters:
     - index.qmd
     - 01_general approach.qmd
-    - 02_methods.qmd
-    - 04_Importance weightings.qmd
     - 05_ind_tree_age.qmd
     - 06_canopy_nativness.qmd
     - 07_vert_struct.qmd
@@ -27,6 +25,8 @@ book:
     - 16_ground-flora.qmd
     - 17_horizontal-complexity.qmd
     - 18_anthro-damage.qmd
+    - 04_Importance weightings.qmd
+    - 02_methods.qmd
 
 number-depth: 0
 
@@ -38,8 +38,9 @@ format:
     fig-width: 6
     fig-asp: 0.618
     reference-location: margin
-
-
+    anchor-sections: true
+    embed-resources: FALSE
+    
   pdf:
     documentclass: scrreprt
 
@@ -51,3 +52,6 @@ execute:
 
 css: style.css
 
+comments:
+  hypothesis: 
+    theme: clean

@@ -52,13 +52,13 @@ respondant_colours <- glasbey.colors(nlevels(respondants_with_something)+1)[-1] 
 
 ```
 
-A lot of the figures in this book are interactive. You can hover to get more info, and for some you can filter out different data etc.
+A lot of the figures and tables in this book are interactive, you can often hover to get more info, click to filter/sort different data etc. Please get in touch if any sections need clarification, if you notice any bugs or errors, or have any other feedback that might improve the doc ([EwanMcHenry\@woodlandtrust.org.uk](mailto:EwanMchenry@woodlandtrust.org.uk)).
 
-The book explores `r has_completed$indicator_name %>% unique() %>% length()` indicators of woodland ecological condition: their effective measurement and how those measurements might be used to assess the ecological condition of a woodland site, based upon evidence from the literature and the expert opinion, gathered from Woodland Trust staff.
+The book explores `r has_completed$indicator_name %>% unique() %>% length()` indicators of woodland ecological condition: how they can be measured and used to assess the ecological condition of woodland sites, based on a structured synthesis of evidence from the literature and the expert opinion of professional woodland conservationists.
 
-The proposed method takes inspiration from many existing international projects that use woodland structural indicators to assess the ecological condition of sites and provide evidence across national scales to inform management and policy.
+The proposed framework takes inspiration from many existing projects internationally that inform management and policy through an assessment of ecological condition at different scales, measured using structural indicators.
 
-### Book structure
+## Book structure
 
 1.  [Introduction (this page)](index.qmd)
 
@@ -80,7 +80,7 @@ The proposed method takes inspiration from many existing international projects 
 
 ## A Definition
 
-> **Woodland ecological condition (WEC)**: The potential for a woodland site - in its current state - to sustain biodiverse, dynamic and well-functioning species communities (i.e. ignoring time-lags in wildlife species colonisation).
+> **Woodland ecological condition (WEC)**: The potential for a woodland site - in its current structural state - to sustain biodiverse, dynamic and well-functioning species communities (i.e. ignoring time-lags in wildlife species colonisation).
 
 ## Why measure WEC?
 

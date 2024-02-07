@@ -1,44 +1,20 @@
 # Species richness: native trees & shrubs
 
-## Justification
-
-More tree species typically reflect greater niche space and resilience to pests/disease.
-
-## Measuring
-
-Record the Native tree species species present.
-
-> For the condition score, that list of species should then be compared to a list of appropriate native tree species for that site (ideally pre-defined automatically). This comparison could be a simple proportion (e.g. 70% of site-appropriate species occupied the site), or could potentially be much more complex functions that might consider different weightings for species present based on considerations such as:
->
-> -   Rarity and contribution to landscape-scale biodiversity (e.g. [Beta diversity](https://methodsblog.com/2015/05/27/beta_diversity/))
->
-> -   Dispersal ability (potentially weighting pioneer species and long-distance dispersers less)
->
-> -   Varying degrees of "site appropriateness", however that is defined.
-
-## Challenges {#sec-tree-sr-chalenges}
-
-### Site-appropriateness
-
-A list of site-appropriate species should be defined prior to surveying in a way that is objective and fully repeatable. Ideally this would be automatic. This list could relate to:
-
--   NVC type or native species predicted at the site by Forest Research's [Ecological Site Classification model (ESC)](https://www.forestresearch.gov.uk/tools-and-resources/fthr/ecological-site-classification/)
-
--   Historic management, disease and site objectives (e.g. if there is an objective to manage for a specific habitat type) etc.
-
-### Detectability of species
-
-Even if an appropriate species is present at a site, we cannot expect to detect it perfectly within every plot. There is always a risk that one or more species is missed, regardless of whether we use survey plots or woodland walks. This risk should be acknowledged and accounted for. If our sampling design uses random representative, replicated plots it will allow us to do this by using well-established ecological methods ( I suggest [Occupancy Modelling techniques](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6362448/#:~:text=Multispecies%20occupancy%20models%20can%20estimate,while%20accounting%20for%20imperfect%20detection.) ideally, or [Species Accumulation Curves](https://en.wikipedia.org/wiki/Species_discovery_curve)).
-
-Plot size, sampling effort etc will affect detection probability and the number of species expected to be recorded, even if they are present at the site. Available habitat area surrounding a plot will also influence the number of species expected to occupy it, but this effect is distinct from the impact of sampling-area on the number of species **detected** [@matthews2016].
-
-# Respondent value functions and weights
-
 ```{r load curated data, echo = F, include = F, eval = T }
+library(knitr)
+library(kableExtra)
+
 extraction.location <- "Data\\Delphi round 1\\"
 load(paste0(extraction.location,"curated.RData"))
 ```
 
+```{=html}
+<style type="text/css">
+caption, .table-caption {
+  text-align: left;
+}
+</style>
+```
 ```{r libraries_data, echo = F, include = F, eval = T }
 
 # LIBARIES ---------------------------------------------------------------
@@ -65,7 +41,82 @@ extraction.location <- "Data\\Delphi round 1\\"
 
 ```
 
-###  {.tabset .tabset-fade .tabset-pills}
+## Justification
+
+More tree species typically reflect greater niche space and resilience to pests/disease and climate change.
+
+## Measuring
+
+Record a list the native tree species within each plot. Additional species detected during woodland walk should also be recorded.
+
+Plot lists will be automatically compared to a list of site-appropriate species, and the proportion of appropriate species present will be calculated. Site-appropriate species will be pre-defined, initially based on The Woodland Trust's Tree Species Handbook [@hotchkissalastair] (See @tbl-approp_spp).
+
+> **Alternative:** Instead of a simple proportion (i.e. "70% of site-appropriate species occupied the site"), apply different weightings to species to reflect their desirability, potentially based on:
+>
+> -   Rarity and contribution to landscape-scale biodiversity (e.g. [Beta diversity](https://methodsblog.com/2015/05/27/beta_diversity/)).
+>
+> -   Functional redundancy (weighting species higher that fulfill ecological functions not well-represented in the community)
+>
+> -   Dispersal ability (weighting pioneer species and long-distance dispersers less).
+>
+> -   Other descriptions "site appropriateness", however that is defined.
+
+## Challenge: dealing with species detectability
+
+Even if species are present at a site, their detection cannot be guaranteed. There is always a risk that one or more species is missed, regardless of using survey plots or woodland walks. This risk will vary depending on many factors (e.g. time spent searching, area searched, surveyor skill etc.), which - if unaccounted for - will bias results in a way that has no ecological relevance. Raw (also called "naive") species richness estimates are well-understood to be frequently biased in this way [@mackenzie2005]. Even ecological factors can influence detectability in a way that might lead to suprious naive species richness estimates. For example, more habitat area is well understood to increase species richness[@matthews2016], but smaller sites are often surveyed with greater intensity (similar effort over a smaller area). This may mean a greater proportion of species present are detected at smaller sites, erroneously inflating their condition score, compared to larger sites.
+
+Fortuneatly, the toolbox of modern ecologists contains sampling and analytically methods to account for this bias. Well-established methods include [Occupancy Modelling techniques](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6362448/#:~:text=Multispecies%20occupancy%20models%20can%20estimate,while%20accounting%20for%20imperfect%20detection.) , or [Species Accumulation Curves](https://en.wikipedia.org/wiki/Species_discovery_curve). Replication of surveys is a nesseary requirement for these methods, and - at least partially - randomised, representative survey locations are highly advised.
+
+> It may be appropriate to add a number of additional "sub-"plots where only tree species are recorded (I advise two within 20-30m of main plots in a random directions).
+
+An analysis pipeline could be set up to automatically estimate "true" species richness of a site/sub-compartment/zone, along with associated uncertainty around that estimate.
+
+## Appropriate species list
+
+The Tree Species Handbook[@hotchkissalastair], includes lists of tree species deemed appropriate for 18 separate woodland communities, divided according to broad descriptions of site characteristics and structural components (grove, open wooded habitats and glade). These lists were intended to support the establishment of locally appropriate and distinctive woods and trees without constraining this to specific National Vegetation Classification (NVC) communities.
+
+> **Alternative species lists sources:**
+>
+> -   NVC type[@whitbreada.m.1992]
+>
+> -   Native species predicted at the site by Forest Research's [Ecological Site Classification model (ESC)](https://www.forestresearch.gov.uk/tools-and-resources/fthr/ecological-site-classification/)
+>
+> <!-- -->
+>
+> -   Expert-expectations based on historic management, disease and site objectives (e.g. if there is an objective to manage for a specific habitat type) etc.
+
+```{r }
+#| tbl-cap: "Numbers of appropriate species for different habitat types and structures. **Interactive tooltip**: hover over number of species to show list. Local/additional species may be appropriate, depending on region and site."
+#| label: tbl-approp_spp
+
+
+
+# Extract relevant columns for the table
+table_data <- data.frame(habitat = tree_spp_list$habitat, 
+                         structure = tree_spp_list$structure, 
+                         tree_spp_length = tree_spp_list$tree_spp_length, 
+                         local_tree_spp_length = tree_spp_list$local_tree_spp_length)
+# create a vector of tree species for each row. Each element is a paste of the list of tree species.
+table_data$tree_spp <- sapply(tree_spp_list$tree_spp, paste, collapse = ", ")
+table_data$local_tree_spp <- sapply(tree_spp_list$local_tree_spp, paste, collapse = ", ")
+
+# Create a table with kableExtra for interactivity
+table_data %>%
+  mutate(tree_spp_length = text_spec(tree_spp_length, "html", tooltip = tree_spp),
+         local_tree_spp_length = text_spec(local_tree_spp_length, "html", tooltip = local_tree_spp)) %>% 
+  select(habitat, structure, tree_spp_length, local_tree_spp_length) %>%
+  rename("Habitat" = habitat,
+         "Structure" = structure,
+         "Core native tree species" = tree_spp_length,
+         "Local/additional tree species" = local_tree_spp_length
+         ) %>% 
+  kable("html", escape=F) %>% 
+  kable_styling("striped", full_width = FALSE)
+
+
+```
+
+# Respondent value functions and weights
 
 ```{r vf Canopy Nativness - init, echo = F , results="asis"}
 

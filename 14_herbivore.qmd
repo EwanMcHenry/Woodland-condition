@@ -12,7 +12,9 @@ High herbivore impact is damaging for most woods[^14_herbivore-1].
 
 **Herbivore Impact Assessment SUPERLITE**:
 
--   A 3 min (timed) HIA, focusing on saplings (0.05 - 2 m), basal shoots (\<2m) and vascular plants
+-   A 3 min (timed) HIA
+
+-   Focusing on saplings (0.05 - 2 m), basal shoots (\<2m) and vascular plants
 
 -   Estimate the percentage of the last 12 months potential growth removed by herbivory
 
@@ -22,35 +24,25 @@ High herbivore impact is damaging for most woods[^14_herbivore-1].
 
 Notes
 
--   Focus on canopy gaps, edge etc, within or close to plot (more potential for saplings)
-
--   Avoid herbivore-inaccessible parts (e.g. Cliff edges)
+-   Focus on canopy gaps, edge etc, within or close to plot (more potential for saplings), avoid herbivore-inaccessible parts (e.g. Cliff edges).
 
 -   Do not consider historic browsing \> 12 months ago
 
 -   May help to tally frequency of different herbivory levels by tree/plant species
 
+-   This indicator focuses on the negative aspects of herbivory, the positive aspects of appropriate levels should be captured by other indicators (e.g. horizontal complexity), although where herbivory is absent this should be noted and may provide an early warning of an issue requiring management.
+
 Tick boxes on: - Visible browse line - Poaching/trampling - Significant deer trails - Fenced status, with note on extent at site
 
 Notes on status of fence, type of grazer, grazing history (if known) etc.
 
-![](images/Herbivore%20Imapct%202023-11-14%2015.44.46.excalidraw.png)
+## Example form
 
-This information will then be used to categorise the level of herbivore impact
+![](images/Herbivore%20Imapct%202023-11-14%2015.44.46.excalidraw.png){width="600"}
 
-![](images/Herbivore%20Imapct%202023-11-06%2016.22.12.excalidraw.png)
+## Calculating condition score
 
-## Challenges
-
-Seasonality
-
--   Bracken can obscure browse line
-
--   Herbivore impact is very patchy in summer, largest impacts happen in winter, when food supply is limited
-
--   Summer assessment of this years growth + part of last year's is difficult. Easiest in March - April, before bud-burst,
-
-    -   But then other indicators e.g. Ground Flora will be more difficult
+![Herbivory measurement will be used to categorise the level of herbivore impact. Condition score will relate to this category (using the value function)](images/Herbivore%20Imapct%202023-11-06%2016.22.12.excalidraw.png){width="500"}
 
 # Respondent value functions and weights
 
@@ -135,6 +127,16 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 Should be tested on sites across the herbivory impact gradient
 
 Will require training: video with e.g. clips from different seasons would be useful
+
+Seasonality
+
+-   Bracken can obscure browse line
+
+-   Herbivore impact is very patchy in summer, largest impacts happen in winter, when food supply is limited
+
+-   Summer assessment of this years growth + part of last year's is difficult. Easiest in March - April, before bud-burst,
+
+    -   But then other indicators e.g. Ground Flora will be more difficult
 
 ### Priority exceptions
 

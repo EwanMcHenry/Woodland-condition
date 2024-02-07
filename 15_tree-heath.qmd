@@ -130,7 +130,7 @@ Low amounts could break up a single-species stand to increase structural complex
 
 [^15_tree-heath-5]: Dave Bonsall, David Venables
 
-> This may be best dealt with via indicators that directly capture those aspects.
+> This may be best dealt with via indicators that directly capture those aspects (e.g. [Horizontal complexity](17_horizontal-complexity.qmd)).
 
 Potential conflict with deadwood[^15_tree-heath-6] and nutrient cycling[^15_tree-heath-7]. Tree mortality may be particularly important where deadwood is scarce[^15_tree-heath-8]
 

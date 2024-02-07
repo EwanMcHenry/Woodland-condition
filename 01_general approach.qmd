@@ -76,7 +76,7 @@ ind.table %>%
 
 Site condition scores can be compared against **thresholds** (5) to assign a **favorability status** to each site, plot or indicator (this can also be done for **indicator condition scores**).
 
-![](images/General approach combo.excalidraw.png)
+![](images/General%20approach%20combo.excalidraw.png)
 
 Site/plot-level favorability statuses can support statements such as "60% of our sites are in favorable ecological condition".
 
@@ -130,7 +130,9 @@ Note: Improvement beyond an indicator's maximum ecological value can be theoreti
 
 # Toy Example
 
-Here we will calculate condition for two simplified woodlands, that only consider two indicators (Tree Size Distribution and Canopy nativeness), exploring the impact of a few different scenarios of weightings and value functions. Condition score is calculated in each case, out of a maximum of 200 (100 for each of 2 indicators), and re-scaled to be out of 100 (for communication). The real condition score will be calculated in a very similar way, but with 14 indicators.
+Here we will calculate condition for two simplified woodlands, that only consider two indicators (Tree Size Distribution and Canopy nativeness), exploring the impact of a few different scenarios of weightings and value functions. Condition score is calculated in each case[^01_general-approach-2], and re-scaled to be out of 100 (for communication). The real condition score will be calculated in a very similar way, but with 14 indicators.
+
+[^01_general-approach-2]: Out of a maximum of the sum of all weights. i.e. with weights of 100 for native canopy and 50 for age distribution the maximum score would be 150 (100 + 50).
 
 Woodland 1 (red) has: 100% native canopy and only 2 age classes present.
 

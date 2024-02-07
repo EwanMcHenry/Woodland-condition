@@ -1,4 +1,4 @@
-# Canopy nattiness
+# Invasives
 
 ## Justification
 
@@ -6,7 +6,7 @@ Invasive species negatively impact biodiversity.
 
 ## Measuring
 
-DOMIN/percentage cover for plots for each invasive present.
+DOMIN/percentage cover for plots for each invasive present and all invasives combined.
 
 Note maximum height of Cherry laurel or Rhododendron ponticum if present.
 
@@ -16,7 +16,13 @@ Note invasive tree regeneration (e.g. Western hemlock)[^09_invasives-1]
 
 Note detection/non detection of other invasives during woodland walk, ideally mapping their location, and nearby records from e.g. NBN.
 
-> Indicator will automatically score 0 if high priority invasives are present
+## Example form
+
+![](images/Invasive%20form%202024-01-22%2012.15.53.excalidraw.png)
+
+## Calculating condition score
+
+![Indicator will automatically score 0 if high priority invasives are present](images/invasive%20flow%202024-01-22%2012.51.49.excalidraw.png){width="600"}
 
 # Respondent value functions and weights
 

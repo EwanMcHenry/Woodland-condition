@@ -1,5 +1,9 @@
 # Vertical structure
 
+## Note to round 2 respondents
+
+Your excel form may only go 1-4 layers, but please **use a full 1-5 range**.
+
 ## Justification
 
 Greater vertical complexity provides a greater range of resources/niches[^07_vert_struct-1]
@@ -8,9 +12,11 @@ Greater vertical complexity provides a greater range of resources/niches[^07_ver
 
 ## Measuring
 
-Tick box for presence of canopy cover at each height class.
+Record presence of canopy cover at each height band, along with DOMIN cover class (to capture management-relevant nuance and allow a diversity metrics to be calculated).
 
-> Alternative: percentage cover or DOMIN score at each height band. This would capture more management-relevant nuance and allow a diversity metrics to be calculated.
+::: column-margin
+![](images/DOMIN%20cover-abundance%20scale%202023-11-10%2019.53.50.excalidraw.png)
+:::
 
 ![](images/Vertical%20Structure%202023-11-13%2016.26.19.excalidraw.png)
 
@@ -23,16 +29,24 @@ Suggested height bands:
 
 -   5-10 m
 
--   Shrub layer (2-5m): 3m suggested by Peter Lowe
+-   Shrub layer (2-5m)[^07_vert_struct-2]
 
--   Field layer 0.4- 2 m (containing tall shrubs and low shrubs)
+-   Field layer 0.4- 2 m (tall and low shrubs)
 
 -   Ground layer
 
 -   Open habitat (Canopy absent above 2 m)
 :::
 
-Note - Should use the same height classes as Horizontal Complexity
+[^07_vert_struct-2]: 3 - 5m suggested by Peter Lowe
+
+> Note
+>
+> -   Should use the same height bands as [horizontal complexity](17_horizontal-complexity.qmd).
+>
+> -   Some confusion around layering, i.e. continuous complex canopy is not one layer, but present through all height strata[^07_vert_struct-3]
+
+[^07_vert_struct-3]: Peter Lowe, Alasdair Firth
 
 # Respondent value functions and weights
 
@@ -81,6 +95,14 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 `r paste(length(unique(filtered_data$respondant_name)))` respondents.
 
 ::: panel-tabset
+#### Continuous Value function
+
+```{r vf - continuous, echo = F , results="asis"}
+
+continuous_vf_fig()
+
+```
+
 #### Categorised value function
 
 ```{r vf Tree age size distribution - categorical, echo = F , results="asis"}
@@ -96,11 +118,11 @@ knitr::kable()
 
 ```
 
-#### Continuous Value function
+#### Weights
 
-```{r vf - continuous, echo = F , results="asis"}
+```{r vf - weights, fig.width= 4, echo = F , results="asis"}
 
-continuous_vf_fig()
+ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ```
 
@@ -112,112 +134,90 @@ ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weigh
 
 ```
 
-#### Weights
-
-```{r vf - weights, fig.width= 4, echo = F , results="asis"}
-
-ggplot_resp_weight_ind(indicator_name = indicator_name)
-
-```
+Weights, standardised so that all respondents varied the same amount
 :::
-
-### Comments on data
-
-VFs:
-
--   Good general agreement - may re-consider 2 and 3 layers value
-
--   Note that the form included a "0" canopy layers option, which is meaningless
-
-Weights:
-
--   Most think middling importance - a few think among most important, a few least important
 
 # Respondent comments
 
 ### Considerations for indicator design
 
-What is a "Layer"? Need to overcome confusion around distinctiveness of layering, i.e. One continuous complex layer present through all height strata is not one layer [^07_vert_struct-2]
+What if a plot lands in a glade?[^07_vert_struct-4]
 
-[^07_vert_struct-2]: Peter Lowe, Alasdair Firth
-
-What if a plot lands in a glade?[^07_vert_struct-3]
-
-[^07_vert_struct-3]: Peter Lowe
+[^07_vert_struct-4]: Peter Lowe
 
 ### Priority exceptions
 
 Woodland type:
 
--   Creation sites/ young woods[^07_vert_struct-4]:
+-   Creation sites/ young woods[^07_vert_struct-5]:
 
-    -   Unlikely to have more than one or two layers[^07_vert_struct-5]
+    -   Unlikely to have more than one or two layers[^07_vert_struct-6]
 
-    -   Can still aim to maximise in woodland creation, e.g. by mixing scrub, trees, variable sward. Could remove upper categories for younger woods[^07_vert_struct-6]
+    -   Can still aim to maximise in woodland creation, e.g. by mixing scrub, trees, variable sward. Could remove upper categories for younger woods[^07_vert_struct-7]
 
--   Rainforest: Dense continuous canopy could be bad for lichens and bryophytes[^07_vert_struct-7]
+-   Rainforest: Dense continuous canopy could be bad for lichens and bryophytes[^07_vert_struct-8]
 
-[^07_vert_struct-4]: David Logan
+[^07_vert_struct-5]: David Logan
 
-[^07_vert_struct-5]: Chris Reid, Ian Moss, Kylie Jones Mattock, Sonia Lorenzo-Martin
+[^07_vert_struct-6]: Chris Reid, Ian Moss, Kylie Jones Mattock, Sonia Lorenzo-Martin
 
-[^07_vert_struct-6]: Saul Herbert
+[^07_vert_struct-7]: Saul Herbert
 
-[^07_vert_struct-7]: Peter Lowe, Adam Thorogood
+[^07_vert_struct-8]: Peter Lowe, Adam Thorogood
 
 > This will require careful thought, and may mean that condition drops off with increasing complexity (after a point) in those sites
 
--   Montane & upland: limited by wind/ severe conditions[^07_vert_struct-8], may only develop two layers[^07_vert_struct-9]. Coastal exposed sites similar[^07_vert_struct-10].
+-   Montane & upland: limited by wind/ severe conditions[^07_vert_struct-9], may only develop two layers[^07_vert_struct-10]. Coastal exposed sites similar[^07_vert_struct-11].
 
-[^07_vert_struct-8]: Chris Reid, Kylie Jones Mattock, Bob Epsom, David Venables
+[^07_vert_struct-9]: Chris Reid, Kylie Jones Mattock, Bob Epsom, David Venables
 
-[^07_vert_struct-9]: Ian Moss
+[^07_vert_struct-10]: Ian Moss
 
-[^07_vert_struct-10]: Bob Epsom
+[^07_vert_struct-11]: Bob Epsom
 
 > Does that mean that two is "good", or that it is just hard to get to "good" in this context?
 
--   Wood pasture/ffridd: often has simple structure[^07_vert_struct-11]
+-   Wood pasture/ffridd: often has simple structure[^07_vert_struct-12]
 
-[^07_vert_struct-11]: Peter Lowe, Kylie Jones Mattock, David Logan, Dean Kirkland, Karen Hornigold, Sonia Lorenzo-Martin
+[^07_vert_struct-12]: Peter Lowe, Kylie Jones Mattock, David Logan, Dean Kirkland, Karen Hornigold, Sonia Lorenzo-Martin
 
 > Does this mean that there is a different relationship between condition and vertical structure? Or are those sites with simple structure just not in as good condition?
 >
 > Could consider lower weighting for this context.
 
--   Atlantic oak: can have poor structure, but still have regeneration (two classes with no intermediate classes)[^07_vert_struct-12]
+-   Atlantic oak: can have poor structure, but still have regeneration (two classes with no intermediate classes)[^07_vert_struct-13]
 
-[^07_vert_struct-12]: Richard Brown
+[^07_vert_struct-13]: Richard Brown
 
 > This may simply imply poor structure?
 
--   Coppices: vertical structure is at between-coupe scale[^07_vert_struct-13]
+-   Coppices: vertical structure is at between-coupe scale[^07_vert_struct-14]
 
--   Scrub thicket habitat[^07_vert_struct-14]
+-   Scrub thicket habitat[^07_vert_struct-15]
 
--   Wetwood[^07_vert_struct-15]
+-   Wetwood[^07_vert_struct-16]
 
-[^07_vert_struct-13]: Peter Lowe
+[^07_vert_struct-14]: Peter Lowe
 
-[^07_vert_struct-14]: Jim Smith-Wright
-
-[^07_vert_struct-15]: Sonia Lorenzo-Martin
-
-Where only upper and lower are present, e.g. with recruitment lost to herbivory[^07_vert_struct-16]
+[^07_vert_struct-15]: Jim Smith-Wright
 
 [^07_vert_struct-16]: Sonia Lorenzo-Martin
 
-Scale - more important in smaller woods[^07_vert_struct-17]
+Where only upper and lower are present, e.g. with recruitment lost to herbivory[^07_vert_struct-17]
 
-[^07_vert_struct-17]: Liam Plummer
+[^07_vert_struct-17]: Sonia Lorenzo-Martin
 
-> This may be related to the scale that vertical structure is measured at[^07_vert_struct-18]
+Scale - more important in smaller woods[^07_vert_struct-18]
 
-[^07_vert_struct-18]: Ewan McHenry
+[^07_vert_struct-18]: Liam Plummer
 
-Where a layer may only be represented by non-native[^07_vert_struct-19]
+> This may be related to the scale that vertical structure is measured at[^07_vert_struct-19]
 
-[^07_vert_struct-19]: Alasdair Firth
+[^07_vert_struct-19]: Ewan McHenry
+
+Where a layer may only be represented by non-native[^07_vert_struct-20]
+
+[^07_vert_struct-20]: Alasdair Firth
 
 > Ideally noted in native-occupancy indicator, but still unsure as to how to properly deal with it in terms of contribution to condition.
 
@@ -225,21 +225,21 @@ Landscape scale: e.g. high dense groves with little structure may be rare in the
 
 ### Lower priority exceptions
 
-Wildlife species: some species may depend on simple structure (e.g. pied flycatcher)[^07_vert_struct-20]
+Wildlife species: some species may depend on simple structure (e.g. pied flycatcher)[^07_vert_struct-21]
 
-[^07_vert_struct-20]: Peter Lowe
+[^07_vert_struct-21]: Peter Lowe
 
-Topography[^07_vert_struct-21]
+Topography[^07_vert_struct-22]
 
-[^07_vert_struct-21]: David Venables
+[^07_vert_struct-22]: David Venables
 
 > More variation expected in more rugged sites?
 
 ### Concerns already covered by this or other indicators
 
-Frequency and diversity is important, a single tree with canopy at all heights is not the same as varying complexity of structure[^07_vert_struct-22]
+Frequency and diversity is important, a single tree with canopy at all heights is not the same as varying complexity of structure[^07_vert_struct-23]
 
-[^07_vert_struct-22]: Saul Herbert
+[^07_vert_struct-23]: Saul Herbert
 
 > Using DOMIN cover at each layer should overcome this
 
@@ -258,6 +258,8 @@ Number of canopy stories present from (note no specific height bands):
 
 -   Shrub
 :::
+
+Note - we aim to use the same here, also adding field layer
 
 Favorable: 4 or more stories, or "complex"
 

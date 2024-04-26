@@ -41,15 +41,23 @@ extraction.location <- "Data\\Delphi round 1\\"
 
 ```
 
+## **Note to round 2 respondents**
+
+**Since round 1, this indicator has been changed from "number of species" to "proportion of appropriate species". Your form still has the original data in it. You might want to start by changing the "numbers of species" that you entered into percentages, then reviewing based on what other respondents have provided.**
+
 ## Justification
 
 More tree species typically reflect greater niche space and resilience to pests/disease and climate change.
 
 ## Measuring
 
-Record a list the native tree species within each plot. Additional species detected during woodland walk should also be recorded.
+Record a list the native tree species within each plot, along with DOMIN cover class. Additional species detected during woodland walk should also be recorded.
 
-Plot lists will be automatically compared to a list of site-appropriate species, and the proportion of appropriate species present will be calculated. Site-appropriate species will be pre-defined, initially based on The Woodland Trust's Tree Species Handbook [@hotchkissalastair] (See @tbl-approp_spp).
+::: column-margin
+![](images/DOMIN%20cover-abundance%20scale%202023-11-10%2019.53.50.excalidraw.png)
+:::
+
+Species lists will be [**automatically**]{.underline} compared to a list of site-appropriate species, and the proportion of appropriate species present will be calculated. Site-appropriate species will be pre-defined, initially based on The Woodland Trust's Tree Species Handbook [@hotchkissalastair] (See @tbl-approp_spp). Some species will be locally appropriate, and these will also be automatically assigned, but editable.
 
 > **Alternative:** Instead of a simple proportion (i.e. "70% of site-appropriate species occupied the site"), apply different weightings to species to reflect their desirability, potentially based on:
 >
@@ -61,19 +69,21 @@ Plot lists will be automatically compared to a list of site-appropriate species,
 >
 > -   Other descriptions "site appropriateness", however that is defined.
 
-## Challenge: dealing with species detectability
+## Example form
 
-Even if species are present at a site, their detection cannot be guaranteed. There is always a risk that one or more species is missed, regardless of using survey plots or woodland walks. This risk will vary depending on many factors (e.g. time spent searching, area searched, surveyor skill etc.), which - if unaccounted for - will bias results in a way that has no ecological relevance. Raw (also called "naive") species richness estimates are well-understood to be frequently biased in this way [@mackenzie2005]. Even ecological factors can influence detectability in a way that might lead to suprious naive species richness estimates. For example, more habitat area is well understood to increase species richness[@matthews2016], but smaller sites are often surveyed with greater intensity (similar effort over a smaller area). This may mean a greater proportion of species present are detected at smaller sites, erroneously inflating their condition score, compared to larger sites.
+![](images/Native%20Tree%20and%20Shrub%20Species%20Richness(N)%202024-02-14%2014.28.19.excalidraw.png)
 
-Fortuneatly, the toolbox of modern ecologists contains sampling and analytically methods to account for this bias. Well-established methods include [Occupancy Modelling techniques](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6362448/#:~:text=Multispecies%20occupancy%20models%20can%20estimate,while%20accounting%20for%20imperfect%20detection.) , or [Species Accumulation Curves](https://en.wikipedia.org/wiki/Species_discovery_curve). Replication of surveys is a nesseary requirement for these methods, and - at least partially - randomised, representative survey locations are highly advised.
+## Appropriate species list {#sec-appropriate-species-list}
 
-> It may be appropriate to add a number of additional "sub-"plots where only tree species are recorded (I advise two within 20-30m of main plots in a random directions).
+The Tree Species Handbook[@hotchkissalastair], includes lists of tree species deemed appropriate for 18 separate woodland communities, divided according to:
 
-An analysis pipeline could be set up to automatically estimate "true" species richness of a site/sub-compartment/zone, along with associated uncertainty around that estimate.
+-   Upland/lowland
 
-## Appropriate species list
+-   Acidic/base-rich/wet
 
-The Tree Species Handbook[@hotchkissalastair], includes lists of tree species deemed appropriate for 18 separate woodland communities, divided according to broad descriptions of site characteristics and structural components (grove, open wooded habitats and glade). These lists were intended to support the establishment of locally appropriate and distinctive woods and trees without constraining this to specific National Vegetation Classification (NVC) communities.
+-   Structure: groves (\> 70% canopy cover)/open wooded habitats (20-70% canopy cover)/glade(\<20% canopy cover).
+
+These lists were intended to support the establishment of locally appropriate and distinctive woods and trees without constraining this to specific National Vegetation Classification (NVC) communities.
 
 > **Alternative species lists sources:**
 >
@@ -81,31 +91,38 @@ The Tree Species Handbook[@hotchkissalastair], includes lists of tree species de
 >
 > -   Native species predicted at the site by Forest Research's [Ecological Site Classification model (ESC)](https://www.forestresearch.gov.uk/tools-and-resources/fthr/ecological-site-classification/)
 >
-> <!-- -->
->
 > -   Expert-expectations based on historic management, disease and site objectives (e.g. if there is an objective to manage for a specific habitat type) etc.
 
 ```{r }
 #| tbl-cap: "Numbers of appropriate species for different habitat types and structures. **Interactive tooltip**: hover over number of species to show list. Local/additional species may be appropriate, depending on region and site."
 #| label: tbl-approp_spp
 
-
-
 # Extract relevant columns for the table
-table_data <- data.frame(habitat = tree_spp_list$habitat, 
-                         structure = tree_spp_list$structure, 
-                         tree_spp_length = tree_spp_list$tree_spp_length, 
-                         local_tree_spp_length = tree_spp_list$local_tree_spp_length)
-# create a vector of tree species for each row. Each element is a paste of the list of tree species.
-table_data$tree_spp <- sapply(tree_spp_list$tree_spp, paste, collapse = ", ")
-table_data$local_tree_spp <- sapply(tree_spp_list$local_tree_spp, paste, collapse = ", ")
+table_data <- data.frame(habitat = map(tree_spp_list, "habitat") %>% unlist(),
+                         type =  map(tree_spp_list, "type") %>% unlist(),
+                         structure = map(tree_spp_list, "structure") %>% unlist()
+                         )
+for (i in 1:dim(table_data)[1]){
+  table_data$tree_spp_length[i] <- tree_spp_list[[i]]$tree_spp_length
+  table_data$local_tree_spp_length[i] <- tree_spp_list[[i]]$local_tree_spp_length
+  table_data$plant_spp_length[i] <- tree_spp_list[[i]]$plant_spp_length
+  table_data$moss_spp_length[i] <- tree_spp_list[[i]]$moss_spp_length
+  table_data$lichen_spp_length[i] <- tree_spp_list[[i]]$lichen_spp_length
+  
+  table_data$tree_spp[i] <- paste(tree_spp_list[[i]]$tree_spp, collapse = ", ")
+  table_data$local_tree_spp[i] <- paste(tree_spp_list[[i]]$local_tree_spp, collapse = ", ")
+  table_data$plant_spp[i] <- paste(tree_spp_list[[i]]$plant_spp, collapse = ", ")
+  table_data$moss_spp[i] <- paste(tree_spp_list[[i]]$moss_spp, collapse = ", ")
+  table_data$lichen_spp[i] <- paste(tree_spp_list[[i]]$lichen_spp, collapse = ", ")
+}
 
 # Create a table with kableExtra for interactivity
 table_data %>%
   mutate(tree_spp_length = text_spec(tree_spp_length, "html", tooltip = tree_spp),
          local_tree_spp_length = text_spec(local_tree_spp_length, "html", tooltip = local_tree_spp)) %>% 
-  select(habitat, structure, tree_spp_length, local_tree_spp_length) %>%
-  rename("Habitat" = habitat,
+  select(habitat, type, structure, tree_spp_length, local_tree_spp_length) %>%
+  rename("Landscape" = habitat,
+         "Soil/hydrology" = type,
          "Structure" = structure,
          "Core native tree species" = tree_spp_length,
          "Local/additional tree species" = local_tree_spp_length
@@ -139,18 +156,11 @@ continuous_vf_fig()
 
 ```
 
-#### Categorised value function
+#### Weights
 
-```{r vf - categorical, echo = F , results="asis"}
+```{r vf - weights, echo = F , results="asis"}
 
-categorised_vf_fig()
-
-# ## table
-# filtered_data %>%
-#   group_by(measure) %>%
-#   summarise(Mean = mean(value, na.rm = TRUE) %>% round(digits = 1),
-#             'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
-# knitr::kable()
+ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ```
 
@@ -162,38 +172,28 @@ ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weigh
 
 ```
 
-#### Weights
-
-```{r vf - weights, echo = F , results="asis"}
-
-ggplot_resp_weight_ind(indicator_name = indicator_name)
-
-```
+Weights, standardised so that all respondents varied the same amount
 :::
 
 ### Comments on data
 
-VFs:
-
--   Feeling consensus may strengthen easily here
-
--   Particular focus useful for 1-2 species
-
--   Different ideas as to the shape of that relationship: linear[^08_native_tree_spceis_richness-1], vs sigmoid, S-shaped relationship[^08_native_tree_spceis_richness-2].
+Different ideas as to the shape of that relationship: linear[^08_native_tree_spceis_richness-1], vs sigmoid, S-shaped relationship[^08_native_tree_spceis_richness-2].
 
 [^08_native_tree_spceis_richness-1]: e.g. Saul Herbert
 
 [^08_native_tree_spceis_richness-2]: e.g. Liam Plummer
 
-Weightings
+# Challenge: dealing with species detectability
 
--   Big variation, some making it least important, some making it most.
+Even if species are present at a site, their detection cannot be guaranteed. There is always a risk that one or more species is missed, regardless of using survey plots or woodland walks. This risk will vary depending on many factors (e.g. time spent searching, area searched, surveyor skill etc.), which - if unaccounted for - will bias results in a way that has no ecological relevance. Raw (also called "naive") species richness estimates are well-understood to be frequently biased in this way [@mackenzie2005]. Even ecological factors can influence detectability in a way that might lead to spurious naive species richness estimates. For example, more habitat area is well understood to increase species richness[@matthews2016], but smaller sites are often surveyed with greater intensity (similar effort over a smaller area). This may mean a greater proportion of species present are detected at smaller sites, erroneously inflating their condition score, compared to larger sites.
+
+Fortunately, the toolbox of modern ecologists contains sampling and analytically methods to account for this bias. Well-established methods include [Occupancy Modelling techniques](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6362448/#:~:text=Multispecies%20occupancy%20models%20can%20estimate,while%20accounting%20for%20imperfect%20detection.) , or [Species Accumulation Curves](https://en.wikipedia.org/wiki/Species_discovery_curve). Replication of surveys is a necessary requirement for these methods, and - at least partially - randomised, representative survey locations are highly advised.
+
+> It may be appropriate to add a number of additional "sub-"plots where only tree species are recorded (I advise two within 20-30m of main plots in a random directions).
+
+An analysis pipeline could be set up to automatically estimate "true" species richness of a site/sub-compartment/zone, along with associated uncertainty around that estimate.
 
 # Respondent comments
-
-### Considerations for indicator design
-
-Large-scale reasons for a geographic bias in species richness.
 
 ### Priority exceptions
 
@@ -229,11 +229,9 @@ Topography: flat, homogeneous ground will have lower expected tree species diver
 
 [^08_native_tree_spceis_richness-10]: Alasdair Firth
 
-Different species may have different wildlife value e.g. oak[^08_native_tree_spceis_richness-11]
+Species may have different functional traits and wildlife value e.g. oak[^08_native_tree_spceis_richness-11]. Presence/number of different functional groups of trees (e.g. nectar sources) may be more important than species number[^08_native_tree_spceis_richness-12]
 
 [^08_native_tree_spceis_richness-11]: Jim Smith-Wright
-
-Functional traits: Presence/number of different functional groups of trees (e.g. nectar sources) may be more important than species number[^08_native_tree_spceis_richness-12]
 
 [^08_native_tree_spceis_richness-12]: Jim Smith-Wright
 

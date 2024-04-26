@@ -1,0 +1,170 @@
+# Delphi Round 2 - respondent instructions
+
+```{r load curated data, echo = F, include = F, eval = T }
+library(knitr)
+library(kableExtra)
+
+extraction.location <- "Data\\Delphi round 1\\"
+load(paste0(extraction.location,"curated.RData"))
+```
+
+```{=html}
+<style type="text/css">
+caption, .table-caption {
+  text-align: left;
+}
+</style>
+```
+```{r libraries_data, echo = F, include = F, eval = T }
+
+# LIBARIES ---------------------------------------------------------------
+# library(readxl)
+library(tidyverse)
+library(ggpubr)
+library(plotly)
+library(htmltools)
+
+# library(stringr)
+# library(plotly)
+# library(htmlwidgets)
+# library(gridExtra)
+# library(grid)
+# library(DT)
+# library(ggiraph)
+# library(cowplot)
+# library(ggnewscale)
+# library(Polychrome)
+source("Scripts\\functions_delphi_analysis.R")
+
+forms.direct <- "Data\\Delphi round 1\\response sheets\\"
+extraction.location <- "Data\\Delphi round 1\\"
+
+```
+
+```{r vf Tree age size distribution - init, echo = F , results="asis"}
+
+ind.num = 1
+indicator_name = ind.matcher.df$indicator_name[ind.num]
+ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
+
+filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
+  mutate(respondant_name = as.factor(respondant_name))
+
+```
+
+You will all have this doc and a revisedversion of your response excel sheet[^002_delphi_r2_instructions-1] . Open both, you'll be switching between them a fair amount (Alt + tab switches between windows).
+
+[^002_delphi_r2_instructions-1]: Revisions to your worksheet since round 1:
+
+    -   Herbivore impact sheet: complete revision. Previous responses have had to be thrown out.
+
+    -   Ground flora and tree species richness: now expressed as "percentage of appropriate", rather than number. Your responses from round 2 are still there (for your reference).
+
+    -   Re-scaled value functions to be 0-100 scale, and weightings, so that the most important indicator had a score of 100
+
+    -   Some (largely minor) changes made where it seemed in keeping with your intent. Contact for a chat if you disagree.
+
+You can open this page in a second tab/window on your browser to refer back to it as you go.
+
+If you want, you can re-familiarise yourself with the [project background and scope](001_project%20background.qmd) and the [general approach](01_general%20approach.qmd) through which WEC will be calculated. You should have a general familiarity of how the different indicator value functions and weightings come together to calculate WEC.
+
+# Round 2 value functions
+
+For each indicator:
+
+1.  Open its sheet in the excel book and its page in this book.
+2.  Familiarise yourself with the measurement method.
+3.  **Compare your response** in round 1 to others in the expert panel.
+    -   Also consider the approach of other organisations and the current WT condition assessment (info at the bottom of each page).
+4.  **Revise your estimates** in the excel book (you don't need to change them if you don't want to!)
+5.  **Revise your certainty**
+6.  **New exceptions**/comments/considerations/concerns [in red]{style="color:red;"} please(so we know they are new).
+    -   Review the exceptions etc already provided, no real need to double-up on what others have already said (unless you particularly want to put your weight behind them).
+
+## Practice example interactive figure
+
+Have a quick practice with these example interactive figures:
+
+-   Isolate your response: double-click your name in the legend on the right (double click again to reset).
+
+    -   Single click to remove/add individuals of interest.
+
+-   Hover to see who each belongs to, their certainty score and their weighting for this indicator.
+
+    -   Hover also shows the value given at each point: this might be useful to remind yourself what you originally said once you've started changing your responses in the excel sheet.
+
+-   Zoom: click-and-drag (double-click to reset).
+
+-   Some indicators have a "Categorised value function" tab (indicators with a limited number of measurements, e.g. number of tree size classes). This is the same info, but with boxplots showing the average for each category and the spread around them.
+
+-   There are also tabs showing the weightings for each indicator, and comparing that to others. You don't have to worry about that here; the weightings have their [own dedicated page in this book](04_Importance%20weightings.qmd).
+
+::: panel-tabset
+#### Continuous Value function
+
+```{r vf Tree age size distribution - continuous, echo = F , results="asis"}
+continuous_vf_fig()
+
+```
+
+#### Categorised value function
+
+```{r vf Tree age size distribution - categorical, echo = F , results="asis"}
+
+categorised_vf_fig()
+
+## table
+filtered_data %>%
+  group_by(measure) %>%
+  summarise(Mean = mean(value, na.rm = TRUE) %>% round(digits = 1),
+            'Standard deviation' = sd(value, na.rm = TRUE) %>% round(digits = 1)) %>% 
+knitr::kable()
+
+```
+
+#### Weights
+
+```{r vf Tree age size distribution - weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+```
+
+#### Standardised weights
+
+```{r std weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weight_standardised")
+
+```
+
+Weights, standardised so that all respondents varied the same amount
+:::
+
+### Use the full 0-100 scale (or a flat line)
+
+For comparison everyone needs to be using the same scale. This also keeps the final score on a 0-100 scale, instead of something more arbitrary like a scale of 5-80.
+
+If you want a line that's less steep, adjust that indicator weight to be low (like 10, or 5, maybe even 0 if you think it should have no effect).
+
+![Don't do this, use the whole 0-100 scale](images/use%20full%20scale.png)
+
+### Don't need to use full scale available
+
+Some indicators, particularly the negative indicators (tree health, human damage and invasive cover) had a lot of variation, and some respondents still scored relatively high condition for e.g. 50% invasive cover. Think carefully for these what cover you might really start to worry about, and have a look at the approaches used by others at the bottom of the page for context.
+
+![](images/using%20full%20scale.png){width="300"}
+
+## Round 2 Weightings
+
+When you come to [the weightings page of this book](04_Importance%20weightings.qmd), you will notice that their is a lot of disagreement about which indicators are more/less important for condition. Do your best in these revisions, this is clearly an area we will have to think about carefully. I have tried to provide further information to help you revise your estimates for these. There are tabs that showing:
+
+-   The rank order given to indicators by respondents
+
+-   Standardised weightings: transformed so that each respondent varied the same amount between them (i.e. ignoring that some respondents thought that indicators were all similar/all very different).
+
+Remember: the weighting is multiplied by the value to get that indicator's condition score: higher weightings effectivly mean a steeper line for the value function, lower weightings mean a flatter line.
+
+Make sure that your most important indicator has a score of 100 (so we are all working to the same scale).
+
+Add any new exceptions/comments/considerations/concerns [in red]{style="color:red;"} (so we know they are new)

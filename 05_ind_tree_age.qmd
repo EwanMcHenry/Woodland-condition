@@ -6,6 +6,8 @@ More variation in age class increases niche-space, and hence biodiversity[^05_in
 
 [^05_ind_tree_age-1]: Peter Lowe, Saul Herbert
 
+![More even age distributions suggest better ecological condition.](images/Tree%20Age%20or%20Size%20Distribution%20value%20function.png){width="800"}
+
 ## Measuring
 
 Check-box of size classes present:
@@ -30,10 +32,6 @@ Check-box of size classes present:
 Could be combined with measurement of [regeneration classes](13_regen.qmd), and possibly [veteran trees](11_avts.qmd).
 
 ![](images/Tree%20Age%20Distribution%20-%20measure.png)
-
-More even age distributions ideally showing better condition.
-
-![](images/Tree%20Age%20or%20Size%20Distribution%20value%20function.png)
 
 ```{r load curated data, echo = F, include = F, eval = T }
 extraction.location <- "Data\\Delphi round 1\\"
@@ -111,6 +109,7 @@ knitr::kable()
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ```
+
 #### Standardised weights
 
 ```{r std weights, fig.width= 4, echo = F , results="asis"}
@@ -118,21 +117,17 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weight_standardised")
 
 ```
-Weights, standardised so that all respondents varied the same amount
 
+Weights, standardised so that all respondents varied the same amount
 :::
 
 ### Comments on estimates
 
-VFs - consensus likely:
+All value functions have a similar shape.
 
--   All continuous relationships have same shape.
-
--   Complete agreement on upper and lower value.
+Complete agreement on upper and lower value.
 
 -   Some put maximum value at 3 classes.
-
-Weight - very diverse opinions
 
 # Respondent comments
 

@@ -82,6 +82,13 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 `r paste(length(unique(filtered_data$respondant_name)))` respondents.
 
 ::: panel-tabset
+#### Continuous Value function
+
+```{r vf Tree age size distribution - continuous, echo = F , results="asis"}
+continuous_vf_fig()
+
+```
+
 #### Categorised value function
 
 ```{r vf Tree age size distribution - categorical, echo = F , results="asis"}
@@ -97,21 +104,6 @@ knitr::kable()
 
 ```
 
-#### Continuous Value function
-
-```{r vf Tree age size distribution - continuous, echo = F , results="asis"}
-continuous_vf_fig()
-
-```
-
-#### Standardised weights
-
-```{r std weights, fig.width= 4, echo = F , results="asis"}
-
-ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weight_standardised")
-
-```
-
 #### Weights
 
 ```{r vf Tree age size distribution - weights, fig.width= 4, echo = F , results="asis"}
@@ -119,6 +111,15 @@ ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weigh
 ggplot_resp_weight_ind(indicator_name = indicator_name)
 
 ```
+#### Standardised weights
+
+```{r std weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weight_standardised")
+
+```
+Weights, standardised so that all respondents varied the same amount
+
 :::
 
 ### Comments on estimates

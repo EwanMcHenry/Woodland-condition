@@ -1,0 +1,40 @@
+# Project background and scope
+
+## Why measure WEC?
+
+Woodland conservationists aim to either improve the ecological condition of wooded sites or maintain condition above some favorable threshold and need reliable evidence on current condition status at different scales (e.g. site, region) and how best to achieve improvement in that context through management and policy interventions. A reliable WEC metric based on rapidly and easily-assessable woodland structural indicators would enable rapid monitoring across a large number of sites at relatively frequent intervals (e.g. Every 5 years). This would enable reporting on the changing state of WEC (relative to strategic goals) and the testing of different interventions to determine which most effectively improve condition (integration with monitoring, evaluation and learning).
+
+# Project Scope
+
+#### Product Users
+
+The assessment protocol should be achievable within a single day's surveying at a typical site and be adaptable to the expertise of different users including:
+
+-   Estate/outreach staff and external consultants, who hold the skills/technical knowledge required for a full survey
+    -   Although training may be required
+-   Landowners, with a less specific skill set but may be able to provide rough survey information where full surveys are a lower priority (e.g. small woodland creation sites such as MOREWOODS).
+
+#### "Woodland"
+
+-   The assessment aims to consider a variety of different woodland types
+    -   Methods must be generalist to allow the specific setting and context of a woodland to be considered in its assessment (e.g. Woodland creation site, oak woodland, upland birch, woodpasture)
+
+The approach will not be applicable for non-wooded habitats e.g. Grassland, open water etc.
+
+# Other Organisation Approaches
+
+The Woodland Trust currently assesses woodland condition across its estate on a 5 year cycle, collecting information on a range of structural attributes. However, these are not processed in a way that allows a site condition score to be calculated
+
+## National Forest Inventory & Woodland Wildlife Toolkit
+
+WEC is measured as part of the GB National Forest Inventory across a sample of wooded 1 ha plots. Simply repeating this method is inappropriate for Woodland Trust estate and outreach purposes for reasons including:
+
+-   The method used requires intensive sampling and specialist expertise. - The design aims to report on the <u>area</u> of woodland in different condition within regions and different wooded habitat types, rather than at the level of individual sites.
+
+-   The NFI's approach samples woodland throughout the UK, and the location of individual sampling locations, and other information gathered during assessment, is not accessible to WT staff.
+
+-   The NFI metric treats each structural indicator as equally important, despite general agreement that some indicators (e.g. Those related to deadwood availability) are of particularly high ecological value.
+
+-   The method of measuring some indicators, and classifying their favourability, are deemed unreliable, insofar as they can support WT objectives.
+
+-   The method involves an intensive survey of 1 ha, typically taking one working day. This is not an appropriate use of effort to assess condition at site-level.

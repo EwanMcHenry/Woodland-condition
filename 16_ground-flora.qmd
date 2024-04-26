@@ -1,32 +1,20 @@
 # Ground flora
 
-## Justification
-
-The presence of an appropriate and rich community of ground flora species is a biodiversity indicator.
-
--   Highlights what is/isn't there and may require management
-
-## Measuring
-
-This indicator requires significant development. A key question is whether it should be based on the diversity of ground flora species present at the site, or another measure of plant community condition (perhaps less based on recorded species identities).
-
-From a species list that includes Ancient Woodland Indicators and plants likely to be associated with younger woodland communities (from the Woodland creation guide's Tree Species handbook).
-
-Should consider differences between sites RE which species might be appropriate.
-
-DOMIN/diversity/cover/species richness of woodland specialist plants (or from a suite of pre-selected)?
-
-## Challenges
-
-Shares many of the same challenges associated with the native tree species richness indicator around detectability and the site-appropriateness of different species(@sec-tree-sr-chalenges). Additionally, there are greater training requirements
-
-# Respondent value functions and weights
-
 ```{r load curated data, echo = F, include = F, eval = T }
+library(knitr)
+library(kableExtra)
+
 extraction.location <- "Data\\Delphi round 1\\"
 load(paste0(extraction.location,"curated.RData"))
 ```
 
+```{=html}
+<style type="text/css">
+caption, .table-caption {
+  text-align: left;
+}
+</style>
+```
 ```{r libraries_data, echo = F, include = F, eval = T }
 
 # LIBARIES ---------------------------------------------------------------
@@ -51,7 +39,99 @@ source("Scripts\\functions_delphi_analysis.R")
 forms.direct <- "Data\\Delphi round 1\\response sheets\\"
 extraction.location <- "Data\\Delphi round 1\\"
 
+
 ```
+
+## Note to round 2 respondents
+
+**Since round 1, this indicator has been changed from "number of species" to "proportion of appropriate species".** Your form still has the original data in it. You might want to start by changing your "numbers of species" into percentages, then reviewing based on what other respondents have provided.
+
+## Justification
+
+The presence of an appropriate and rich community of ground flora species is a biodiversity indicator.
+
+-   Highlights what is/isn't there and may require management
+
+## Measuring
+
+Indicator plant species presence will be recorded (in each plot-quarter[^16_ground-flora-1]), and given a DOMIN cover score (to provide information for management).
+
+[^16_ground-flora-1]: Replicating by plot-quarters allows species richness to be more accurately estimated at plot/sub compartment scale (this will be an automatic part of later analysis).
+
+::: column-margin
+![](images/DOMIN%20cover-abundance%20scale%202023-11-10%2019.53.50.excalidraw.png)
+:::
+
+The plants present in each plot will then be [**automatically**]{.underline} compared to a list of appropriate field-layer indicator species (initially from @alastairhotchkiss2022, which includes ancient woodland Indicators and plants likely to be associated with younger woodland communities), and the proportion of appropriate species present will be calculated (following similar method as in [tree species richness](08_native_tree_spceis_richness.qmd), with the same potential alternatives).
+
+![](images/Ground%20Flora%202024-02-08%2013.17.53.excalidraw.png)
+
+## 
+
+## Appropriate species list {#sec-appropriate-plant-species-list}
+
+The Tree Species Handbook[@hotchkissalastair], includes lists of field layer indicator species deemed appropriate for 18 separate woodland communities, .
+
+-   Upland/lowland
+
+-   Acidic/base-rich/wet
+
+-   Structure: groves (\> 70% canopy cover)/open wooded habitats (20-70% canopy cover)/glade(\<20% canopy cover).
+
+These lists were intended to support the establishment of locally appropriate and distinctive woods and trees without constraining this to specific National Vegetation Classification (NVC) communities.
+
+> **Alternative species lists sources:**
+>
+> -   NVC type[@whitbreada.m.1992]
+>
+> -   Ancient woodland indicator species lists
+>
+> -   Expert-expectations based on historic management, disease and site objectives (e.g. if there is an objective to manage for a specific habitat type) etc.
+
+```{r }
+#| tbl-cap: "Numbers of appropriate field layer indicator species for different habitat types and structures. **Interactive tooltip**: hover over number of species to show list."
+#| label: tbl-approp_field_spp
+
+# Extract relevant columns for the table
+table_data <- data.frame(habitat = map(tree_spp_list, "habitat") %>% unlist(),
+                         type =  map(tree_spp_list, "type") %>% unlist(),
+                         structure = map(tree_spp_list, "structure") %>% unlist()
+                         )
+for (i in 1:dim(table_data)[1]){
+  table_data$tree_spp_length[i] <- tree_spp_list[[i]]$tree_spp_length
+  table_data$local_tree_spp_length[i] <- tree_spp_list[[i]]$local_tree_spp_length
+  table_data$plant_spp_length[i] <- tree_spp_list[[i]]$plant_spp_length
+  table_data$moss_spp_length[i] <- tree_spp_list[[i]]$moss_spp_length
+  table_data$lichen_spp_length[i] <- tree_spp_list[[i]]$lichen_spp_length
+  
+  table_data$tree_spp[i] <- paste(tree_spp_list[[i]]$tree_spp, collapse = ", ")
+  table_data$local_tree_spp[i] <- paste(tree_spp_list[[i]]$local_tree_spp, collapse = ", ")
+  table_data$plant_spp[i] <- paste(tree_spp_list[[i]]$plant_spp, collapse = ", ")
+  table_data$moss_spp[i] <- paste(tree_spp_list[[i]]$moss_spp, collapse = ", ")
+  table_data$lichen_spp[i] <- paste(tree_spp_list[[i]]$lichen_spp, collapse = ", ")
+}
+
+# Create a table with kableExtra for interactivity
+table_data %>%
+  mutate(plant_spp_length = text_spec(plant_spp_length, "html", tooltip = plant_spp),
+         moss_spp_length = text_spec(moss_spp_length, "html", tooltip = moss_spp),
+         lichen_spp_length = text_spec(lichen_spp_length, "html", tooltip = lichen_spp)) %>% 
+  select(habitat, type, structure, plant_spp_length, moss_spp_length, lichen_spp_length) %>%
+  rename("Habitat" = habitat,
+         "Soil/hydrology" = type,
+         "Structure" = structure,
+         "Plant species" = plant_spp_length,
+         "Moss species" = moss_spp_length,
+         "Lichen species" = lichen_spp_length) %>% 
+  kable("html", escape=F) %>% 
+  kable_styling("striped", full_width = FALSE)
+
+
+```
+
+# Respondent value functions and weights
+
+**Note:** in round 2 of the Delphi process this indicator has been changed, from "number of indicator species present" to "proportion of appropriate indicator species present".
 
 ```{r vf Canopy Nativness - init, echo = F , results="asis"}
 
@@ -75,6 +155,14 @@ continuous_vf_fig()
 
 ```
 
+#### Weights
+
+```{r vf - weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+```
+
 #### Standardised weights
 
 ```{r std weights, fig.width= 4, echo = F , results="asis"}
@@ -83,34 +171,28 @@ ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weigh
 
 ```
 
-#### Weights
-
-```{r vf - weights, fig.width= 4, echo = F , results="asis"}
-
-ggplot_resp_weight_ind(indicator_name = indicator_name)
-
-```
+Weights, standardised so that all respondents varied the same amount
 :::
 
 ### Comments on data
 
-Will obviously need development, particularly RE appropriate species for the site.
+Logarithmic "r" shaped relationship most popular, followed by sigmoid "s" shape
 
-VF:
+## Challenges
 
--   Logarithmic "r" shaped relationship most popular, followed by sigmoid "s" shape - Consensus likely
+Shares many of the same challenges associated with the [tree species richness indicator](08_native_tree_spceis_richness.qmd) around detectability and the site-appropriateness of different species. These issues are even greater for plant indicator species, as detectability is lower and more variable (i.e. they can be missed by surveyors even when present within plots). Additionally, there are greater training requirements for accurate identification.
 
--   Weights: medium - high importance
+The survey replication methods suggested in [tree species richness indicator](08_native_tree_spceis_richness.qmd) (involving additional "sub-plots" of the same size as main survey plots) might be too onerous on surveyors, as plant species surveys take longer than tree-species surveys. An acceptable alternative (as laid out above) may be to record the number of plot-quarters that each species is present within, allowing plot surveys to act as four replicates[^16_ground-flora-2].
+
+[^16_ground-flora-2]: The same "sub-plot" method suggested for [tree species richness](08_native_tree_spceis_richness.qmd) would still be preferred, if that is workable. This quarter-plot method would have some issues with non-independence of the replicates (because they would neighbor each other so closely), although these could alleviated somewhat with an appropriate analytical framework.
 
 # Respondent comments
 
 ### Considerations for indicator design
 
-See considerations and challenges in [Native Tree and Shrub Species Richness(N)](08_native_tree_spceis_richness.qmd).
+Reluctance to rely on expert opinion for value function here[^16_ground-flora-3].
 
-Reluctance to rely on expert opinion for value function here[^16_ground-flora-1].
-
-[^16_ground-flora-1]: Richard Brown
+[^16_ground-flora-3]: Richard Brown
 
 Should this indicator be based on identifying species, or more identifying where there is a "range of nice stuff"
 
@@ -120,123 +202,117 @@ Should lichens/bryophytes count towards this in e.g. rainforest zone? Oceanic mo
 
 Training requirements RE species identification would be regionally-specific
 
-Should "open habitat" NVC community indicator plants contribute to the condition of glades?
-
 ### Priority exceptions
 
-Expected species vary widely by woodland type/region/geology/soil/topographic heterogeneity/hydrology etc. Condition should relate to the expectation for the site, were it in good condition[^16_ground-flora-2], or introduce bias between site types/geography.
+Expected species vary widely by woodland type/region/geology/soil/topographic heterogeneity/hydrology etc. Condition should relate to the expectation for the site, were it in good condition[^16_ground-flora-4], or introduce bias between site types/geography.
 
-[^16_ground-flora-2]: Louise Hackett, Bob Epsom, David Venables
+[^16_ground-flora-4]: Louise Hackett, Bob Epsom, David Venables
 
 -   Could define an "appropriate species list" in a similar way to [Native Tree and Shrub Species Richness(N)](08_native_tree_spceis_richness.qmd).
 
-    -   BSBI priority habitats indicator plant lists[^16_ground-flora-3] could support[^16_ground-flora-4].
+    -   BSBI priority habitats indicator plant lists[^16_ground-flora-5] could support[^16_ground-flora-6].
 
         -   Note: BSBI haven't defined thresholds for condition here, but could revisit
 
-    -   Could relate to NVC type, but this is not really what NVC is for[^16_ground-flora-5] and NVC is imperfect[^16_ground-flora-6], there are always exceptions and it needs to be used with care[^16_ground-flora-7].
+    -   Could relate to NVC type, but this is not really what NVC is for[^16_ground-flora-7] and NVC is imperfect[^16_ground-flora-8], there are always exceptions and it needs to be used with care[^16_ground-flora-9].
 
     -   Rainforest Indicator list for lichens and bryophytes. Plantlife has positive indicators in Rapid Rainforest Assessments
 
--   Upland woods: may be more like to be dominated by more open ground flora, and fewer species[^16_ground-flora-8]
+-   Upland woods: may be more like to be dominated by more open ground flora, and fewer species[^16_ground-flora-10]
 
--   Wetwoods[^16_ground-flora-9]
+-   Wetwoods[^16_ground-flora-11]
 
--   Woodpasture[^16_ground-flora-10]
+-   Woodpasture[^16_ground-flora-12]
 
 -   Acidic woods - less diversity naturally
 
--   Woodland creation sites, few woodland species to begin with[^16_ground-flora-11]
+-   Woodland creation sites, few woodland species to begin with[^16_ground-flora-13]
 
-    -   May have high diversity to begin with, with open group species communities that change as woodland develops[^16_ground-flora-12]
+    -   May have high diversity to begin with, with open group species communities that change as woodland develops[^16_ground-flora-14]
 
--   Closed canopy[^16_ground-flora-13] -
+-   Closed canopy[^16_ground-flora-15] -
 
--   Woodland with high-shading tree species (e.g. hornbeam, beech)[^16_ground-flora-14]
+-   Woodland with high-shading tree species (e.g. hornbeam, beech)[^16_ground-flora-16]
 
-[^16_ground-flora-3]: <https://database.bsbi.org/checklists.php>
+[^16_ground-flora-5]: <https://database.bsbi.org/checklists.php>
 
-[^16_ground-flora-4]: Saul Herbert
+[^16_ground-flora-6]: Saul Herbert
 
-[^16_ground-flora-5]: Peter Lowe
+[^16_ground-flora-7]: Peter Lowe
 
-[^16_ground-flora-6]: Dave Bonsall
+[^16_ground-flora-8]: Dave Bonsall
 
-[^16_ground-flora-7]: Richard Brown
+[^16_ground-flora-9]: Richard Brown
 
-[^16_ground-flora-8]: Peter Lowe, Ian Moss
+[^16_ground-flora-10]: Peter Lowe, Ian Moss
 
-[^16_ground-flora-9]: Liam Plummer, Sonia Lorenzo-Martin
+[^16_ground-flora-11]: Liam Plummer, Sonia Lorenzo-Martin
 
-[^16_ground-flora-10]: Bob Epsom
+[^16_ground-flora-12]: Bob Epsom
 
-[^16_ground-flora-11]: Dave Bonsall, Kylie Jones Mattock, Hannah Patterson, Bob Epsom, Dean Kirkland, Sonia Lorenzo-Martin
+[^16_ground-flora-13]: Dave Bonsall, Kylie Jones Mattock, Hannah Patterson, Bob Epsom, Dean Kirkland, Sonia Lorenzo-Martin
 
-[^16_ground-flora-12]: David Logan
+[^16_ground-flora-14]: David Logan
 
-[^16_ground-flora-13]: Dave Bonsall
+[^16_ground-flora-15]: Dave Bonsall
 
-[^16_ground-flora-14]: Dave Bonsall
+[^16_ground-flora-16]: Dave Bonsall
 
-Different species may have different value, which may vary by habitat type[^16_ground-flora-15].
+Different species may have different value, which may vary by habitat type[^16_ground-flora-17].
 
-[^16_ground-flora-15]: Alasdair Firth, Louise Hackett
+[^16_ground-flora-17]: Alasdair Firth, Louise Hackett
 
 -   e.g. ancient woodland plants weight more important, common plants like vaccinium still indicative, but lower score
 
-Woodland Extent interaction: bigger woods expected to have more species expected per unit area[^16_ground-flora-16], although this could be said for most of the indicators (as they indicate better structure, capable of hosting more ground flora species)[^16_ground-flora-17].
+Woodland Extent interaction: bigger woods expected to have more species expected per unit area[^16_ground-flora-18], although this could be said for most of the indicators (as they indicate better structure, capable of hosting more ground flora species)[^16_ground-flora-19].
 
-[^16_ground-flora-16]: Jim Smith-Wright
+[^16_ground-flora-18]: Jim Smith-Wright
 
-[^16_ground-flora-17]: Ewan McHenry
+[^16_ground-flora-19]: Ewan McHenry
 
 Consider building appropriate species lists that are easier to identify.
 
-Historic management[^16_ground-flora-18]
+Historic management[^16_ground-flora-20]
 
-[^16_ground-flora-18]: David Venables
+[^16_ground-flora-20]: David Venables
 
-Season[^16_ground-flora-19]
+Monocultures- e.g. bluebell carpets suppressing other flora[^16_ground-flora-21]
 
-[^16_ground-flora-19]: David Venables
-
-Monocultures- e.g. bluebell carpets suppressing other flora[^16_ground-flora-20]
-
-[^16_ground-flora-20]: Rhiannon Hoy
+[^16_ground-flora-21]: Rhiannon Hoy
 
 ### Lower priority exceptions
 
 ### Concerns already covered by this or other indicators
 
-Ancient vs secondary woodland and seed bank/soil condition differences[^16_ground-flora-21]
+Ancient vs secondary woodland and seed bank/soil condition differences[^16_ground-flora-22]
 
-[^16_ground-flora-21]: Dave Bonsall
+[^16_ground-flora-22]: Dave Bonsall
 
 > Here sites with reduced seed bank may just score poorly, potentially leading to management considerations RE translocations.
 
-Commercial forestry[^16_ground-flora-22]
+Commercial forestry[^16_ground-flora-23]
 
-[^16_ground-flora-22]: Kylie Jones Mattock
+[^16_ground-flora-23]: Kylie Jones Mattock
 
 > Will just score poorly, prompting explicit trade-off between ecological condition and commercial productivity.
 
-Air and soil quality[^16_ground-flora-23]
+Air and soil quality[^16_ground-flora-24]
 
-[^16_ground-flora-23]: Ian Moss
+[^16_ground-flora-24]: Ian Moss
 
 > This indicator may suggest poor quality in these aspects.
 
-Light conditions[^16_ground-flora-24]
+Light conditions[^16_ground-flora-25]
 
-[^16_ground-flora-24]: David Venables, Rhiannon Hoy
+[^16_ground-flora-25]: David Venables, Rhiannon Hoy
 
 > If light is restrictive, this should inform management decisions
 
-Browsing pressure[^16_ground-flora-25]
+Browsing pressure[^16_ground-flora-26]
 
-[^16_ground-flora-25]: David Venables
+[^16_ground-flora-26]: David Venables
 
-> If browsing impacting, should inform managment
+> If browsing impacting, should inform management
 
 # Other approaches
 

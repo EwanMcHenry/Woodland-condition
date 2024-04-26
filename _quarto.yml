@@ -10,6 +10,8 @@ book:
   downloads: [pdf, epub]
   chapters:
     - index.qmd
+    - 002_delphi_r2_instructions.qmd
+    - 001_project background.qmd
     - 01_general approach.qmd
     - 05_ind_tree_age.qmd
     - 06_canopy_nativness.qmd
@@ -45,6 +47,8 @@ format:
     documentclass: scrreprt
 
 editor: visual
+
+prefer-html: true
 
 execute:
   echo: false

@@ -1,5 +1,9 @@
 # Invasives
 
+## Note to round 2 respondents
+
+Review [Woodland Wildlife Toolkit & NFI](#woodland-wildlife-toolkit-nfi) approach for context.
+
 ## Justification
 
 Invasive species negatively impact biodiversity.
@@ -8,11 +12,13 @@ Invasive species negatively impact biodiversity.
 
 DOMIN/percentage cover for plots for each invasive present and all invasives combined.
 
-Note maximum height of Cherry laurel or Rhododendron ponticum if present.
+Note maximum height of Cherry laurel or Rhododendron ponticum if present[^09_invasives-1].
 
-Note invasive tree regeneration (e.g. Western hemlock)[^09_invasives-1]
+[^09_invasives-1]: Ewan McHenry, Jim Smith-Wright
 
-[^09_invasives-1]: Chris Reid
+Note invasive tree regeneration (e.g. Western hemlock)[^09_invasives-2]
+
+[^09_invasives-2]: Chris Reid
 
 Note detection/non detection of other invasives during woodland walk, ideally mapping their location, and nearby records from e.g. NBN.
 
@@ -81,6 +87,14 @@ continuous_vf_fig()
 
 ```
 
+#### Weights
+
+```{r vf - weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+```
+
 #### Standardised weights
 
 ```{r std weights, fig.width= 4, echo = F , results="asis"}
@@ -89,20 +103,8 @@ ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weigh
 
 ```
 
-#### Weights
-
-```{r vf - weights, fig.width= 4, echo = F , results="asis"}
-
-ggplot_resp_weight_ind(indicator_name = indicator_name)
-
-```
+Weights, standardised so that all respondents varied the same amount
 :::
-
-### Comments on data
-
-VF:
-
--   A lot of variation. Worth considering Woodland Wildlife Toolkit approaches when revising estimates.
 
 # Respondent comments
 
@@ -110,77 +112,65 @@ VF:
 
 Should drive early detection and eradication of invasives
 
--   There should be a rapid exponential drop in condition with presence of any invasive[^09_invasives-2]
+-   Condition should rapidly drop in with presence of any invasive[^09_invasives-3]
 
--   A little may not have a big impact initially[^09_invasives-3], but much easier to deal with before it spreads[^09_invasives-4], growth (and so the potential for impact and cost of removal) is likely exponential[^09_invasives-5].
+-   A little may not have a big impact initially[^09_invasives-4], but much easier to deal with before it spreads[^09_invasives-5], growth (and impact and cost of removal) is likely exponential[^09_invasives-6].
 
-[^09_invasives-2]: Liam Plummer, Jim Smith-Wright
+[^09_invasives-3]: Liam Plummer, Jim Smith-Wright
 
-[^09_invasives-3]: Martin Hugi
+[^09_invasives-4]: Martin Hugi
 
-[^09_invasives-4]: Ewan McHenry
+[^09_invasives-5]: Ewan McHenry
 
-[^09_invasives-5]: Saul Herbert
+[^09_invasives-6]: Saul Herbert
 
-Location may be worth noting: beside watercourses or boundary etc may have management implications[^09_invasives-6]
+Location may be worth noting: beside watercourses or boundary etc may have management implications[^09_invasives-7]
 
-[^09_invasives-6]: Hannah Patterson, David Logan
+[^09_invasives-7]: Hannah Patterson, David Logan
 
-Note landscape-presence of invasives - relevant for management[^09_invasives-7]
+Note landscape-presence of invasives - relevant for management[^09_invasives-8]
 
-[^09_invasives-7]: Hannah Patterson
+[^09_invasives-8]: Hannah Patterson
 
 ### Priority exceptions
 
-May consider species such as Gualtheria shallon equal consideration to Rhododendron, over laurel[^09_invasives-8]
+May consider species such as Gualtheria shallon equal consideration to Rhododendron, over laurel[^09_invasives-9]
 
-[^09_invasives-8]: Jim Smith-Wright
+[^09_invasives-9]: Jim Smith-Wright
 
 ### Lower priority exceptions
 
-Species - Some may spread more and be more costly/difficult to remove[^09_invasives-9]
+Species - Some may spread more and be more costly/difficult to remove[^09_invasives-10]
 
-[^09_invasives-9]: Hannah Patterson
+[^09_invasives-10]: Hannah Patterson
 
-> Not really ecologically-relevant, just needs to be a
+Aggressiveness of rhododendron and laurel depends on soil type[^09_invasives-11]
 
-Aggressiveness of rhododendron and laurel depends on soil type[^09_invasives-10]
+[^09_invasives-11]: Jim Smith-Wright
 
-[^09_invasives-10]: Jim Smith-Wright
+-   In SE cherry laurel may not spread[^09_invasives-12]
 
--   In SE cherry laurel may not spread[^09_invasives-11]
+[^09_invasives-12]: Dave Bonsall
 
-[^09_invasives-11]: Dave Bonsall
+Woodland creation - Less important[^09_invasives-13]
 
-Woodland creation - Less important[^09_invasives-12]
-
-[^09_invasives-12]: Liam Plummer
+[^09_invasives-13]: Liam Plummer
 
 Non-plant invasives? Grey squirrel, mink etc.
 
 ### Concerns already covered by this or other indicators
 
-Different invasives are worse[^09_invasives-13]
+Different invasives are worse[^09_invasives-14]
 
-[^09_invasives-13]: Karen Hornigold
+[^09_invasives-14]: Karen Hornigold
 
-> indicator will score 0 if high priority species are present
-
-Age/structure important[^09_invasives-14]
-
-[^09_invasives-14]: Ewan McHenry, Jim Smith-Wright
-
-> Indicator now records of height/flowering status
+> Indicator will score 0 if high priority species are present
 
 Appropriately managed species that are an acceptable part of the historic/designed landscape/park/garden[^09_invasives-15].
 
 [^09_invasives-15]: Jim Smith-Wright, David Venables
 
 > This may mean willingly accepting dropping ecological condition, as a trade-off to historic/amenity-value
-
-Diverse, well functioning woodlands should be less invasive-susceptible.
-
-> Should therefore have a higher score for this indicator
 
 Where control/eradication is difficult/expensive[^09_invasives-16]
 
@@ -190,7 +180,7 @@ Where control/eradication is difficult/expensive[^09_invasives-16]
 
 # Other approaches
 
-## Woodland Wildlife Toolkit & NFI
+## Woodland Wildlife Toolkit & NFI {#woodland-wildlife-toolkit-nfi}
 
 Percentage cover for species at whole woodland level
 

@@ -6,15 +6,13 @@ Veteran features provide diverse niches for wildlife species. Their continuity b
 
 ## Measuring
 
+Will not be needed if a site has been fully inventoried for AVTs, the information will be derived from that, automatically.
+
 Extend plot to a 1 ha square (50m from center in each direction) and count AVTs (up to a maximum).
 
-Where recording of AVTs is effective (i.e. an inventory has been done). This can be use instead of field survey - May encourage better recording on estate[^11_avts-1].
+Note where AVTs make up the majority of all trees present. There may be too many for a long-term sustainability[^11_avts-1].
 
-[^11_avts-1]: Saul Herbert
-
-Note where AVTs make up the majority of all trees present. There may be too many for a long-term sustainability[^11_avts-2].
-
-[^11_avts-2]: Alasdair Firth
+[^11_avts-1]: Alasdair Firth
 
 # Respondent value functions and weights
 
@@ -71,6 +69,14 @@ continuous_vf_fig()
 
 ```
 
+#### Weights
+
+```{r vf - weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+```
+
 #### Standardised weights
 
 ```{r std weights, fig.width= 4, echo = F , results="asis"}
@@ -79,42 +85,30 @@ ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weigh
 
 ```
 
-#### Weights
-
-```{r vf - weights, fig.width= 4, echo = F , results="asis"}
-
-ggplot_resp_weight_ind(indicator_name = indicator_name)
-
-```
+Weights, standardised so that all respondents varied the same amount
 :::
 
 ### Comments on data
 
-VFs:
-
--   Biggest disagreement is about where max should occur
-
-Weights:
-
--   Massive variation, may need some evidence or guidance.
+Biggest disagreement is about where max should occur
 
 # Respondent comments
 
 ### Considerations for indicator design
 
-Need to include coppice stools, but no agreed way to assess veteran status[^11_avts-3]
+Need to include coppice stools, but no agreed way to assess veteran status[^11_avts-2]
 
-[^11_avts-3]: Dave Bonsall
+[^11_avts-2]: Dave Bonsall
 
 Extending sample plot to 1 ha may be difficult, particularly in dense vegetation or steep ground.
 
-Somewhat subjective definition of a veteran tree[^11_avts-4]
+Somewhat subjective definition of a veteran tree[^11_avts-3]
 
-[^11_avts-4]: Jim Smith-Wright
+[^11_avts-3]: Jim Smith-Wright
 
-Should record future potential veterans, particularly important where the site has current veterans[^11_avts-5]
+Should record future potential veterans, particularly important where the site has current veterans[^11_avts-4]
 
-[^11_avts-5]: Alasdair Firth, Rhiannon Hoy
+[^11_avts-4]: Alasdair Firth, Rhiannon Hoy
 
 > Research Q: Is there good evidence for AVT density needed for e.g. a diverse invert assemblage?
 
@@ -124,73 +118,73 @@ Woodland type:
 
 -   Wood pasture/parkland:
 
-    -   Good condition would require more[^11_avts-6], perhaps more than eight[^11_avts-7]
+    -   Good condition would require more[^11_avts-5], perhaps more than eight[^11_avts-6]
 
-    -   More important here[^11_avts-8]
+    -   More important here[^11_avts-7]
 
--   Young woodland - Expect none[^11_avts-9], or just lower[^11_avts-10], and have lower importance weighting[^11_avts-11]
+-   Young woodland - Expect none[^11_avts-8], or just lower[^11_avts-9], and have lower importance weighting[^11_avts-10]
 
--   Upland/montane[^11_avts-12],
+-   Upland/montane[^11_avts-11],
 
--   Coppice[^11_avts-13]
+-   Coppice[^11_avts-12]
 
--   Alder carr, wet willow woodland more dynamic woods - retention of trees to veteran is less important[^11_avts-14]
+-   Alder carr, wet willow woodland more dynamic woods - retention of trees to veteran is less important[^11_avts-13]
 
--   Upland birch: may be solely veteran[^11_avts-15], but also potentially very dynamic[^11_avts-16]
+-   Upland birch: may be solely veteran[^11_avts-14], but also potentially very dynamic[^11_avts-15]
 
-[^11_avts-6]: Chris Reid, Liam Plummer, Adam Thorogood, Rhiannon Hoy
+[^11_avts-5]: Chris Reid, Liam Plummer, Adam Thorogood, Rhiannon Hoy
 
-[^11_avts-7]: Chris Reid
+[^11_avts-6]: Chris Reid
 
-[^11_avts-8]: Liam Plummer, Jim Smith-Wright, Karen Hornigold
+[^11_avts-7]: Liam Plummer, Jim Smith-Wright, Karen Hornigold
 
-[^11_avts-9]: Chris Reid, Dave Bonsall, Kylie Jones Mattock, Hannah Patterson, Ian Moss, Daniel Aitken, David Logan, David Venables
+[^11_avts-8]: Chris Reid, Dave Bonsall, Kylie Jones Mattock, Hannah Patterson, Ian Moss, Daniel Aitken, David Logan, David Venables
 
-[^11_avts-10]: Rhiannon Hoy, Sonia Lorenzo-Martin
+[^11_avts-9]: Rhiannon Hoy, Sonia Lorenzo-Martin
 
-[^11_avts-11]: Liam Plummer, Hannah Patterson, Louise Hackett, Karen Hornigold
+[^11_avts-10]: Liam Plummer, Hannah Patterson, Louise Hackett, Karen Hornigold
 
-[^11_avts-12]: Peter Lowe
+[^11_avts-11]: Peter Lowe
 
-[^11_avts-13]: Peter Lowe, Dave Bonsall
+[^11_avts-12]: Peter Lowe, Dave Bonsall
 
-[^11_avts-14]: Adam Thorogood
+[^11_avts-13]: Adam Thorogood
 
-[^11_avts-15]: Peter Lowe
+[^11_avts-14]: Peter Lowe
 
-[^11_avts-16]: Adam Thorogood
+[^11_avts-15]: Adam Thorogood
 
 ### Lower priority exceptions
 
-Some species more value than others[^11_avts-17]
+Some species more value than others[^11_avts-16]
 
-[^11_avts-17]: Jim Smith-Wright
+[^11_avts-16]: Jim Smith-Wright
 
-Lowland ancient woodland often have no AVTs[^11_avts-18]
+Lowland ancient woodland often have no AVTs[^11_avts-17]
 
-[^11_avts-18]: Peter Lowe
+[^11_avts-17]: Peter Lowe
 
 > Should they be managed with AVTs more in mind?
 
 ### Concerns already covered by this or other indicators
 
-Commercial plantations[^11_avts-19]
+Commercial plantations[^11_avts-18]
 
-[^11_avts-19]: Kylie Jones Mattock
+[^11_avts-18]: Kylie Jones Mattock
 
 > Will score low for this indicator if no AVTs present
 
-If whole wood is old there is no space for young trees[^11_avts-20]
+If whole wood is old there is no space for young trees[^11_avts-19]
 
-[^11_avts-20]: Alasdair Firth
+[^11_avts-19]: Alasdair Firth
 
-> Should be dealt with via tree age or distribution and regeneration. Have Added suggestion to note where AVTs are the majority of trees present[^11_avts-21]
+> Should be dealt with via tree age or distribution and regeneration. Have Added suggestion to note where AVTs are the majority of trees present[^11_avts-20]
 
-[^11_avts-21]: Ewan McHenry
+[^11_avts-20]: Ewan McHenry
 
-High conservation value sites may have no veterans[^11_avts-22]
+High conservation value sites may have no veterans[^11_avts-21]
 
-[^11_avts-22]: Daniel Aitken
+[^11_avts-21]: Daniel Aitken
 
 > They would be scoring well for other indicators
 

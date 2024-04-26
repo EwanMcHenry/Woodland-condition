@@ -1,5 +1,9 @@
 # Tree health
 
+## Note to round 2 respondents
+
+Review [Woodland Wildlife Toolkit] approach for context.
+
 ## Justification
 
 Tree disease threatens the resilience of woodlands, locally and at landscape scale.
@@ -10,11 +14,13 @@ Record detection/non-detection of high risk and low risk (separately) pests and 
 
 Record percentage of basal area tree mortality and notable crown dieback
 
-Should be recorded separately in non-natives and invasive plants
+Note if non-natives and invasive plants are only ones affected[^15_tree-heath-1].
 
-Condition score of 0 if high-risk pest/disease is present,
+[^15_tree-heath-1]: Kylie Jones Mattock
 
-![](images/Tree%20health%202023-11-14%2016.12.01.excalidraw.png)
+![Example form](images/Tree%20health%202023-11-14%2016.12.01.excalidraw.png)
+
+![Condition score of 0 if high-risk pest/disease is present](images/Tree%20health%20flow%202024-02-15%2011.58.44.excalidraw.png){width="400"}
 
 # Respondent value functions and weights
 
@@ -71,6 +77,14 @@ continuous_vf_fig()
 
 ```
 
+#### Weights
+
+```{r vf - weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+```
+
 #### Standardised weights
 
 ```{r std weights, fig.width= 4, echo = F , results="asis"}
@@ -79,30 +93,16 @@ ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weigh
 
 ```
 
-#### Weights
-
-```{r vf - weights, fig.width= 4, echo = F , results="asis"}
-
-ggplot_resp_weight_ind(indicator_name = indicator_name)
-
-```
+Weights, standardised so that all respondents varied the same amount
 :::
-
-### Comments on data
-
-VFs:
-
--   A lot of variation
-
-> Refer to [Woodland Wildlife Toolkit] approach when reviewing
 
 # Respondent comments
 
 ### Considerations for indicator design
 
-Measuring basal area is a relatively tedious desk job, difficult to do quickly in the field. Suggest DAFOR instead[^15_tree-heath-1].
+Measuring basal area is a relatively tedious desk job, difficult to do quickly in the field. Suggest DAFOR instead[^15_tree-heath-2].
 
-[^15_tree-heath-1]: Richard Brown
+[^15_tree-heath-2]: Richard Brown
 
 > They are quire broad basal area categories, high precision may not be necessary.
 >
@@ -110,13 +110,11 @@ Measuring basal area is a relatively tedious desk job, difficult to do quickly i
 
 ### Priority exceptions
 
-Landscape - e.g. ash dieback on chalk[^15_tree-heath-2].
+Landscape - e.g. ash dieback on chalk[^15_tree-heath-3].
 
-[^15_tree-heath-2]: Dave Bonsall
+[^15_tree-heath-3]: Dave Bonsall
 
-> -   [ ] Follow up; unsure what is meant here[^15_tree-heath-3].
-
-[^15_tree-heath-3]: Ewan McHenry
+> -   [ ] Follow up; unsure what is meant here.
 
 Landscapes susceptible to outbreak, where affected species abundant (ash, chestnut)[^15_tree-heath-4]
 
@@ -142,31 +140,21 @@ Potential conflict with deadwood[^15_tree-heath-6] and nutrient cycling[^15_tree
 
 > This should probably be dealt with independently using the deadwood indicator.
 
-Interaction with Native Tree and Shrub Species Richness(N):
-
--   a little bit of disease could be good to break up single species stands[^15_tree-heath-9]
+Interaction with Native Tree and Shrub Species Richness(N), a little bit of disease could be good to break up single species stands[^15_tree-heath-9]. Diverse woods will be more resilient to disease[^15_tree-heath-10], less important with higher species diversity[^15_tree-heath-11]
 
 [^15_tree-heath-9]: Dave Bonsall
-
-> May be best covered with e.g. Vertical Structure and other indicators.
-
--   A diverse wood will be more resilient to disease[^15_tree-heath-10], less important with higher species diversity[^15_tree-heath-11]
 
 [^15_tree-heath-10]: Liam Plummer, Jim Smith-Wright, Martin Hugi
 
 [^15_tree-heath-11]: Hannah Patterson, Ian Moss, Martin Hugi
 
-> It would be expected to score better for this indicator then (as it is expected to have less % of disease). But could consider lowering importance with increasing tree SR.
+> May be best covered with e.g. Vertical Structure and other indicators.
+>
+> More diverse expected to score better for this indicator, but exception maybe not needed. Could consider lowering importance with increasing tree SR.
 
-Disease in e.g. Invasives and non-native over-canopy may be good[^15_tree-heath-12], but may require notification.
+Will depend on virulence and specificity of the pest/pathogen[^15_tree-heath-12]
 
-[^15_tree-heath-12]: Kylie Jones Mattock
-
-> Should be record separately, but have no impact on ecological condition
-
-Will depend on virulence and specificity of the pest/pathogen[^15_tree-heath-13]
-
-[^15_tree-heath-13]: Ian Moss
+[^15_tree-heath-12]: Ian Moss
 
 > Pathogen risk level is recorded and affects scoring
 
@@ -192,9 +180,9 @@ Value 1: 25- 100% rapid mortality of basal area
 
 DAFOR notable and other pests/diseases
 
--   Noted to work very well[^15_tree-heath-14]
+-   Noted to work very well[^15_tree-heath-13]
 
-[^15_tree-heath-14]: Richard Brown
+[^15_tree-heath-13]: Richard Brown
 
 > Should consider DOMIN instead of DAFOR
 

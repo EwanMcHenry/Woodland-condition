@@ -1,20 +1,26 @@
 # Herbivore Impact
 
+## **Note to round 2 respondents**
+
+**Since round 1, this indicator has been completly revised. Your initial responses have had to be discarded.**
+
 ## Justification
 
-High herbivore impact is damaging for most woods[^14_herbivore-1].
+High herbivore impact is damaging for most woods[^14_herbivore-1]. This indicator aims to capture this damage, with positive impacts of herbivory coming from other indicators ([horizontal complexity](17_horizontal-complexity.qmd) etc).
 
 [^14_herbivore-1]: Chris Reid, Dave Bonsall, Richard Brown
 
 ## Measuring
 
-> Note: this indicator has been completely overhauled since the first round of responses. The previous responses are thus, not relevant. The following has been developed and trialed by Ewan McHenry, Alasdair Firth and Peter Lowe.
+> Note: The following has been developed and trialed by Ewan McHenry, Alasdair Firth and Peter Lowe.
+
+If a herbivore impact assessment (LITE or full) has been carried out in the past 2 years, this will not be required, and the information can be taken from that survey.
 
 **Herbivore Impact Assessment SUPERLITE**:
 
 -   A 3 min (timed) HIA
 
--   Focusing on saplings (0.05 - 2 m), basal shoots (\<2m) and vascular plants
+-   Focusing on saplings (0.05 - 2 m), basal shoots (\<2m) and vascular plants.
 
 -   Estimate the percentage of the last 12 months potential growth removed by herbivory
 
@@ -24,7 +30,7 @@ High herbivore impact is damaging for most woods[^14_herbivore-1].
 
 Notes
 
--   Focus on canopy gaps, edge etc, within or close to plot (more potential for saplings), avoid herbivore-inaccessible parts (e.g. Cliff edges).
+-   Focus on canopy gaps, edge etc, within or close to plot (more potential for saplings), avoid herbivore-inaccessible parts (e.g. Cliff edges). Extend beyond plot if required
 
 -   Do not consider historic browsing \> 12 months ago
 
@@ -38,9 +44,9 @@ Notes on status of fence, type of grazer, grazing history (if known) etc.
 
 ## Example form
 
-![](images/Herbivore%20Imapct%202023-11-14%2015.44.46.excalidraw.png){width="600"}
+![](images/Herbivore%20Imapct%20form%202023-11-14%2015.44.46.excalidraw.png)
 
-## Calculating condition score
+## Calculating condition score (will be automatic)
 
 ![Herbivory measurement will be used to categorise the level of herbivore impact. Condition score will relate to this category (using the value function)](images/Herbivore%20Imapct%202023-11-06%2016.22.12.excalidraw.png){width="500"}
 
@@ -101,6 +107,14 @@ filtered_data <- df[df$indicator_name == ind.matcher.df$indicator_name_for_extra
 `r paste(length(unique(filtered_data$respondant_name)))` respondents.
 
 ::: panel-tabset
+#### Weights
+
+```{r vf - weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+```
+
 #### Standardised weights
 
 ```{r std weights, fig.width= 4, echo = F , results="asis"}
@@ -109,16 +123,8 @@ ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weigh
 
 ```
 
-#### Weights
-
-```{r vf - weights, fig.width= 4, echo = F , results="asis"}
-
-ggplot_resp_weight_ind(indicator_name = indicator_name)
-
-```
+Weights, standardised so that all respondents varied the same amount
 :::
-
-### Comments on data
 
 # Respondent comments
 
@@ -142,7 +148,7 @@ Seasonality
 
 Woodland types
 
--   Woodland age: more important in woodland creation sites[^14_herbivore-2]
+-   Woodland creation sites: more important[^14_herbivore-2]
 
 -   Open woodland types: Tension where grazing and browsing is a key component of the habitat. Need to encourage appropriate amount of grazing, not encourage continual reduction as associated increases in tree regeneration[^14_herbivore-3].
 
@@ -170,9 +176,9 @@ Pulses of herbivory may be beneficial[^14_herbivore-7]
 
 [^14_herbivore-7]: Jim Smith-Wright
 
--   Intermittent heavy browsing could aid veteranisation
+Intermittent heavy browsing could aid veteranisation
 
-> Speculative tone, is there evidence for this?
+> *Is there evidence for this?*
 
 Quality of grazing available may impact holding capacity of the land: as e.g. restoration and creation improves grazing quality, impact may increase[^14_herbivore-8]
 

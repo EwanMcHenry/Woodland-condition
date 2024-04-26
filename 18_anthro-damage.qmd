@@ -1,5 +1,9 @@
 # Human damage
 
+## Note to round 2 respondents
+
+Review [Woodland Wildlife Toolkit](#sec-dam-woodland-wildlife-toolkit) approach for context.
+
 ## Justification
 
 High pollution reduces species diversity and natural processes[^18_anthro-damage-1]
@@ -13,7 +17,7 @@ This indicator requires significant development
 Attempting to capture:
 
 ::: two-columns
--   Anthropogenic damage
+-   Fires, vandalism to trees/habitat
 
 -   Soil damage
 
@@ -85,6 +89,14 @@ continuous_vf_fig()
 
 ```
 
+#### Weights
+
+```{r vf - weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+```
+
 #### Standardised weights
 
 ```{r std weights, fig.width= 4, echo = F , results="asis"}
@@ -93,24 +105,8 @@ ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weigh
 
 ```
 
-#### Weights
-
-```{r vf - weights, fig.width= 4, echo = F , results="asis"}
-
-ggplot_resp_weight_ind(indicator_name = indicator_name)
-
-```
+Weights, standardised so that all respondents varied the same amount
 :::
-
-### Comments on data
-
-VFs: Big range, but may converge to a consensus.
-
--   Recommend referring to the [Woodland Wildlife Toolkit] methods to contextualize
-
-Weights:
-
--   Full range
 
 # Respondent comments
 
@@ -189,7 +185,7 @@ Demographics of neighboring community, perception of woodland culture[^18_anthro
 
 # Other approaches
 
-## Woodland Wildlife Toolkit
+## Woodland Wildlife Toolkit {#sec-dam-woodland-wildlife-toolkit}
 
 On woodland walk, record evidence of nutrient enrichment and/or damaged ground, including patches of nettle and/or goose grass/cleavers (nutrient enrichment indicator) \>0.1 ha
 

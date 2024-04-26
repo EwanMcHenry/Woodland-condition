@@ -104,6 +104,14 @@ knitr::kable()
 
 ```
 
+#### Weights
+
+```{r vf - weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+```
+
 #### Standardised weights
 
 ```{r std weights, fig.width= 4, echo = F , results="asis"}
@@ -112,24 +120,12 @@ ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weigh
 
 ```
 
-#### Weights
-
-```{r vf - weights, fig.width= 4, echo = F , results="asis"}
-
-ggplot_resp_weight_ind(indicator_name = indicator_name)
-
-```
+Weights, standardised so that all respondents varied the same amount
 :::
 
 ### Comments on data
 
-VFs:
-
--   Disagreement in shape of relationship - A lot of variation around value of 1 and 2 classes
-
-Weights:
-
--   a lot of variation
+Disagreement in shape of relationship - A lot of variation around value of 1 and 2 classes
 
 # Respondent comments
 
@@ -137,61 +133,57 @@ Weights:
 
 Regeneration classes of shrubs require refinement
 
-Need to provide some estimate of abundance, at least enough to show when there is too much recruitment but ideally to show amount of survival between regen classes.
+Need to provide some estimate of abundance, to show when there is too much and estiamte survival between regen classes.
 
-Good to have temporal continuity, but also spatial patchiness[^13_regen-5]
+Recruitment from larger seedlings to saplings is most important, only happens when light above species-specific threshold[^13_regen-5]
 
-[^13_regen-5]: Saul Herbert
+[^13_regen-5]: Peter Lowe
 
-Recruitment from larger seedlings to saplings is most important, only happens when light above species-specific threshold[^13_regen-6]
+Would planted trees count as regenerating age class?[^13_regen-6]
 
-[^13_regen-6]: Peter Lowe
-
-Would planted trees count as regenerating age class?[^13_regen-7]
-
-[^13_regen-7]: Saul Herbert
+[^13_regen-6]: Saul Herbert
 
 ### Priority exceptions
 
-Seasonality will have a big impact, early spring many class 1, then lost to browsing[^13_regen-8]
+Seasonality will have a big impact, early spring many class 1, then lost to browsing[^13_regen-7]
 
-[^13_regen-8]: Jim Smith-Wright
+[^13_regen-7]: Jim Smith-Wright
 
 Woodland type
 
--   Wood pasture: Less regeneration expected/desired, depending on grazing pulses etc[^13_regen-9]. Protection may be required to ensure regen[^13_regen-10]
+-   Wood pasture: Less regeneration expected/desired, depending on grazing pulses etc[^13_regen-8]. Protection may be required to ensure regen[^13_regen-9]
 
--   Rainforest and other areas with important lower plant assemblages[^13_regen-11]
+-   Rainforest and other areas with important lower plant assemblages[^13_regen-10]
 
     > more emphasises needed to identify when there is "too much"
 
--   Woodland creation sites[^13_regen-12]: There may be no seed sources[^13_regen-13], lower importance when planting, greater importance when relying on natural colonisation[^13_regen-14],
+-   Woodland creation sites[^13_regen-11]: There may be no seed sources[^13_regen-12], lower importance when planting, greater importance when relying on natural colonisation[^13_regen-13], more variable growth rates [^13_regen-14]
 
-    -   More variable growth rates [^13_regen-15]
+[^13_regen-8]: Chris Reid, David Venables
 
-[^13_regen-9]: Chris Reid, David Venables
+[^13_regen-9]: David Logan
 
-[^13_regen-10]: David Logan
+[^13_regen-10]: Kylie Jones Mattock, Adam Thorogood
 
-[^13_regen-11]: Kylie Jones Mattock, Adam Thorogood
+[^13_regen-11]: Dean Kirkland
 
-[^13_regen-12]: Dean Kirkland
+[^13_regen-12]: Ian Moss
 
-[^13_regen-13]: Ian Moss
+[^13_regen-13]: Ewan McHenry
 
-[^13_regen-14]: Ewan McHenry
+[^13_regen-14]: David Logan
 
-[^13_regen-15]: David Logan
+Spatial scale: Regen is important at site, but not necessarily at plot-scale[^13_regen-15]. Its OK to have no regen in an individual plot, as long as it is elsewhere. Good to have temporal continuity, but also spatial patchiness[^13_regen-16]
 
-Spatial scale: Regen it important at site, but not necessarily at plot-scale[^13_regen-16]. Its OK to have no regen in an individual plot, as long as it is elsewhere
+[^13_regen-15]: Dave Bonsall
 
-[^13_regen-16]: Dave Bonsall
+[^13_regen-16]: Saul Herbert
 
 Species that is regenerating[^13_regen-17]
 
 [^13_regen-17]: Daniel Aitken
 
-Closed canopy[^13_regen-18]
+Closed canopy, less regen expected[^13_regen-18]
 
 [^13_regen-18]: Dave Bonsall
 
@@ -206,8 +198,6 @@ Temporal patchiness:
 -   Can be ephemeral because of grazing (slugs, deer etc)[^13_regen-21]:
 
     -   Absence within plot-visit doesn't mean no successful recruitment over e.g. next 5 years.
-
-    -   Presence in e.g. A spring survey, doesn't guarantee survival in 2 months
 
 -   Needs a long-term view. Regen not needed constantly to ensure good condition[^13_regen-22]
 

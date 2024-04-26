@@ -72,13 +72,14 @@ ind.matcher.df$weight.name <- c("Tree Age distribution" ,"Canopy nativeness (all
                                 "Herbivore impact", "Tree health", "Ground flora" , "Horizontal complexity", 
                                 "Anthropogenic damage")
 # whats needed to match in the extractio nprocess to find locations of things in excel sheets
-ind.matcher.df$indicator_name_for_extraction <- ind.matcher.df$indicator_name
-ind.matcher.df$indicator_name_for_extraction[8] <- "Extent/ area of woodland"
-ind.matcher.df$indicator_name_for_extraction[9] <- "Tree regeneration"
-ind.matcher.df$indicator_name_for_extraction[10] <- "Herbivore impact"
-ind.matcher.df$indicator_name_for_extraction[11] <- "Tree disease and rapid mortality"
-ind.matcher.df$indicator_name_for_extraction[13] <- "Horizontal complexity (structural mosaics across a wood)"
-ind.matcher.df$indicator_name_for_extraction[14] <- "Anthropogenic damage"
+ind.matcher.df$indicator_name_topof_sheet <- ind.matcher.df$indicator_name
+ind.matcher.df$indicator_name_topof_sheet[4] <- "Number of native tree and shrub species"
+ind.matcher.df$indicator_name_topof_sheet[8] <- "Extent/ area of woodland"
+ind.matcher.df$indicator_name_topof_sheet[9] <- "Tree regeneration"
+ind.matcher.df$indicator_name_topof_sheet[10] <- "Herbivore impact"
+ind.matcher.df$indicator_name_topof_sheet[11] <- "Tree disease and rapid mortality"
+ind.matcher.df$indicator_name_topof_sheet[13] <- "Horizontal complexity (structural mosaics across a wood)"
+ind.matcher.df$indicator_name_topof_sheet[14] <- "Anthropogenic damage"
 
 ### whats written on the axis title for that indicator's sheet.... wow, this is exhausting! ----
 ind.matcher.df$ind.axis.title <- NA
@@ -124,7 +125,7 @@ extract.from.delphi.form <- function(forms.direct){
       ## value function info ----
       data_val_func <- read_excel(this.form.direct, sheet = indicator_num) # load data for this indicator:respondent
       
-      expert.data$indicator_name[[bk]] <- names(data_val_func)[1] # this is the top cell
+      expert.data$indicator_name_topof_sheet[[bk]] <- names(data_val_func)[1] # this is the top cell
       expert.data$indicator_num[[bk]] <- indicator_num
       
       descriptive_sentance.loc <- matching_cell_index(data_val_func, pattern = "Write a sentence or so describing") + c(1, 0)
@@ -148,13 +149,15 @@ extract.from.delphi.form <- function(forms.direct){
       data_weight  <- read_excel(this.form.direct, sheet = "Relative importance")
       
       weight_indicies_loc <- which(data_weight == 
-                                     ind.matcher.df$weight.name[ind.matcher.df$indicator_name_for_extraction == expert.data$indicator_name[[bk]]],
+                                     ind.matcher.df$weight.name[ind.matcher.df$indicator_name_topof_sheet == expert.data$indicator_name_topof_sheet[[bk]]],
                                    arr.ind = T) %>% as.numeric() + 
         c(0,1) 
       expert.data$weight_indicy_score[[bk]] <- data_weight[weight_indicies_loc[1], weight_indicies_loc[2]] %>% as.numeric()
       expert.data$weight_indicy_confidence[[bk]] <- data_weight[weight_indicies_loc[1], weight_indicies_loc[2]+1] %>% as.numeric()
       expert.data$weight_indicy_exceptions[[bk]] <- data_weight[weight_indicies_loc[1], (weight_indicies_loc[2]+2):ncol(data_weight)] %>% 
         unlist() %>% Filter(function(x)!all(is.na(x)), .) %>% as.character()
+      
+      expert.data$indicator_name[[bk]] <- ind.matcher.df$indicator_name_topof_sheet[indicator_num]
       
       bk <- bk +1
     }

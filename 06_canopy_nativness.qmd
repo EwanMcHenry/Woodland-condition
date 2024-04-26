@@ -12,7 +12,11 @@ Estimate the percentage of those canopy volumes that are **site**-native.
 
 > Note: There is confusion between "percentage OF canopy THAT IS native" and "percentage native canopy cover". This is explicitly the percentage **of the canopy**.
 
-### ![](images/Canopy%20cover%20and%20nativeness%202023-11-13%2014.17.18.excalidraw.png)
+Bramble and bracken cover also recorded for management info[^06_canopy_nativness-1].
+
+[^06_canopy_nativness-1]: Relates directly to light and could inform woodland management (e.g. thinning). Nearest 20% is good enough.
+
+![](images/Canopy%20cover%20and%20nativeness%202023-11-13%2014.17.18.excalidraw.png)
 
 # Respondent value functions and weights
 
@@ -80,6 +84,14 @@ continuous_vf_fig()
 
 ```
 
+#### Weights
+
+```{r vf Tree age size distribution - weights, fig.width= 4, echo = F , results="asis"}
+
+ggplot_resp_weight_ind(indicator_name = indicator_name)
+
+```
+
 #### Standardised weights
 
 ```{r std weights, fig.width= 4, echo = F , results="asis"}
@@ -88,13 +100,7 @@ ggplot_resp_weight_ind(indicator_name = indicator_name, weight_variable = "weigh
 
 ```
 
-#### Weights
-
-```{r vf Tree age size distribution - weights, fig.width= 4, echo = F , results="asis"}
-
-ggplot_resp_weight_ind(indicator_name = indicator_name)
-
-```
+Weights, standardised so that all respondents varied the same amount
 :::
 
 ### Comments on data
@@ -102,150 +108,113 @@ ggplot_resp_weight_ind(indicator_name = indicator_name)
 Value functions:
 
 -   Similar general trends, but a lot of variation - Different shapes - Some linear, some S-shaped, some exponential, some logarithmic("r" shaped) - disagreement RE max value
-
-> Recommend focusing reassessments on
->
-> -   The areas of 0-25% native and 75-100%
->
-> -   when a value of 100 is reached
-
-Weightings:
-
--   Fairly wide spread - 5 or so think it among most important - rest think it is middle-importance
+-   Disagreement most important at each end of the scale - **focus review there**
 
 # Respondent comments
 
 ### Considerations for indicator design
 
-Non-natives can provide important structural functions not provided by the native species present, important to note where removing them may be adverse[^06_canopy_nativness-1].
+Non-natives can provide important structural functions not provided by the native species present, important to note where removing them may be adverse[^06_canopy_nativness-2].
 
-[^06_canopy_nativness-1]: Kylie Jones Mattock, Dave Bonsall
+[^06_canopy_nativness-2]: Kylie Jones Mattock, Dave Bonsall
 
-> Assessment should give space to note significant structural contributions of non-natives, focusing on where native species are not providing those structures.
+> Space needed to note significant structural contributions of non-natives, focusing on where native species are not providing those structures. Useful for management info, for condition scoring those non-native contributions would be captured by those specific indicators.
 >
-> Good to record for management. For the condition score the structural complexity added by non-natives would be captured by those specific indicators.
+> Consider measuring at different height bands. At least, there should be a prompt to note where non-native component is mainly in upper/lower canopy.
 
-DOMIN cover-abundance scale might be used instead of un-prompted percentages. May be more reliable than DAFOR[^06_canopy_nativness-2].
+DOMIN cover-abundance scale might be used instead of un-prompted percentages. May be more reliable than DAFOR[^06_canopy_nativness-3].
 
-[^06_canopy_nativness-2]: <http://www.magnificentmeadows.org.uk/assets/pdfs/How_to_do_an_NVC_Survey.pdf>
+[^06_canopy_nativness-3]: <http://www.magnificentmeadows.org.uk/assets/pdfs/How_to_do_an_NVC_Survey.pdf>
 
 ::: column-margin
 ![](images/DOMIN%20cover-abundance%20scale%202023-11-10%2019.53.50.excalidraw.png){fig-align="right"}
 :::
 
-Consider measuring at different height bands, using same layers as for, Vertical Structure and Horizontal Complexity. At least, there should be a prompt to note where non-native component is mainly in upper/lower canopy.
-
-Consider specifying a height requirements for trees/shrubs to count (3m for trees?).
-
-Would open habitat include areas with e.g. 2.5m regenerating trees?
-
-A measure of bramble and bracken specifically might be useful
-
--   Relates directly to light and could inform woodland management (e.g. thinning)
-
--   Not necessarily as part of condition score, but easy to assess and useful info for manager - Nearest 20% is good enough
+Open habitat needs strict definition - i.e. tree height etc.
 
 ### Priority exceptions
 
 Some non-natives not as bad as others
 
--   Larch and Scots pine [^06_canopy_nativness-3], honorary natives such as sweet chestnut in the SE, sycamore[^06_canopy_nativness-4], Douglas fir[^06_canopy_nativness-5], beech?[^06_canopy_nativness-6].
+-   Douglas fir[^06_canopy_nativness-4], Larch and Scots pine [^06_canopy_nativness-5], honorary natives such as sweet chestnut in the SE, sycamore[^06_canopy_nativness-6], beech?[^06_canopy_nativness-7].
 
--   Specific tree species that are part of targeted conservation management of wildlife species (e.g. potentially goshawk and red squirrel)[^06_canopy_nativness-7].
+-   Specific species part of targeted species conservation (e.g. potentially goshawk and red squirrel)[^06_canopy_nativness-8].
 
--   Non-native species that have ranges that overlap with UK-native species (European larch, Norway spruce etc)[^06_canopy_nativness-8]
-
--   Species that share mycorrhizal associations with native trees[^06_canopy_nativness-9]
+-   Non-native species that have ranges that overlap with UK-native species (European larch, Norway spruce etc)[^06_canopy_nativness-9], or that share mycorrhizal associations with native trees[^06_canopy_nativness-10]
 
 -   UK-native species that aren't site-native, but are ecologically site-appropriate.
 
-[^06_canopy_nativness-3]: Peter Lowe, Alasdair Firth
+[^06_canopy_nativness-4]: Bob Epsom
 
-[^06_canopy_nativness-4]: Daniel Aitken, Dave Bonsall, Jim Smith-Wright: Sycamore can provide similar bark pH to ash which could be important for lichens associated with ash, particularly in context of ash dieback.
+[^06_canopy_nativness-5]: Peter Lowe, Alasdair Firth
 
-[^06_canopy_nativness-5]: Bob Epsom
+[^06_canopy_nativness-6]: Daniel Aitken, Dave Bonsall, Jim Smith-Wright: Sycamore can provide similar bark pH to ash which could be important for lichens associated with ash, particularly in context of ash dieback.
 
-[^06_canopy_nativness-6]: Daniel Aitken
+[^06_canopy_nativness-7]: Daniel Aitken
 
-[^06_canopy_nativness-7]: Peter Lowe, Daniel Aitken
-
-[^06_canopy_nativness-8]: Martin Hugi
+[^06_canopy_nativness-8]: Peter Lowe, Daniel Aitken
 
 [^06_canopy_nativness-9]: Martin Hugi
 
-Climate change will shift species' native ranges[^06_canopy_nativness-10]
+[^06_canopy_nativness-10]: Martin Hugi
 
-[^06_canopy_nativness-10]: David Venables
+Climate change will shift species' native ranges[^06_canopy_nativness-11]
 
-Wood pasture[^06_canopy_nativness-11]; groves[^06_canopy_nativness-12]
+[^06_canopy_nativness-11]: David Venables
 
-[^06_canopy_nativness-11]: Karen Hornigold
+Wood pasture[^06_canopy_nativness-12]; groves[^06_canopy_nativness-13]
 
-[^06_canopy_nativness-12]: Mick Bracken
+[^06_canopy_nativness-12]: Karen Hornigold
 
-> -   [ ] follow up, dont understand reasoning here,
+[^06_canopy_nativness-13]: Mick Bracken
+
+> -   [ ] follow up, don't understand reasoning here,
 
 ### Lower priority exceptions
 
-Arboretums/designed landscapes[^06_canopy_nativness-13]
+Arboretums/designed landscapes[^06_canopy_nativness-14], amenity woodlands[^06_canopy_nativness-15], urban, shelter belts[^06_canopy_nativness-16] often need to be non-native to be effective.
 
-[^06_canopy_nativness-13]: Kylie Jones Mattock, David Venables
+[^06_canopy_nativness-14]: Kylie Jones Mattock, David Venables
 
-Amenity woodlands[^06_canopy_nativness-14]
+[^06_canopy_nativness-15]: Kylie Jones Mattock
 
-[^06_canopy_nativness-14]: Kylie Jones Mattock
+[^06_canopy_nativness-16]: Ian Moss
 
-> Don't quite understand this one
->
-> -   [ ] should follow up.
+> May score well for other indicators, but advising no ecological reason for an exception RE native component's impact on condition. Often there may be a trade-off with services etc. That tradeoff should be made explicit: an accepted loss of potential wildlife value (i.e. ecological condition) for the service of shelter etc, a non-native shelter-belt would just have a low condition score.
 
-Urban
+Wildlife reserves, ground conditions, pests/diseases[^06_canopy_nativness-17]
 
-> may score well for other indicators, but recommend no exception RE native component.
+[^06_canopy_nativness-17]: David Venables
 
-Shelter belts, often need to be non-native to be effective[^06_canopy_nativness-15]
-
-[^06_canopy_nativness-15]: Ian Moss
-
-> Here there may be a trade-off that should be made explicitly: an accepted loss of potential wildlife value (i.e. ecological condition) for the service of shelter, a non-native shelter-belt would just have a low condition score.
-
-Wildlife reserves, ground conditions, pests/diseases[^06_canopy_nativness-16]
-
-[^06_canopy_nativness-16]: David Venables
-
-> Dont understand these one...
+> Don't understand these one...
 
 ### Concerns already covered by this or other indicators
 
-What to do with overlapping canopy of native/non-native species?
+Where non-natives provide important structures missing in native component. e.g. veteran trees in historic parkland[^06_canopy_nativness-18]
 
-> Considering % canopy volume should deal with this.
-
-Non-native veteran trees can provide significant wildlife value e.g. in historic parkland[^06_canopy_nativness-17]
-
-[^06_canopy_nativness-17]: Chris Reid
+[^06_canopy_nativness-18]: Chris Reid
 
 -   e.g. sweet chestnut heart rot provides similar habitat niche to oak heart rot.
 
 > This should be accounted for within the Veteran Trees indicator.
 
-Some natives can be detrimental if in monoculture, e.g. yew, holly[^06_canopy_nativness-18], or otherwise low species diversity[^06_canopy_nativness-19]
+Some natives can be detrimental if in monoculture, e.g. yew, holly[^06_canopy_nativness-19], or otherwise low species diversity[^06_canopy_nativness-20]
 
-[^06_canopy_nativness-18]: Jim Smith-Wright
+[^06_canopy_nativness-19]: Jim Smith-Wright
 
-[^06_canopy_nativness-19]: David Venables
+[^06_canopy_nativness-20]: David Venables
 
 > This is definitely worth making a note of, but may be best dealt with using the Native Tree and Shrub Species Richness indicator.
 
-Commercial plantations and wood lots[^06_canopy_nativness-20]
+Commercial plantations and wood lots[^06_canopy_nativness-21]
 
-[^06_canopy_nativness-20]: Kylie Jones Mattock, David Venables, Rhiannon Hoy
+[^06_canopy_nativness-21]: Kylie Jones Mattock, David Venables, Rhiannon Hoy
 
 > The "negative" impacts of management of native plantations should be picked up in other indicators. Non-native plantations would be expected to score poorly for this indicator.
 
-Native PAWS[^06_canopy_nativness-21]
+Native PAWS[^06_canopy_nativness-22]
 
-[^06_canopy_nativness-21]: Dean Kirkland
+[^06_canopy_nativness-22]: Dean Kirkland
 
 > If restoration status is critical etc, this should be picked up by other indicators.
 

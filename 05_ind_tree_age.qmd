@@ -33,11 +33,6 @@ Could be combined with measurement of [regeneration classes](13_regen.qmd), and 
 
 ![](images/Tree%20Age%20Distribution%20-%20measure.png)
 
-```{r load curated data, echo = F, include = F, eval = T }
-extraction.location <- "Data\\Delphi round 1\\"
-load(paste0(extraction.location,"curated.RData"))
-```
-
 ```{r libraries_data, echo = F, include = F, eval = T }
 
 # LIBARIES ---------------------------------------------------------------
@@ -58,10 +53,7 @@ library(htmltools)
 # library(ggnewscale)
 # library(Polychrome)
 source("Scripts\\functions_delphi_analysis.R")
-
-forms.direct <- "Data\\Delphi round 1\\response sheets\\"
-extraction.location <- "Data\\Delphi round 1\\"
-
+load(paste0(extraction.location,"curated.RData"))
 ```
 
 ```{r vf Tree age size distribution - init, echo = F , results="asis"}

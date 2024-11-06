@@ -26,11 +26,6 @@ Total sum for score (later development could weight deadwood types differently)
 
 # Respondent value functions and weights
 
-```{r load curated data, echo = F, include = F, eval = T }
-extraction.location <- "Data\\Delphi round 1\\"
-load(paste0(extraction.location,"curated.RData"))
-```
-
 ```{r libraries_data, echo = F, include = F, eval = T }
 
 # LIBARIES ---------------------------------------------------------------
@@ -51,10 +46,7 @@ library(htmltools)
 # library(ggnewscale)
 # library(Polychrome)
 source("Scripts\\functions_delphi_analysis.R")
-
-forms.direct <- "Data\\Delphi round 1\\response sheets\\"
-extraction.location <- "Data\\Delphi round 1\\"
-
+load(paste0(extraction.location,"curated.RData"))
 ```
 
 ```{r vf Canopy Nativness - init, echo = F , results="asis"}

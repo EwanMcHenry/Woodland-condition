@@ -12,6 +12,7 @@ Many respondents provided weighting estimates that were very similar between ind
 
 There were [patterns](#sec-patterns) of disagreement between respondents in round 1, that might be used to inform the second round of deliberation.
 
+
 ```{r libraries_data, echo = F, include = F, eval = T }
 
 # LIBARIES ---------------------------------------------------------------
@@ -31,10 +32,8 @@ library(DT)
 # library(cowplot)
 # library(ggnewscale)
 # library(Polychrome)
-source("Scripts\\functions_delphi_analysis.R")
 
-forms.direct <- "Data\\Delphi round 1\\response sheets\\"
-extraction.location <- "Data\\Delphi round 1\\"
+source("Scripts\\functions_delphi_analysis.R")
 load(paste0(extraction.location,"curated.RData"))
 
 # add reverce rank of wieghts by each respondant to just.one.df

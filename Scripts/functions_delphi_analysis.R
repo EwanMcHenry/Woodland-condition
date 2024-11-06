@@ -7,7 +7,14 @@ library(dplyr)
 library(tidyr)
 library(ggrepel)
 
-
+# forms.direct <- "Data\\Delphi round 1\\response sheets\\"
+# extraction.location <- "Data\\Delphi round 1\\"
+# forms.direct <- "Data\\Delphi round 1\\editing for round 2\\"
+# forms.direct <- "Data\\Delphi round 1\\response sheets\\"
+forms.direct <- "Data\\Delphi round 2\\response sheets\\"
+extraction.location <- "Data\\Delphi round 2\\"
+# forms.direct <- "Data\\Delphi round 1\\response sheets\\"
+# extraction.location <- "Data\\Delphi round 1\\"
 
 # interactive PCA plot -------------------------
 generate_interactive_PCA <- function(data, weight_variable) {
@@ -63,7 +70,7 @@ generate_interactive_PCA <- function(data, weight_variable) {
 
 
 # function to plot continuous delphi results ------------
-continuous_vf_fig <- function(line.col = NA){
+continuous_vf_fig <- function(line.col = "black"){
   plot <- ggplot_gam_resp_vf(indicator_name = indicator_name,
                              x.lab = ind.axis.title, gam.col = line.col)
   
@@ -95,7 +102,7 @@ ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.ma
   
   # PLOT SPEC, LINES AND TREND ----
   plot <- ggplot() +
-    # geom_line(data = dummy_data, size = 2, aes(y = predicted_value, x = measure), colour = gam.col) + # gam prediction
+    geom_line(data = dummy_data, size = 2, aes(y = predicted_value, x = measure), colour = gam.col) + # gam prediction
     geom_line(data = filtered_data, 
               aes(x = measure, y = value, color = respondant_name,
                   text = map(
@@ -184,11 +191,16 @@ ggplot_resp_cat_vf <- function(indicator_name, x.lab = ind.matcher.df$ind.axis.t
 
 # FUNCTION - PLOT RESPONDANTS' WEIGHTS - FOR INDICATOR  ----
 ggplot_resp_weight_ind <- function(indicator_name, 
-                                   indicator_name_for_extraction =  ind.matcher.df$indicator_name_for_extraction[ind.num], 
+                                   indicator_name_topof_sheet =  ind.matcher.df$indicator_name_topof_sheet[ind.num], 
                                    this.ind.num = ind.num, pal = respondant_colours,
                                    weight_variable = "weight"){
   # plot by respondant for this indicator
   ### weight_variable = weight or weight_standardised
+  
+  #cheat to fix incase old version of ind.matcher.df is used
+  if(names(ind.matcher.df)[4] == "indicator_name_for_extraction"){
+    names(ind.matcher.df)[4] <- "indicator_name_topof_sheet"
+  }
   
   #filter data of one weight for each respondant:indicator
   weights_filtered_data <- just.one.df %>% #df[ !duplicated(paste0(df$respondant_name, df$indicator_name)), ] %>% 
@@ -212,7 +224,7 @@ ggplot_resp_weight_ind <- function(indicator_name,
   )
   
   # Filter the data for the selected indicator
-  filtered_data <- weights_filtered_data[weights_filtered_data$indicator_name == indicator_name_for_extraction, ] 
+  filtered_data <- weights_filtered_data[weights_filtered_data$indicator_name == indicator_name_topof_sheet, ] 
     # arrange 
   
 ylim <- min(c(0,min(weights_filtered_data[,weight_variable], na.rm = T)), na.rm = T)

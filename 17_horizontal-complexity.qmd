@@ -18,11 +18,6 @@ Using same height bands as [vertical structure](07_vert_struct.qmd).
 
 # Respondent value functions and weights
 
-```{r load curated data, echo = F, include = F, eval = T }
-extraction.location <- "Data\\Delphi round 1\\"
-load(paste0(extraction.location,"curated.RData"))
-```
-
 ```{r libraries_data, echo = F, include = F, eval = T }
 
 # LIBARIES ---------------------------------------------------------------
@@ -43,19 +38,17 @@ library(htmltools)
 # library(ggnewscale)
 # library(Polychrome)
 source("Scripts\\functions_delphi_analysis.R")
-
-forms.direct <- "Data\\Delphi round 1\\response sheets\\"
-extraction.location <- "Data\\Delphi round 1\\"
-
+load(paste0(extraction.location,"curated.RData"))
 ```
 
 ```{r vf Canopy Nativness - init, echo = F , results="asis"}
 
 ind.num = 13
-indicator_name = ind.matcher.df$indicator_name[ind.num]
+indicator_name = ind.matcher.df$indicator_name_topof_sheet[ind.num]
+
 ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
 
-filtered_data <- df[df$indicator_name == ind.matcher.df$indicator_name_for_extraction[ind.num], ] %>% 
+filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
   mutate(respondant_name = as.factor(respondant_name))
 
 ```

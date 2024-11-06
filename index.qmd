@@ -16,18 +16,18 @@ library(DT)
 # library(cowplot)
 # library(ggnewscale)
 library(Polychrome)
-source("Scripts\\functions_delphi_analysis.R")
 
- forms.direct <- "Data\\Delphi round 1\\editing for round 2\\"
-# forms.direct <- "Data\\Delphi round 1\\response sheets\\"
 
-extraction.location <- "Data\\Delphi round 1\\"
+
+source("Scripts\\functions_delphi_analysis.R") # also contains directorys for forms etc
+
 
 ```
 
 ```{r data_extraction_from_excelsheets and curation - preliminary work, echo = F, include = F, eval = F }
 
 # extract from excel sheets ----
+delphi.round <- 1
 source("Scripts\\Extract_expert_info.R")
 # if all is well this should:
 # save ind.matcher ind.matcher.df and expert.data (expert opinion responses from the Delphi forms) 
@@ -38,7 +38,20 @@ source("Scripts\\curation of extracted data.R")
 # this one loads the data and does some curation, scaling responses etc
 # then saves the dataframes
 
+# round 2 
+delphi.round <- 2
+source("Scripts\\Extract_expert_info.R")
+source("Scripts\\curation of extracted data.R")
+
+
+
+
+
 # then later I loads it (in Italian-American mafiosi accent)
+
+
+
+
 
 ```
 

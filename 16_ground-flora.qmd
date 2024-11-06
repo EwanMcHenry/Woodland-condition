@@ -4,8 +4,6 @@
 library(knitr)
 library(kableExtra)
 
-extraction.location <- "Data\\Delphi round 1\\"
-load(paste0(extraction.location,"curated.RData"))
 ```
 
 ```{=html}
@@ -15,6 +13,7 @@ caption, .table-caption {
 }
 </style>
 ```
+
 ```{r libraries_data, echo = F, include = F, eval = T }
 
 # LIBARIES ---------------------------------------------------------------
@@ -35,13 +34,8 @@ library(htmltools)
 # library(ggnewscale)
 # library(Polychrome)
 source("Scripts\\functions_delphi_analysis.R")
-
-forms.direct <- "Data\\Delphi round 1\\response sheets\\"
-extraction.location <- "Data\\Delphi round 1\\"
-
-
+load(paste0(extraction.location,"curated.RData"))
 ```
-
 ## Note to round 2 respondents
 
 **Since round 1, this indicator has been changed from "number of species" to "proportion of appropriate species".** Your form still has the original data in it. You might want to start by changing your "numbers of species" into percentages, then reviewing based on what other respondents have provided.
@@ -136,10 +130,11 @@ table_data %>%
 ```{r vf Canopy Nativness - init, echo = F , results="asis"}
 
 ind.num = 12
-indicator_name = ind.matcher.df$indicator_name[ind.num]
+indicator_name = ind.matcher.df$indicator_name_topof_sheet[ind.num]
+
 ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
 
-filtered_data <- df[df$indicator_name == ind.matcher.df$indicator_name_for_extraction[ind.num], ] %>% 
+filtered_data <- df[df$indicator_name == indicator_name, ] %>% 
   mutate(respondant_name = as.factor(respondant_name))
 
 ```

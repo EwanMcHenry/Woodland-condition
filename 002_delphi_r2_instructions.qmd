@@ -8,13 +8,12 @@ extraction.location <- "Data\\Delphi round 1\\"
 load(paste0(extraction.location,"curated.RData"))
 ```
 
-```{=html}
 <style type="text/css">
 caption, .table-caption {
   text-align: left;
 }
 </style>
-```
+
 ```{r libraries_data, echo = F, include = F, eval = T }
 
 # LIBARIES ---------------------------------------------------------------

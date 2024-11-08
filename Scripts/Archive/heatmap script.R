@@ -1,9 +1,5 @@
 ### Heatmaps
 
-::: panel-tabset
-#### Raw weightings
-
-```{r heatmap function}
 library(heatmaply)
 
 generate_interactive_heatmap <- function(data, weight_variable) {
@@ -37,18 +33,13 @@ generate_interactive_heatmap <- function(data, weight_variable) {
 }
 
 
-```
 
-```{r heatmap weights raw, echo = F, results="asis"}
 generate_interactive_heatmap(just.one.df, "weight")
-```
 
 #### Ranked weightings
 
-```{r heatmap rank weights, echo = F, results="asis"}
 generate_interactive_heatmap(just.one.df, "rank_weight")
 ```
-:::
-  
+
   ### 
   

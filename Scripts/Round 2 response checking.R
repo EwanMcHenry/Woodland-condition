@@ -2,10 +2,9 @@
 # check which folk responded, changed some things etc
 # make sure that the extraction all went well
 
-source("Scripts\\functions_delphi_analysis.R") # also contains directorys for forms etc
 library(tidyverse)
 
-
+# round 1
 delphi.round <- 1
 extraction.location <- paste0("Data\\Delphi round ", delphi.round,"\\")
 load(paste0(extraction.location,"curated.RData"))

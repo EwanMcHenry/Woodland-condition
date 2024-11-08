@@ -28,6 +28,9 @@ source("Scripts\\functions_delphi_analysis.R") # also contains directorys for fo
 
 # extract from excel sheets ----
 delphi.round <- 1
+extraction.location <- paste0("Data\\Delphi round ", delphi.round,"\\")
+forms.direct <- paste0(extraction.location, "response sheets\\")
+
 source("Scripts\\Extract_expert_info.R")
 # if all is well this should:
 # save ind.matcher ind.matcher.df and expert.data (expert opinion responses from the Delphi forms) 
@@ -40,6 +43,9 @@ source("Scripts\\curation of extracted data.R")
 
 # round 2 
 delphi.round <- 2
+extraction.location <- paste0("Data\\Delphi round ", delphi.round,"\\")
+forms.direct <- paste0(extraction.location, "response sheets\\")
+
 source("Scripts\\Extract_expert_info.R")
 source("Scripts\\curation of extracted data.R")
 
@@ -56,6 +62,10 @@ source("Scripts\\curation of extracted data.R")
 ```
 
 ```{r load curated data, echo = F, include = F, eval = T }
+delphi.round <- 1
+extraction.location <- paste0("Data\\Delphi round ", delphi.round,"\\")
+forms.direct <- paste0(extraction.location, "response sheets\\")
+
 load(paste0(extraction.location,"curated.RData"))
 ```
 

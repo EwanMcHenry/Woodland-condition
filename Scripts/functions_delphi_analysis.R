@@ -67,8 +67,6 @@ generate_interactive_PCA <- function(data, weight_variable) {
   )
 }
 
-
-
 # function to plot continuous delphi results ------------
 continuous_vf_fig <- function(line.col = "black"){
   plot <- ggplot_gam_resp_vf(indicator_name = indicator_name,
@@ -84,8 +82,6 @@ continuous_vf_fig <- function(line.col = "black"){
     config(displayModeBar = F) %>% 
     layout(yaxis = list(range = c(-5, 105)))
 }
-
-
 
 # FUNCTION - PLOT RESPONDANTS' continuous INDICATOR VFs ------------
 ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.matcher.df$ind.axis.title[i], pal = respondant_colours){

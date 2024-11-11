@@ -7,15 +7,6 @@ library(dplyr)
 library(tidyr)
 library(ggrepel)
 
-# forms.direct <- "Data\\Delphi round 1\\response sheets\\"
-# extraction.location <- "Data\\Delphi round 1\\"
-# forms.direct <- "Data\\Delphi round 1\\editing for round 2\\"
-# forms.direct <- "Data\\Delphi round 1\\response sheets\\"
-forms.direct <- "Data\\Delphi round 2\\response sheets\\"
-extraction.location <- "Data\\Delphi round 2\\"
-# forms.direct <- "Data\\Delphi round 1\\response sheets\\"
-# extraction.location <- "Data\\Delphi round 1\\"
-
 # interactive PCA plot -------------------------
 generate_interactive_PCA <- function(data, weight_variable) {
   # Select relevant columns and spread the data  

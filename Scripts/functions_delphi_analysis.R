@@ -7,7 +7,29 @@ library(dplyr)
 library(tidyr)
 library(ggrepel)
 
-# interactive PCA plot -------------------------
+## Configure for Delphi round ----
+config_for_delphi_round <- function(delphi.round) {
+  #' Sets the paths for the specified Delphi round by creating the 
+  #' `delphi.round`, `extraction.location`, and `forms.direct` objects in the global environment.
+  
+  #'
+  #' @param delphi.round An integer representing the Delphi round number.
+  #' @return None. The function creates global variables `delphi.round`, `extraction.location`, 
+  #' and `forms.direct` for use in the global environment.
+  
+  # Define the paths
+  extraction.location <- paste0("Data\\Delphi round ", delphi.round, "\\")
+  forms.direct <- paste0(extraction.location, "response sheets\\")
+  
+  # Assign variables to the global environment
+  assign("delphi.round", delphi.round, envir = .GlobalEnv)
+  assign("extraction.location", extraction.location, envir = .GlobalEnv)
+  assign("forms.direct", forms.direct, envir = .GlobalEnv)
+}
+
+# PLOTING FUNCTIONS ----
+
+## interactive PCA plot -------------------------
 generate_interactive_PCA <- function(data, weight_variable) {
   # Select relevant columns and spread the data  
   weights.mat <- data %>%
@@ -58,7 +80,7 @@ generate_interactive_PCA <- function(data, weight_variable) {
   )
 }
 
-# function to plot continuous delphi results ------------
+## function to plot continuous delphi results ------------
 continuous_vf_fig <- function(line.col = "black"){
   plot <- ggplot_gam_resp_vf(indicator_name = indicator_name,
                              x.lab = ind.axis.title, gam.col = line.col)
@@ -74,7 +96,7 @@ continuous_vf_fig <- function(line.col = "black"){
     layout(yaxis = list(range = c(-5, 105)))
 }
 
-# FUNCTION - PLOT RESPONDANTS' continuous INDICATOR VFs ------------
+## FUNCTION - PLOT RESPONDANTS' continuous INDICATOR VFs ------------
 ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.matcher.df$ind.axis.title[i], pal = respondant_colours){
 
   # PREDICT TREND ----
@@ -133,7 +155,7 @@ ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.ma
   plot
 }
 
-# FUNCTION - PLOT RESPONDANTS' CATEGORICAL INDICATOR VFs ----
+## FUNCTION - PLOT RESPONDANTS' CATEGORICAL INDICATOR VFs ----
 ggplot_resp_cat_vf <- function(indicator_name, x.lab = ind.matcher.df$ind.axis.title[i], data = vf_cat_data, pal = respondant_colours){
   # vf_cat_data is filtered_data, formatted to include categories - cat_measure
   
@@ -176,7 +198,7 @@ ggplot_resp_cat_vf <- function(indicator_name, x.lab = ind.matcher.df$ind.axis.t
   plot
 }
 
-# FUNCTION - PLOT RESPONDANTS' WEIGHTS - FOR INDICATOR  ----
+## FUNCTION - PLOT RESPONDANTS' WEIGHTS - FOR INDICATOR  ----
 ggplot_resp_weight_ind <- function(indicator_name, 
                                    indicator_name_topof_sheet =  ind.matcher.df$indicator_name_topof_sheet[ind.num], 
                                    this.ind.num = ind.num, pal = respondant_colours,
@@ -342,7 +364,7 @@ ylim[2] <- max(weights_filtered_data[,weight_variable], na.rm = T)
   
 }
 
-# FUNCTION - RUN PLOTTING OF CATEGORISED VF ----
+## FUNCTION - RUN PLOTTING OF CATEGORISED VF ----
 categorised_vf_fig <- function(){
   # categorical plot
   vf_cat_data = filtered_data %>% 

@@ -13,6 +13,7 @@ The repository is structured as follows:
     -   data on appropriate tree and plant species for different types of site and woodland structure, adapted from The Woodland Trust's Tree Species Handbook.
 -   `Scripts/` contains the scripts used to analyse the data:
     -   `functions_delphi_analysis.R` contains many of the the functions used repeatedly in the analysis and loads the libraries required for them. Functions include:
+        -   `config_for_delphi_round()`
         -   `generate_interactive_PCA()`
         -   `continuous_vf_fig()`
         -   `ggplot_gam_resp_vf()`
@@ -21,9 +22,9 @@ The repository is structured as follows:
         -   `categorised_vf_fig()`
     -   `Extract_expert_info.R` extracts the expert information from the Excel forms
     -   `curation of extracted data.R` curates the extracted data
-    -   `indicator tempalte.qmd` is used as a template for indicator pages of the Quorto book
+    -   `indicator template.qmd` is used as a template for indicator pages of the Quorto book
     -   `Round 2 response checking.R` exploratory analysis of the second round of expert responses
     -   `indicator matcher data.R` sets the different names used for the same indicators so they can be matched. Ran within `Extract_expert_info.R` and dependent on that.
     -   `Archive/` exploratory scripts and functions that were used in the analysis but are not part of the final analysis:
-        -   `Delphi results processing.R` prelude to analysis of value functions and weights later used in Quorto book
-        -   `heatmap script.R` initial exploratory work to investigate correlations between indicators and experts
+        -   `Delphi results processing.R` prelude to developed code that does some of extraction of data and analysis of value functions and weights. Superceeded by Quorto book
+        -   `heatmap script.R` initial exploratory work to investigate correlations between indicators and experts using heat maps

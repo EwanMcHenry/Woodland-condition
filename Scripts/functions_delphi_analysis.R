@@ -8,7 +8,7 @@ library(tidyr)
 library(ggrepel)
 
 ## Configure for Delphi round ----
-config_for_delphi_round <- function(delphi.round) {
+config_for_delphi_round <- function(delphi.round = delphi.round) {
   #' Sets the paths for the specified Delphi round by creating the 
   #' `delphi.round`, `extraction.location`, and `forms.direct` objects in the global environment.
   
@@ -26,6 +26,32 @@ config_for_delphi_round <- function(delphi.round) {
   assign("extraction.location", extraction.location, envir = .GlobalEnv)
   assign("forms.direct", forms.direct, envir = .GlobalEnv)
 }
+
+prepare_round_data <- function(round_num, extraction_location, forms_directory, run_extraction) {
+  # configure the environment and load curated data for specified round of a Delphi study
+  # optionally run data extraction and curation scripts
+  
+  delphi.round <- round_num
+  config_for_delphi_round(delphi.round)
+  
+  if(run_extraction == T){
+    source("Scripts\\Extract_expert_info.R")
+    source("Scripts\\curation of extracted data.R")
+  }
+  
+  # Load curated data
+  load(paste0(extraction_location, "curated.RData"))
+  
+  # Return a list of curated data
+  list(
+    df = df,
+    completed_summary = completed_summary,
+    ind_matcher_df = ind.matcher.df,
+    has_completed = has_completed,
+    just_one_df = just.one.df
+  )
+}
+
 
 # PLOTING FUNCTIONS ----
 

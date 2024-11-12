@@ -28,3 +28,5 @@ The repository is structured as follows:
     -   `Archive/` exploratory scripts and functions that were used in the analysis but are not part of the final analysis:
         -   `Delphi results processing.R` prelude to developed code that does some of extraction of data and analysis of value functions and weights. Superceeded by Quorto book
         -   `heatmap script.R` initial exploratory work to investigate correlations between indicators and experts using heat maps
+
+![](images/Condition code structure 2024-11-11 16.43.03.excalidraw.png){width="1500"}

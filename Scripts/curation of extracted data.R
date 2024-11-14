@@ -123,9 +123,9 @@ respondants_with_something <- completed_summary$respondent_names[
   as.factor()
 
 
-respondant_colours <- glasbey.colors(nlevels(respondants_with_something)+1)[-1] %>% as.character() %>% 
-  setNames(., respondants_with_something)
+# set respondent colours
 
+respondant_colours <- set_resp_col_fun(respondants_with_something)
 
 # test and throw up error issue ---------
 if (length(unique(paste0(df$sheet_name,df$indicator_num )))!=length(unique(df$sheet_name)) ){

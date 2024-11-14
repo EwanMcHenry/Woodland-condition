@@ -113,65 +113,159 @@ interpolation_measurements <- list(
 #create list : sheet_name -> round -> respondent ->  df( measurement and interpolated values), certainties and weights
 
 interpolated.data <- list()
-  for (i in unique(c.df$sheet_name)) {
-    interpolated.data[[i]] <- list()
-    for (r in unique(c.df$round)) {
-      interpolated.data[[i]][[r]] <- list()
-      for (resp in unique(c.df$respondant_name)) {
+for (i in unique(c.df$sheet_name)) {
+  interpolated.data[[i]] <- list()
+  for (r in unique(c.df$round)) {
+    interpolated.data[[i]][[r]] <- list()
+    for (resp in unique(c.df$respondant_name)) {
+      explanitory <- c.df$measure[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
+      response <- c.df$value[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
+      
+      
+      # Check conditions for adding value_function
+      if (sum(!is.na(response))>1 && length(response) > 1 && diff(range(response, na.rm = TRUE)) > 0) {
         interpolated.data[[i]][[r]][[resp]] <- list(
-            value_function = data.frame("measurement" = interpolation_measurements[[i]]),
-            weight = c.df$weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
-            vf_cert = c.df$cert_val_funct[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
-             wt_cert = c.df$cert_weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1]
-          )
-        } # resp
-      }# round
-    } # indicator
+          value_function = data.frame("measurement" = interpolation_measurements[[i]]),
+          weight = c.df$weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
+          vf_cert = c.df$cert_val_funct[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
+          wt_cert = c.df$cert_weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1]
+        )
+      } else {
+        interpolated.data[[i]][[r]][[resp]] <- list(
+          weight = c.df$weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
+          vf_cert = c.df$cert_val_funct[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
+          wt_cert = c.df$cert_weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1]
+        )
+      }
+      
 
-#use data from corresponding round, respondent and indicator to interpolate values
+      } # resp
+    }# round
+  } # indicator
 
-i <- unique(c.df$sheet_name)[1]
-r <- unique(c.df$round)[1]
-resp <- unique(c.df$respondant_name)[1]
-meas <- interpolated.data[[i]][[r]][[resp]]$value_function$measurement
+# use data from corresponding round, respondent and indicator to interpolate values
 
-# fit spline based on observed data for this respondent, indicator and round using c.df
-explanitory <- c.df$measure[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
-response <- c.df$value[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
-  # Fit a natural spline, ensuring bounds
-  spline_fit <- splinefun(x = explanitory, y = response, method = "natural")
-  
-  # Use the spline to interpolate values for the measurement `m`
-  interpolated_value <- spline_fit(meas)
+# i <- unique(c.df$sheet_name)[1]
+# r <- unique(c.df$round)[1]
+# resp <- unique(c.df$respondant_name)[1]
+i <- "Native canopy percentage "
+r <- 1
+resp <- "Paul Allen"
 
 
-
-
+library(mgcv)
 for (i in unique(c.df$sheet_name)) {
   for (r in unique(c.df$round)) {
     for (resp in unique(c.df$respondant_name)) {
-      
-      
-      
-      
-      # set 
+      # Check if value_function exists for the current combination
+      if (!is.null(interpolated.data[[i]][[r]][[resp]]$value_function)) {
+
+      #measurements for interpolation
       meas <- interpolated.data[[i]][[r]][[resp]]$value_function$measurement
+      # data from form
+      explanatory <- c.df$measure[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
+      response <- c.df$value[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
       
+      if(!identical(range(response), c(0,100))) {
+        print(paste("Warning: response range not 0-100 for", i, r, resp))}
+
+      # Create a data frame for modeling
+      response_scaled <- (response - min(response)) / (max(response) - min(response))
+      data <- data.frame(explanatory = explanatory, response_scaled = response_scaled)
+      # Fit a GAM
+      spline_model <- gam(response_scaled ~ s(explanatory, bs = "cs", k = length(explanatory) - 1), 
+                    family = binomial(link = "logit"), 
+                    data = data, 
+                    method = "REML")
+      # Predict over the interpolation measurements
+      predictions_scaled <- predict(spline_model, newdata = data.frame(explanatory = meas), type = "response")
+      # fix to 0-100 bounds
+      predictions_fixed <- (predictions_scaled - min(predictions_scaled))*(100/(max(predictions_scaled) - min(predictions_scaled)))
       
-        interpolated.data[[i]][[r]][[resp]]$value_function$value <- 
-           %>%
-          
-          interpolate_value(
-          m,
-          c.df$measure[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp],
-          c.df$value[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp],
-          c.df$cert_val_funct[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp],
-          c.df$cert_weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
-        )
+            if(!identical(range(predictions_fixed), c(0,100))) {
+        print(paste("Warning: INTERPOLATED response range not 0-100 for", i, r, resp))}
+      
+            # add to interpolated.data
+      interpolated.data[[i]][[r]][[resp]]$value_function$value <- predictions_fixed
       }
     }
   }
 }
 
-
 ```
+
+# Plots of each indicator value functions, with different respondents in different colours
+
+
+```{r}
+respondant_colours <-  set_resp_col_fun(unique(c.df$respondant_name))
+
+# using continuous_vf_fig() function, 
+
+i <- "Native canopy percentage "
+r <- 1
+
+library(ggpubr)
+library(plotly)
+library(htmltools)
+library(patchwork)
+
+plot_list <- list()
+
+for (i in unique(c.df$sheet_name)) {
+  for (r in unique(c.df$round)) {
+    # create df of all data for this round and indicator
+    filtered_data <- data.frame()
+    for(resp in unique(c.df$respondant_name)) {
+      if (!is.null(interpolated.data[[i]][[r]][[resp]]$value_function)) {
+        filtered_data <- rbind(filtered_data, 
+                               data.frame(
+                                 measure = interpolated.data[[i]][[r]][[resp]]$value_function$measurement,
+                                 value = interpolated.data[[i]][[r]][[resp]]$value_function$value,
+                                 respondant_name = resp,
+                                 cert_val_funct = interpolated.data[[i]][[r]][[resp]]$vf_cert %>% as.numeric()
+                                 
+                                 )
+        )
+      }
+    }
+    filtered_data$value.dec <- filtered_data$value/100
+    
+    filtered_data$cert_val_funct[is.na(filtered_data$cert_val_funct)] <- 3 # HACK!!!!!!
+
+    
+ind.num = which(ind.matcher.df$sheet_name == i )
+indicator_name = ind.matcher.df$indicator_name[ind.num]
+ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
+    
+    # p <- continuous_vf_fig(line.col = "black", 
+    #                        filtered_data = filtered_data, 
+    #                        respondant_colours = respondant_colours) 
+    # 
+    # 
+    # print(p)
+
+    plot <- ggplot_gam_resp_vf(indicator_name, 
+                               gam.col = "black", 
+                               x.lab = ind.axis.title, 
+                               pal = respondant_colours,
+                               filtered_data = filtered_data)
+
+    # Store the plot in the list, using indicator and round as identifiers
+    plot_list[[paste(i, r, sep = "_")]] <- plot
+
+  }}
+    
+
+
+# Combine the plots for each indicator and round (1 and 2) into a 1x2 grid using patchwork
+combined_plots <- list()
+
+for (i in unique(c.df$sheet_name)) {
+  # Create the 1x2 layout for this indicator
+  indicator_plots <- plot_list[[paste(i, 1, sep = "_")]] + plot_list[[paste(i, 2, sep = "_")]] + plot_layout(ncol = 2)
+  combined_plots[[i]] <- indicator_plots
+}
+
+# To view the plots, you can print the individual indicator plots
+combined_plots[[1]]  # Example: print the first indicator plot

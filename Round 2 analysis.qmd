@@ -1,0 +1,177 @@
+---
+title: "Round 2 analysis"
+author: "Ewan McHenry"
+---
+
+```{r setup}
+library(tidyverse)
+source("Scripts\\functions_delphi_analysis.R") 
+
+r1_data <- prepare_round_data(1, "Data\\Delphi round 1\\", "response sheets\\", run_extraction = T)
+r2_data <- prepare_round_data(2, "Data\\Delphi round 2\\", "response sheets\\", run_extraction = T)
+
+all.respondents <- unique(c(r1_data$df$respondant_name, r2_data$df$respondant_name))
+all.indicators <- unique(c(r1_data$df$indicator_name, r2_data$df$indicator_name))
+```
+
+```{r respondent-completion-table}
+# table of respondents by round
+respondent_table <- tibble(
+  respondent_names = all.respondents,
+  round1 = as.integer(all.respondents %in% r1_data$completed_summary$respondent_names),
+  round2 = as.integer(all.respondents %in% r2_data$completed_summary$respondent_names)
+)
+
+respondent_table
+
+```
+
+```{r combine_rounds}
+combine_rounds <- function(r1, r2, round1 = 1, round2 = 2) {
+  bind_rows(
+    mutate(r1, round = round1),
+    mutate(r2, round = round2)
+  )
+}
+
+c.df <- combine_rounds(r1_data$df, r2_data$df) %>% 
+  arrange(respondant_name,indicator_num, round, measure)
+c.completed_summary <- combine_rounds(r1_data$completed_summary, r2_data$completed_summary)
+c.ind.matcher.df <- combine_rounds(r1_data$ind_matcher_df, r2_data$ind_matcher_df)
+c.has_completed <- combine_rounds(r1_data$has_completed, r2_data$has_completed)
+c.just.one.df <- combine_rounds(r1_data$just_one_df, r2_data$just_one_df)
+
+```
+
+```{r reduced df}
+red.df <- c.df %>% 
+  arrange(respondant_name,indicator_num, round, measure) %>% 
+  # select only the columns we want to see
+  select(respondant_name, sheet_name, measure, value, round)
+
+
+```
+
+Looked at which respondent-indicator pairs hadn't differed between rounds. Happy now that data only contains forms that were actually completed by respondents.
+
+```{r}
+# find respondent name - indicator pairs that are identical between rounds
+bk = 1
+same_last = data.frame(respondent = NA, indicator = NA)
+
+for (r in all.respondents) {
+  for(i in all.indicators) {
+      r1v <- c.df$value[c.df$respondant_name == r & c.df$indicator_name == i & c.df$round == 1]
+      r2v <- c.df$value[c.df$respondant_name == r & c.df$indicator_name == i & c.df$round == 2]
+      r1m <- c.df$measure[c.df$respondant_name == r & c.df$indicator_name == i & c.df$round == 1]
+      r2m <- c.df$measure[c.df$respondant_name == r & c.df$indicator_name == i & c.df$round == 2]
+
+        if ( # responses unchanged between round 1 and 2
+          identical(r1v, r2v) & identical(r1m, r2m)) {
+          same_last[bk,] = c(r, i)
+          bk = bk + 1
+    }
+  }
+}
+same_last
+```
+
+Looked like some folk used different number of tree age categories. Table of max number of tree age categories used by respondent and round. Found in round 1 DK, NRB and PA had 5,5 and 3 categories respectively. Went into forms and altered. Intent seemed clear in all cases.
+
+```{r}
+# find max number of tree age categories used by respondent and round
+nages <- c.df %>%
+  filter(sheet_name == "Tree age distribution") %>%
+  group_by(round, respondant_name) %>%
+  summarise(
+    max_age_categories = max(measure, na.rm = TRUE),
+    .groups = "drop"
+  ) %>% 
+  filter (max_age_categories != 4)
+
+```
+
+```{r interpolation of vfs}
+# note dependency on sheet_name
+interpolation_measurements <- list(
+  "Tree age distribution" = unique(c.df$measure[c.df$sheet_name == "Tree age distribution"]) %>% sort(),
+  "Native canopy percentage " = seq(from = 0, to = 100, by = 5),
+  "Vertical structure" = unique(c.df$measure[c.df$sheet_name == "Vertical structure"]) %>% sort(),
+  "N tree & shrub spp." = seq(from = 0, to = 100, by = 5),
+  "Invasive plants % cover" = seq(from = 0, to = 100, by = 5),
+  "Deadwood" = 0:12,
+  "Veteran trees" = seq(from = 0, to = 12, by = 0.5),
+  "Woodland extent" = seq(from = 0, to = 100, by = 1),
+  "Regen" = 0:3,
+  "Herbivore damage" = 0:4,
+  "Tree health" = seq(from = 0, to = 100, by = 5),
+  "Ground flora" = seq(from = 0, to = 100, by = 5),
+  "Horizontal complexity" = 0:5,
+  "Anthropogenic damage" = seq(from = 0, to = 100, by = 5)
+)
+
+#create list : sheet_name -> round -> respondent ->  df( measurement and interpolated values), certainties and weights
+
+interpolated.data <- list()
+  for (i in unique(c.df$sheet_name)) {
+    interpolated.data[[i]] <- list()
+    for (r in unique(c.df$round)) {
+      interpolated.data[[i]][[r]] <- list()
+      for (resp in unique(c.df$respondant_name)) {
+        interpolated.data[[i]][[r]][[resp]] <- list(
+            value_function = data.frame("measurement" = interpolation_measurements[[i]]),
+            weight = c.df$weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
+            vf_cert = c.df$cert_val_funct[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
+             wt_cert = c.df$cert_weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1]
+          )
+        } # resp
+      }# round
+    } # indicator
+
+#use data from corresponding round, respondent and indicator to interpolate values
+
+i <- unique(c.df$sheet_name)[1]
+r <- unique(c.df$round)[1]
+resp <- unique(c.df$respondant_name)[1]
+meas <- interpolated.data[[i]][[r]][[resp]]$value_function$measurement
+
+# fit spline based on observed data for this respondent, indicator and round using c.df
+explanitory <- c.df$measure[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
+response <- c.df$value[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
+  # Fit a natural spline, ensuring bounds
+  spline_fit <- splinefun(x = explanitory, y = response, method = "natural")
+  
+  # Use the spline to interpolate values for the measurement `m`
+  interpolated_value <- spline_fit(meas)
+
+
+
+
+for (i in unique(c.df$sheet_name)) {
+  for (r in unique(c.df$round)) {
+    for (resp in unique(c.df$respondant_name)) {
+      
+      
+      
+      
+      # set 
+      meas <- interpolated.data[[i]][[r]][[resp]]$value_function$measurement
+      
+      
+        interpolated.data[[i]][[r]][[resp]]$value_function$value <- 
+           %>%
+          
+          interpolate_value(
+          m,
+          c.df$measure[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp],
+          c.df$value[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp],
+          c.df$cert_val_funct[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp],
+          c.df$cert_weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
+        )
+      }
+    }
+  }
+}
+
+
+```

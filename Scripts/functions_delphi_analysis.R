@@ -55,6 +55,15 @@ prepare_round_data <- function(round_num, extraction_location, forms_directory, 
 
 # PLOTING FUNCTIONS ----
 
+## set respondant colours
+set_resp_col_fun <- function(respondents = respondants_with_something) {
+  glasbey.colors(length(respondents)+1)[-1] %>% as.character() %>% 
+  setNames(., respondents)
+}
+
+
+
+
 ## interactive PCA plot -------------------------
 generate_interactive_PCA <- function(data, weight_variable) {
   # Select relevant columns and spread the data  
@@ -107,9 +116,13 @@ generate_interactive_PCA <- function(data, weight_variable) {
 }
 
 ## function to plot continuous delphi results ------------
-continuous_vf_fig <- function(line.col = "black"){
+continuous_vf_fig <- function(line.col = "black", 
+                              filtered_data = filtered_data, 
+                              respondant_colours = NULL ){
   plot <- ggplot_gam_resp_vf(indicator_name = indicator_name,
-                             x.lab = ind.axis.title, gam.col = line.col)
+                             x.lab = ind.axis.title, 
+                             gam.col = line.col, 
+                             filtered_data)
   
   ggsave(filename = paste0("Figs//ind_",
                            formatC(ind.num, width = 2, format = "d", flag = "0"),
@@ -123,7 +136,9 @@ continuous_vf_fig <- function(line.col = "black"){
 }
 
 ## FUNCTION - PLOT RESPONDANTS' continuous INDICATOR VFs ------------
-ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.matcher.df$ind.axis.title[i], pal = respondant_colours){
+ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.matcher.df$ind.axis.title[i], 
+                               pal = respondant_colours,
+                               filtered_data = filtered_data){
 
   # PREDICT TREND ----
   filtered_data$point.influence <- 1/(table(filtered_data$respondant_name)[as.factor(filtered_data$respondant_name)]) %>% 
@@ -134,6 +149,8 @@ ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.ma
   dummy_data <- data.frame(measure = seq(min(filtered_data$measure), max(filtered_data$measure), length.out = 50))
   # Predict using the GAM model
   dummy_data$predicted_value <- predict(gam_model, newdata = dummy_data, type = "response")*100
+  # fix gam predictions to 0-100
+  dummy_data$predicted_value <- (dummy_data$predicted_value - min(dummy_data$predicted_value)) * 100 / (max(dummy_data$predicted_value) - min(dummy_data$predicted_value))
   
   # PLOT SPEC, LINES AND TREND ----
   plot <- ggplot() +

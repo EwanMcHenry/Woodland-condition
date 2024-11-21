@@ -31,4 +31,4 @@ The repository is structured as follows:
 
 Some of the Code Structure
 
-![](images/Condition code structure 2024-11-11 16.43.03.excalidraw.png){width="1500"}
+![](images/Condition%20code%20structure%202024-11-11%2016.43.03.excalidraw.png){width="1500"}

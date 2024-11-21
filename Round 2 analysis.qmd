@@ -14,7 +14,7 @@ all.respondents <- unique(c(r1_data$df$respondant_name, r2_data$df$respondant_na
 all.indicators <- unique(c(r1_data$df$indicator_name, r2_data$df$indicator_name))
 ```
 
-```{r respondent-completion-table}
+```{r respondent_completion_table}
 # table of respondents by round
 respondent_table <- tibble(
   respondent_names = all.respondents,
@@ -43,7 +43,7 @@ c.just.one.df <- combine_rounds(r1_data$just_one_df, r2_data$just_one_df)
 
 ```
 
-```{r reduced df}
+```{r reduced_df}
 red.df <- c.df %>% 
   arrange(respondant_name,indicator_num, round, measure) %>% 
   # select only the columns we want to see
@@ -91,23 +91,23 @@ nages <- c.df %>%
 
 ```
 
-```{r interpolation of vfs}
+```{r interpolation_of_vfs}
 # note dependency on sheet_name
 interpolation_measurements <- list(
   "Tree age distribution" = unique(c.df$measure[c.df$sheet_name == "Tree age distribution"]) %>% sort(),
-  "Native canopy percentage " = seq(from = 0, to = 100, by = 5),
+  "Native canopy percentage " = seq(from = 0, to = 100, by = 1),
   "Vertical structure" = unique(c.df$measure[c.df$sheet_name == "Vertical structure"]) %>% sort(),
-  "N tree & shrub spp." = seq(from = 0, to = 100, by = 5),
-  "Invasive plants % cover" = seq(from = 0, to = 100, by = 5),
+  "N tree & shrub spp." = seq(from = 0, to = 100, by = 1),
+  "Invasive plants % cover" = seq(from = 0, to = 100, by = 1),
   "Deadwood" = 0:12,
   "Veteran trees" = seq(from = 0, to = 12, by = 0.5),
   "Woodland extent" = seq(from = 0, to = 100, by = 1),
   "Regen" = 0:3,
   "Herbivore damage" = 0:4,
-  "Tree health" = seq(from = 0, to = 100, by = 5),
-  "Ground flora" = seq(from = 0, to = 100, by = 5),
+  "Tree health" = seq(from = 0, to = 100, by = 1),
+  "Ground flora" = seq(from = 0, to = 100, by = 1),
   "Horizontal complexity" = 0:5,
-  "Anthropogenic damage" = seq(from = 0, to = 100, by = 5)
+  "Anthropogenic damage" = seq(from = 0, to = 100, by = 1)
 )
 
 #create list : sheet_name -> round -> respondent ->  df( measurement and interpolated values), certainties and weights
@@ -126,9 +126,14 @@ for (i in unique(c.df$sheet_name)) {
       if (sum(!is.na(response))>1 && length(response) > 1 && diff(range(response, na.rm = TRUE)) > 0) {
         interpolated.data[[i]][[r]][[resp]] <- list(
           value_function = data.frame("measurement" = interpolation_measurements[[i]]),
+          og_vf = data.frame("measurement" = explanitory, "value" = response),
           weight = c.df$weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
           vf_cert = c.df$cert_val_funct[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
-          wt_cert = c.df$cert_weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1]
+          wt_cert = c.df$cert_weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
+          round = r,
+          respondent = resp,
+          indicator = i
+          
         )
       } else {
         interpolated.data[[i]][[r]][[resp]] <- list(
@@ -148,9 +153,9 @@ for (i in unique(c.df$sheet_name)) {
 # i <- unique(c.df$sheet_name)[1]
 # r <- unique(c.df$round)[1]
 # resp <- unique(c.df$respondant_name)[1]
-i <- "Native canopy percentage "
+i <- "Horizontal complexity"
 r <- 1
-resp <- "Paul Allen"
+resp <- "Martin Hu"
 
 
 library(mgcv)
@@ -172,13 +177,34 @@ for (i in unique(c.df$sheet_name)) {
       # Create a data frame for modeling
       response_scaled <- (response - min(response)) / (max(response) - min(response))
       data <- data.frame(explanatory = explanatory, response_scaled = response_scaled)
-      # Fit a GAM
-      spline_model <- gam(response_scaled ~ s(explanatory, bs = "cs", k = length(explanatory) - 1), 
+      
+      
+      # Fit models
+      ## binomial gam
+      binom.spline_model <- gam(response_scaled ~ s(explanatory, bs = "cs", k = length(explanatory) - 1), 
                     family = binomial(link = "logit"), 
                     data = data, 
                     method = "REML")
-      # Predict over the interpolation measurements
-      predictions_scaled <- predict(spline_model, newdata = data.frame(explanatory = meas), type = "response")
+      beta.spline_model <- gam(response_scaled ~ s(explanatory, bs = "cs", k = length(explanatory) - 1), 
+                    family = betar(link = "logit"), 
+                    data = data, 
+                    method = "REML")
+      ## beta gam
+      linear.mod = lm(response ~ explanatory, data = data)
+      
+      AIC(linear.mod, binom.spline_model, beta.spline_model)
+
+      
+      
+      # Predict over the interpolation measurements using best model, based on AIC
+      if (AIC(linear.mod) == min(AIC(linear.mod, binom.spline_model, beta.spline_model))) {
+        predictions_scaled <- predict(linear.mod, newdata = data.frame(explanatory = meas))
+      } else if (AIC(binom.spline_model) == min(AIC(linear.mod, binom.spline_model, beta.spline_model))) {
+        predictions_scaled <- predict(binom.spline_model, newdata = data.frame(explanatory = meas), type = "response")
+      } else {
+        predictions_scaled <- predict(beta.spline_model, newdata = data.frame(explanatory = meas), type = "response")
+      }
+
       # fix to 0-100 bounds
       predictions_fixed <- (predictions_scaled - min(predictions_scaled))*(100/(max(predictions_scaled) - min(predictions_scaled)))
       
@@ -194,78 +220,224 @@ for (i in unique(c.df$sheet_name)) {
 
 ```
 
-# Plots of each indicator value functions, with different respondents in different colours
+```{r bootstrap_predictions}
 
+set.seed(5448)
+boot_results <- list(indicator = list(NA))
+
+boot_results <- list()
+
+for (i in unique(c.df$sheet_name)) {
+    boot_results[[i]] <- list()  
+  for (r in unique(c.df$round)) {
+    if(paste0(i,r) != "Herbivore damage1" ){
+          resp_list <- NA
+    bk = 1
+    for (resp.n in 1:length(names(interpolated.data[[i]][[r]]))){
+      response <- c.df$value[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
+      if(length(response)>2){
+        resp_list[bk] <- names(interpolated.data[[i]][[r]])[resp.n]
+        bk = bk + 1
+      }
+    }
+    
+    boot_expl <- interpolated.data[[i]][[r]][[resp_list[1]]]$value_function$measurement
+    
+    # sample by respondent
+    boot_resps <- sample(resp_list, 1000, replace = TRUE)
+    boot_res_pre = data.frame(expl = numeric(length(boot_expl)),
+                              median = numeric(length(boot_expl)),
+                              mean = numeric(length(boot_expl)),
+                              upper95 = numeric(length(boot_expl)),
+                              lower95 = numeric(length(boot_expl)))
+        for(e in 1:length(boot_expl)){
+          y = map(boot_resps, ~ interpolated.data[[i]][[r]][[.x]]$value_function$value[e]) %>%
+    flatten_dbl()
+          
+          boot_res_pre$expl[e] <- boot_expl[e]
+          boot_res_pre$median[e] <- median(y)
+          boot_res_pre$mean[e] <- mean(y)
+          boot_res_pre$upper95[e] <- quantile(y, 0.975)
+          boot_res_pre$lower95[e] <- quantile(y, 0.025)
+        }
+    
+        boot_results[[i]][[r]] <- list(indicator = i,             # Indicator name
+                                   round = r,                 # Round number
+                                   respondents = resp_list, # Vector of respondent names
+                                   boot_response = data.frame( # Data frame with explanatory and response data
+                                     expl = boot_res_pre$expl,
+                                     median = boot_res_pre$median,
+                                     mean = boot_res_pre$mean,
+                                     upper95 = boot_res_pre$upper95,
+                                     lower95 = boot_res_pre$lower95
+                                   )
+      )
+    }
+  }
+}
+
+
+
+
+```
+```{r plots}
+
+
+
+library(ggpubr)
+library(grid)
+library(gridExtra)
+library(patchwork)
+
+# Loop through each indicator
+for (indicator in names(boot_results)) {
+  # Initialize an empty list to hold plots for the rounds
+  round_plots <- list()
+  
+  # Loop through each round for the current indicator
+  for (round in seq_along(boot_results[[indicator]])) {
+    round_data <- boot_results[[indicator]][[round]]
+    
+    if (is.null(round_data$boot_response) || round_data$indicator == "Herbivore Impact" && round == 1) {
+      # Create an empty plot for "Herbivore Impact" round 1 or if data is NULL
+      plot <- ggplot() +
+        theme_void() +
+        ggtitle(paste(indicator, "Round", round, "(No Data)"))
+    } else {
+      # Extract the boot_response data frame
+      plot_data <- round_data$boot_response
+      
+      # Create the ggplot
+      plot <- ggplot(plot_data, aes(x = expl, y = median)) +
+        geom_line(color = "black", linewidth = 2) +
+        geom_ribbon(aes(ymin = lower95, ymax = upper95), alpha = 0.2, fill = "grey13") +
+        labs(
+          title = paste("Round", round, "N =", length(round_data$respondents)),
+          x = ind.matcher.df$ind.axis.title[ind.matcher.df$sheet_name == indicator],
+          y = "Value"
+        ) +
+        theme_pubr()
+    }
+    
+    # Append the plot to the round_plots list
+    round_plots[[round]] <- plot
+  }
+    # Add a shared title
+  shared_title <- textGrob(label = paste(indicator),
+                           gp = gpar(fontsize = 16, fontface = "bold")
+  )
+  combined_plot <- grid.arrange(shared_title, grid_plots, heights = c(0.1, 0.9), nrow = 2)
+
+  # Combine the two plots using patchwork
+  ncol <- 2
+  nrow <- ceiling(length(round_plots) / ncol)
+  grid_plots <- arrangeGrob(grobs = round_plots, ncol = ncol)
+  
+  # Add a shared title
+  shared_title <- textGrob(
+    label = paste("Indicator:", indicator),
+    gp = gpar(fontsize = 16, fontface = "bold")
+  )
+  combined_plot <- grid.arrange(shared_title, grid_plots, heights = c(0.1, 0.9), nrow = 2)
+
+  # Save the plot (optional)
+  ggsave(
+    filename = paste0("plots/", indicator, "_round_plots.png"),
+    plot = combined_plot,
+    width = 10, height = 5
+  )
+  
+  # Print the combined plot for this indicator
+  print(combined_plot)
+}
+
+
+```
+
+# Plots of respondent value functions
+
+Coloured by respondent
 
 ```{r}
-respondant_colours <-  set_resp_col_fun(unique(c.df$respondant_name))
 
 # using continuous_vf_fig() function, 
 
-i <- "Native canopy percentage "
-r <- 1
+respondant_colours <-  set_resp_col_fun(unique(c.df$respondant_name))
 
-library(ggpubr)
-library(plotly)
-library(htmltools)
-library(patchwork)
-
-plot_list <- list()
-
-for (i in unique(c.df$sheet_name)) {
-  for (r in unique(c.df$round)) {
-    # create df of all data for this round and indicator
-    filtered_data <- data.frame()
-    for(resp in unique(c.df$respondant_name)) {
-      if (!is.null(interpolated.data[[i]][[r]][[resp]]$value_function)) {
-        filtered_data <- rbind(filtered_data, 
-                               data.frame(
-                                 measure = interpolated.data[[i]][[r]][[resp]]$value_function$measurement,
-                                 value = interpolated.data[[i]][[r]][[resp]]$value_function$value,
-                                 respondant_name = resp,
-                                 cert_val_funct = interpolated.data[[i]][[r]][[resp]]$vf_cert %>% as.numeric()
-                                 
-                                 )
+# Loop through each indicator
+for (indicator in names(boot_results)) {
+  # Initialize an empty list to hold plots for the rounds
+  round_plots <- list()
+  
+  # Loop through each round for the current indicator
+  for (round in seq_along(boot_results[[indicator]])) {
+    round_data <- boot_results[[indicator]][[round]]
+    
+    if (is.null(round_data$boot_response) || 
+        (round_data$indicator == "Herbivore Impact" && round == 1)) {
+      # Create an empty plot for "Herbivore Impact" round 1 or if data is NULL
+      plot <- ggplot() +
+        theme_void() +
+        ggtitle(paste(indicator, "Round", round, "(No Data)"))
+    } else {
+      # Extract the boot_response data frame
+      plot_data <- round_data$boot_response
+      
+      # Create a data frame for respondent-specific value functions
+      respondent_data <- do.call(rbind, lapply(round_data$respondents, function(resp) {
+        data.frame(
+          expl = interpolated.data[[indicator]][[round]][[resp]]$value_function$measurement,
+          value = interpolated.data[[indicator]][[round]][[resp]]$value_function$value,
+          respondent = resp
         )
-      }
+      }))
+      
+      # Create the ggplot
+      plot <- ggplot() +
+        # Add respondent-specific lines
+        geom_line(data = respondent_data, 
+                  aes(x = expl, y = value, color = respondent), 
+                  alpha = 0.7, linewidth = 1) +
+        # Add median and 95% CI ribbon
+        geom_line(data = plot_data, aes(x = expl, y = median), color = "black", linewidth = 2) +
+        geom_ribbon(data = plot_data, aes(x = expl, ymin = lower95, ymax = upper95), 
+                    alpha = 0.2, fill = "grey13") +
+        scale_color_manual(values = respondant_colours) +
+        labs(
+          title = paste("Round", round, "N =", length(round_data$respondents)),
+          x = ind.matcher.df$ind.axis.title[ind.matcher.df$sheet_name == indicator],
+          y = "Value",
+          color = "Respondents"
+        ) +
+        theme_pubr()
     }
-    filtered_data$value.dec <- filtered_data$value/100
     
-    filtered_data$cert_val_funct[is.na(filtered_data$cert_val_funct)] <- 3 # HACK!!!!!!
-
-    
-ind.num = which(ind.matcher.df$sheet_name == i )
-indicator_name = ind.matcher.df$indicator_name[ind.num]
-ind.axis.title <- ind.matcher.df$ind.axis.title[ind.num]
-    
-    # p <- continuous_vf_fig(line.col = "black", 
-    #                        filtered_data = filtered_data, 
-    #                        respondant_colours = respondant_colours) 
-    # 
-    # 
-    # print(p)
-
-    plot <- ggplot_gam_resp_vf(indicator_name, 
-                               gam.col = "black", 
-                               x.lab = ind.axis.title, 
-                               pal = respondant_colours,
-                               filtered_data = filtered_data)
-
-    # Store the plot in the list, using indicator and round as identifiers
-    plot_list[[paste(i, r, sep = "_")]] <- plot
-
-  }}
-    
-
-
-# Combine the plots for each indicator and round (1 and 2) into a 1x2 grid using patchwork
-combined_plots <- list()
-
-for (i in unique(c.df$sheet_name)) {
-  # Create the 1x2 layout for this indicator
-  indicator_plots <- plot_list[[paste(i, 1, sep = "_")]] + plot_list[[paste(i, 2, sep = "_")]] + plot_layout(ncol = 2)
-  combined_plots[[i]] <- indicator_plots
+    # Append the plot to the round_plots list
+    round_plots[[round]] <- plot
+  }
+  
+  # Add a shared title
+  shared_title <- textGrob(
+    label = paste("Indicator:", indicator),
+    gp = gpar(fontsize = 16, fontface = "bold")
+  )
+  
+  # Combine plots using gridExtra
+  ncol <- 2
+  nrow <- ceiling(length(round_plots) / ncol)
+  grid_plots <- arrangeGrob(grobs = round_plots, ncol = ncol)
+  combined_plot <- grid.arrange(shared_title, grid_plots, heights = c(0.1, 0.9), nrow = 2)
+  
+  # Save the plot (optional)
+  ggsave(
+    filename = paste0("plots/", indicator, "_round_plots.png"),
+    plot = combined_plot,
+    width = 10, height = 5
+  )
+  
+  # Print the combined plot for this indicator
+  print(combined_plot)
 }
 
-# To view the plots, you can print the individual indicator plots
-combined_plots[[1]]  # Example: print the first indicator plot
+
+```

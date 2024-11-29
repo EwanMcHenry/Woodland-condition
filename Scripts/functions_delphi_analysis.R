@@ -52,7 +52,6 @@ prepare_round_data <- function(round_num, extraction_location, forms_directory, 
   )
 }
 
-
 # PLOTING FUNCTIONS ----
 
 ## set respondant colours
@@ -61,7 +60,12 @@ set_resp_col_fun <- function(respondents = respondants_with_something) {
   setNames(., respondents)
 }
 
-
+# Function to extract legend from a ggplot
+extract_legend <- function(plot) {
+  gtable <- ggplotGrob(plot)
+  legend <- gtable$grobs[[which(sapply(gtable$grobs, function(x) x$name) == "guide-box")]]
+  return(legend)
+}
 
 
 ## interactive PCA plot -------------------------
@@ -119,6 +123,8 @@ generate_interactive_PCA <- function(data, weight_variable) {
 continuous_vf_fig <- function(line.col = "black", 
                               filtered_data = filtered_data, 
                               respondant_colours = NULL ){
+  # filtered data is all data for this indicator
+  
   plot <- ggplot_gam_resp_vf(indicator_name = indicator_name,
                              x.lab = ind.axis.title, 
                              gam.col = line.col, 

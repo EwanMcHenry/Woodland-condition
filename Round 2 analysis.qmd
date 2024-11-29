@@ -153,9 +153,9 @@ for (i in unique(c.df$sheet_name)) {
 # i <- unique(c.df$sheet_name)[1]
 # r <- unique(c.df$round)[1]
 # resp <- unique(c.df$respondant_name)[1]
-i <- "Horizontal complexity"
-r <- 1
-resp <- "Martin Hu"
+# i <- "Horizontal complexity"
+# r <- 1
+# resp <- "Martin Hu"
 
 
 library(mgcv)
@@ -178,31 +178,74 @@ for (i in unique(c.df$sheet_name)) {
       response_scaled <- (response - min(response)) / (max(response) - min(response))
       data <- data.frame(explanatory = explanatory, response_scaled = response_scaled)
       
-      
       # Fit models
-      ## binomial gam
-      binom.spline_model <- gam(response_scaled ~ s(explanatory, bs = "cs", k = length(explanatory) - 1), 
-                    family = binomial(link = "logit"), 
-                    data = data, 
-                    method = "REML")
-      beta.spline_model <- gam(response_scaled ~ s(explanatory, bs = "cs", k = length(explanatory) - 1), 
-                    family = betar(link = "logit"), 
-                    data = data, 
-                    method = "REML")
-      ## beta gam
-      linear.mod = lm(response ~ explanatory, data = data)
+      ## Binomial GAM
+      binom.spline_model <- gam(
+        response_scaled ~ s(explanatory, bs = "cs", k = length(explanatory) - 1),
+        family = binomial(link = "logit"),
+        data = data,
+        method = "REML"
+      )
       
-      AIC(linear.mod, binom.spline_model, beta.spline_model)
-
+      ## Beta GAM
+      beta.spline_model <- gam(
+        response_scaled ~ s(explanatory, bs = "cs", k = length(explanatory) - 1),
+        family = betar(link = "logit"),
+        data = data,
+        method = "REML"
+      )
       
+      ## Linear Model
+      linear.mod <- glm(response ~ explanatory, data = data)
       
-      # Predict over the interpolation measurements using best model, based on AIC
-      if (AIC(linear.mod) == min(AIC(linear.mod, binom.spline_model, beta.spline_model))) {
-        predictions_scaled <- predict(linear.mod, newdata = data.frame(explanatory = meas))
-      } else if (AIC(binom.spline_model) == min(AIC(linear.mod, binom.spline_model, beta.spline_model))) {
-        predictions_scaled <- predict(binom.spline_model, newdata = data.frame(explanatory = meas), type = "response")
+      ## Exponential Model
+      data$log_response <- log(data$response+0.01) # Log-transform response
+      exp.mod <- glm(log_response ~ explanatory, data = data)
+      
+      ## Negative Exponential Model
+      data$negexp_predictor <- 1 - exp(-data$explanatory)
+      negexp.mod <- glm(response ~ negexp_predictor, data = data)
+      
+      ## Logarithmic Model
+      data$log_explanatory <- log(data$explanatory+0.001) # Log-transform explanatory
+      log.mod <- glm(response ~ log_explanatory, data = data)
+      
+      ## Negative Logarithmic Model
+      neglog.mod <- glm(response ~ -log_explanatory, data = data)
+      
+      # Compare models using AIC
+      model_aics <- AIC(
+        linear.mod,
+        binom.spline_model,
+        beta.spline_model,
+        exp.mod,
+        negexp.mod,
+        log.mod,
+        neglog.mod
+      )
+      
+      # Predict over the interpolation measurements using the best model
+      best_model <- which.min(model_aics$AIC)
+      meas_transformed <- data.frame(
+        explanatory = meas,
+        log_explanatory = log(meas),
+        negexp_predictor = 1 - exp(-meas)
+      )
+      
+      if (best_model == 1) {
+        predictions_scaled <- predict(linear.mod, newdata = meas_transformed)
+      } else if (best_model == 2) {
+        predictions_scaled <- predict(binom.spline_model, newdata = meas_transformed, type = "response")
+      } else if (best_model == 3) {
+        predictions_scaled <- predict(beta.spline_model, newdata = meas_transformed, type = "response")
+      } else if (best_model == 4) {
+        predictions_scaled <- exp(predict(exp.mod, newdata = meas_transformed)) # Back-transform predictions
+      } else if (best_model == 5) {
+        predictions_scaled <- predict(negexp.mod, newdata = meas_transformed)
+      } else if (best_model == 6) {
+        predictions_scaled <- predict(log.mod, newdata = meas_transformed)
       } else {
-        predictions_scaled <- predict(beta.spline_model, newdata = data.frame(explanatory = meas), type = "response")
+        predictions_scaled <- predict(neglog.mod, newdata = meas_transformed)
       }
 
       # fix to 0-100 bounds
@@ -249,7 +292,9 @@ for (i in unique(c.df$sheet_name)) {
                               median = numeric(length(boot_expl)),
                               mean = numeric(length(boot_expl)),
                               upper95 = numeric(length(boot_expl)),
-                              lower95 = numeric(length(boot_expl)))
+                              lower95 = numeric(length(boot_expl)),
+                              upperq = numeric(length(boot_expl)),
+                              lowerq = numeric(length(boot_expl)))
         for(e in 1:length(boot_expl)){
           y = map(boot_resps, ~ interpolated.data[[i]][[r]][[.x]]$value_function$value[e]) %>%
     flatten_dbl()
@@ -259,6 +304,9 @@ for (i in unique(c.df$sheet_name)) {
           boot_res_pre$mean[e] <- mean(y)
           boot_res_pre$upper95[e] <- quantile(y, 0.975)
           boot_res_pre$lower95[e] <- quantile(y, 0.025)
+          boot_res_pre$lowerq[e] <- quantile(y, 0.25)
+          boot_res_pre$upperq[e] <- quantile(y, 0.75)
+          
         }
     
         boot_results[[i]][[r]] <- list(indicator = i,             # Indicator name
@@ -269,7 +317,9 @@ for (i in unique(c.df$sheet_name)) {
                                      median = boot_res_pre$median,
                                      mean = boot_res_pre$mean,
                                      upper95 = boot_res_pre$upper95,
-                                     lower95 = boot_res_pre$lower95
+                                     lower95 = boot_res_pre$lower95,
+                                     lowerq = boot_res_pre$lowerq,
+                                     upperq = boot_res_pre$upperq
                                    )
       )
     }
@@ -280,7 +330,7 @@ for (i in unique(c.df$sheet_name)) {
 
 
 ```
-```{r plots}
+```{r plots_boot}
 
 
 
@@ -290,29 +340,31 @@ library(gridExtra)
 library(patchwork)
 
 # Loop through each indicator
+  round_data <- list(list())
+
 for (indicator in names(boot_results)) {
   # Initialize an empty list to hold plots for the rounds
   round_plots <- list()
   
   # Loop through each round for the current indicator
   for (round in seq_along(boot_results[[indicator]])) {
-    round_data <- boot_results[[indicator]][[round]]
+    round_data[[indicator]][[round]] <- boot_results[[indicator]][[round]]
     
-    if (is.null(round_data$boot_response) || round_data$indicator == "Herbivore Impact" && round == 1) {
+    if (is.null(round_data[[indicator]][[round]]$boot_response) || round_data[[indicator]][[round]]$indicator == "Herbivore Impact" && round == 1) {
       # Create an empty plot for "Herbivore Impact" round 1 or if data is NULL
       plot <- ggplot() +
         theme_void() +
         ggtitle(paste(indicator, "Round", round, "(No Data)"))
     } else {
       # Extract the boot_response data frame
-      plot_data <- round_data$boot_response
+      plot_data <- round_data[[indicator]][[round]]$boot_response
       
       # Create the ggplot
       plot <- ggplot(plot_data, aes(x = expl, y = median)) +
         geom_line(color = "black", linewidth = 2) +
         geom_ribbon(aes(ymin = lower95, ymax = upper95), alpha = 0.2, fill = "grey13") +
         labs(
-          title = paste("Round", round, "N =", length(round_data$respondents)),
+          title = paste("Round", round, "N =", length(round_data[[indicator]][[round]]$respondents)),
           x = ind.matcher.df$ind.axis.title[ind.matcher.df$sheet_name == indicator],
           y = "Value"
         ) +
@@ -353,79 +405,96 @@ for (indicator in names(boot_results)) {
 
 Coloured by respondent
 
-```{r}
-
+```{r plot-boot-and-resp}
 # using continuous_vf_fig() function, 
 
 respondant_colours <-  set_resp_col_fun(unique(c.df$respondant_name))
 
 # Loop through each indicator
-for (indicator in names(boot_results)) {
+for (i in names(boot_results)) {
   # Initialize an empty list to hold plots for the rounds
   round_plots <- list()
-  
   # Loop through each round for the current indicator
-  for (round in seq_along(boot_results[[indicator]])) {
-    round_data <- boot_results[[indicator]][[round]]
+  plot_data <- list()
+  ind_round_vfs <- list()
+
+  for (r in seq_along(boot_results[[i]])) {
+    resps <- names(interpolated.data[[i]][[r]])
+    ind_round_vfs[[r]] <- data.frame(measurement = NA, value = NA, resp = NA)[0,]
+    for (resp in resps){
+      if (!is.null(interpolated.data[[i]][[r]][[resp]]$value_function)){
+              ind_round_vfs[[r]] <- rbind(ind_round_vfs[[r]], 
+                             data.frame(measurement = interpolated.data[[i]][[r]][[resp]]$value_function$measurement,
+                                        value = interpolated.data[[i]][[r]][[resp]]$value_function$value,
+                                        resp = resp))
+
+      }
+    }
     
-    if (is.null(round_data$boot_response) || 
-        (round_data$indicator == "Herbivore Impact" && round == 1)) {
+    if (is.null(boot_results[[i]][[r]]$boot_response) || boot_results[[i]][[r]]$indicator == "Herbivore Impact" && round == 1) {
       # Create an empty plot for "Herbivore Impact" round 1 or if data is NULL
       plot <- ggplot() +
         theme_void() +
         ggtitle(paste(indicator, "Round", round, "(No Data)"))
     } else {
       # Extract the boot_response data frame
-      plot_data <- round_data$boot_response
-      
-      # Create a data frame for respondent-specific value functions
-      respondent_data <- do.call(rbind, lapply(round_data$respondents, function(resp) {
-        data.frame(
-          expl = interpolated.data[[indicator]][[round]][[resp]]$value_function$measurement,
-          value = interpolated.data[[indicator]][[round]][[resp]]$value_function$value,
-          respondent = resp
-        )
-      }))
+      plot_data[[r]] <- boot_results[[i]][[r]]$boot_response
       
       # Create the ggplot
       plot <- ggplot() +
-        # Add respondent-specific lines
-        geom_line(data = respondent_data, 
-                  aes(x = expl, y = value, color = respondent), 
-                  alpha = 0.7, linewidth = 1) +
-        # Add median and 95% CI ribbon
-        geom_line(data = plot_data, aes(x = expl, y = median), color = "black", linewidth = 2) +
-        geom_ribbon(data = plot_data, aes(x = expl, ymin = lower95, ymax = upper95), 
-                    alpha = 0.2, fill = "grey13") +
-        scale_color_manual(values = respondant_colours) +
+        geom_ribbon(aes(x = plot_data[[r]] $expl, 
+                        ymin = plot_data[[r]] $lower95, 
+                        ymax = plot_data[[r]] $upper95
+                        ), alpha = 0.2, fill = "grey63") +
+        geom_line(aes(x = ind_round_vfs[[r]]$measurement, 
+                      y = ind_round_vfs[[r]]$value, 
+                      colour = ind_round_vfs[[r]]$resp), 
+                  linewidth = 1, alpha = 0.3,
+                  linetype = "longdash") +
+        scale_colour_manual(values = respondant_colours,
+                            name = NULL,
+                            guide = guide_legend(ncol = 10)) + # Adjust the number of columns here
+        geom_line(aes(x = plot_data[[r]] $expl, 
+                      y = plot_data[[r]] $median), 
+                  color = "black", linewidth = 2) +
         labs(
-          title = paste("Round", round, "N =", length(round_data$respondents)),
+          title = paste("Round", round, "N =", length(boot_results[[i]][[r]]$respondents)),
           x = ind.matcher.df$ind.axis.title[ind.matcher.df$sheet_name == indicator],
-          y = "Value",
-          color = "Respondents"
+          y = "Value"
         ) +
-        theme_pubr()
+        theme_pubr() +
+        theme(legend.text = element_text(size = 8),
+              legend.position = "bottom")
     }
     
+# Extract the legend from one of the plots
+  legend <- extract_legend(plot)
+
     # Append the plot to the round_plots list
-    round_plots[[round]] <- plot
+    round_plots[[r]] <- plot+ theme(legend.position = "none")
   }
   
-  # Add a shared title
+  # Arrange the plots in a grid
+  grid_plots <- arrangeGrob(grobs = round_plots, ncol = 2)
+  
+  # Create a shared title
   shared_title <- textGrob(
-    label = paste("Indicator:", indicator),
+    label = paste(i),
     gp = gpar(fontsize = 16, fontface = "bold")
   )
   
-  # Combine plots using gridExtra
-  ncol <- 2
-  nrow <- ceiling(length(round_plots) / ncol)
-  grid_plots <- arrangeGrob(grobs = round_plots, ncol = ncol)
-  combined_plot <- grid.arrange(shared_title, grid_plots, heights = c(0.1, 0.9), nrow = 2)
+  # Combine the title, grid of plots, and legend
+  combined_plot <- grid.arrange(
+    shared_title,
+    grid_plots,
+    legend,
+    ncol = 1,
+    heights = c(1, 9, 2) # Adjust heights for title, plots, and legend
+  )
   
   # Save the plot (optional)
   ggsave(
-    filename = paste0("plots/", indicator, "_round_plots.png"),
+    filename = paste0("plots/vfs-av_and_individual/boot_indiv", indicator, ".png"),
     plot = combined_plot,
     width = 10, height = 5
   )
@@ -434,5 +503,8 @@ for (indicator in names(boot_results)) {
   print(combined_plot)
 }
 
+
+
+  
 
 ```

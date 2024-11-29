@@ -322,11 +322,6 @@ for (indicator in names(boot_results)) {
     # Append the plot to the round_plots list
     round_plots[[round]] <- plot
   }
-    # Add a shared title
-  shared_title <- textGrob(label = paste(indicator),
-                           gp = gpar(fontsize = 16, fontface = "bold")
-  )
-  combined_plot <- grid.arrange(shared_title, grid_plots, heights = c(0.1, 0.9), nrow = 2)
 
   # Combine the two plots using patchwork
   ncol <- 2
@@ -335,7 +330,7 @@ for (indicator in names(boot_results)) {
   
   # Add a shared title
   shared_title <- textGrob(
-    label = paste("Indicator:", indicator),
+    label = paste(indicator),
     gp = gpar(fontsize = 16, fontface = "bold")
   )
   combined_plot <- grid.arrange(shared_title, grid_plots, heights = c(0.1, 0.9), nrow = 2)

@@ -3,9 +3,21 @@ title: "Round 2 analysis"
 author: "Ewan McHenry"
 ---
 
-```{r setup}
+```{r libraries}
 library(tidyverse)
+library(ggpubr)
+library(grid)
+library(gridExtra)
+library(cowplot)
+library(mgcv)
+library(kableExtra)
+library(Polychrome)
+
 source("Scripts\\functions_delphi_analysis.R") 
+
+```
+```{r load_data}
+load("Data\\Delphi round 2\\curated.RData")
 
 r1_data <- prepare_round_data(1, "Data\\Delphi round 1\\", "response sheets\\", run_extraction = T)
 r2_data <- prepare_round_data(2, "Data\\Delphi round 2\\", "response sheets\\", run_extraction = T)
@@ -14,6 +26,11 @@ all.respondents <- unique(c(r1_data$df$respondant_name, r2_data$df$respondant_na
 all.indicators <- unique(c(r1_data$df$indicator_name, r2_data$df$indicator_name))
 ```
 
+The value functions etc presented here are based on the `sum(all.respondents %in% r2_data$completed_summary$respondent_names)` respondents that completed round 2 of the Delphi process.
+
+# Survey completion and changes
+
+
 ```{r respondent_completion_table}
 # table of respondents by round
 respondent_table <- tibble(
@@ -21,10 +38,19 @@ respondent_table <- tibble(
   round1 = as.integer(all.respondents %in% r1_data$completed_summary$respondent_names),
   round2 = as.integer(all.respondents %in% r2_data$completed_summary$respondent_names)
 )
+respondent_table$both_rounds <- respondent_table$round1 * respondent_table$round2
 
-respondent_table
+respondent_table %>% arrange(desc(both_rounds)) %>% 
+  mutate(
+    round1 = ifelse(round1 == 1, "Yes", "No"),
+    round2 = ifelse(round2 == 1, "Yes", "No"),
+    both_rounds = ifelse(both_rounds == 1, "Yes", "No")
+  ) %>% 
+  select(respondent_names, round1, round2, both_rounds) %>% 
+  kable() 
 
 ```
+
 
 ```{r combine_rounds}
 combine_rounds <- function(r1, r2, round1 = 1, round2 = 2) {
@@ -42,7 +68,6 @@ c.has_completed <- combine_rounds(r1_data$has_completed, r2_data$has_completed)
 c.just.one.df <- combine_rounds(r1_data$just_one_df, r2_data$just_one_df)
 
 ```
-
 ```{r reduced_df}
 red.df <- c.df %>% 
   arrange(respondant_name,indicator_num, round, measure) %>% 
@@ -52,7 +77,11 @@ red.df <- c.df %>%
 
 ```
 
-Looked at which respondent-indicator pairs hadn't differed between rounds. Happy now that data only contains forms that were actually completed by respondents.
+# Curation of responses
+
+## Unchanged responses between rounds
+
+Checked value function estimates that didn't differ between rounds. Happy that data only contains forms that were actually completed by respondents, and that lack of change is because those respondents were happy with their original answer.
 
 ```{r}
 # find respondent name - indicator pairs that are identical between rounds
@@ -76,22 +105,511 @@ for (r in all.respondents) {
 same_last
 ```
 
-Looked like some folk used different number of tree age categories. Table of max number of tree age categories used by respondent and round. Found in round 1 DK, NRB and PA had 5,5 and 3 categories respectively. Went into forms and altered. Intent seemed clear in all cases.
+## Age structure
 
-```{r}
+Some respondents used different numbers of age categories. 
+
+Went through forms and altered, ensuring that intent (which seemed clear in all cases) was preserved. Now all respondents in both use 4 age classes.
+
+```{r check_r2_age_structure}
+this.sheet <- "Tree age distribution"
+
+# Check that all respondents covered entire range of 0-100% native canopy cover, and that all value functions were within 0-100.
+ind_checker <- function (data = c.df){ data %>%
+    filter(sheet_name == this.sheet & round == 2) %>% 
+    group_by(respondant_name) %>%
+    summarise(
+      min_value = min(value, na.rm = TRUE),
+      max_value = max(value, na.rm = TRUE),
+      min.measure = min(measure, na.rm = TRUE),
+      max.measure = max(measure, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      full_range_measure = (min.measure == min(min.measure) & max.measure == max(max.measure)),
+      full_range_value = (min_value == 0 & max_value == 100)
+    )
+}
+
+ind_check <- ind_checker()
+
+call_ind_mess <- function(data = ind_check){
+  if(any(!ind_check$full_range_measure)) {
+  for (i in which(!ind_check$full_range_measure)) {
+    print(paste(ind_check$respondant_name[i], "does not cover full range of", min(ind_check$min.measure) , "-",
+                max(ind_check$max.measure),  this.sheet))
+  }}  else {
+  print(paste("All respondents cover the full range of", min(ind_check$min.measure) , "-",
+                max(ind_check$max.measure),  this.sheet))}
+if(any(!ind_check$full_range_value)) {
+  for (i in which(!ind_check$full_range_value)) {
+    print(paste(ind_check$respondant_name[i], "has value function outside of 0-100"))
+  }} else {
+  print("All respondents have value functions within 0-100")
+}}
+call_ind_mess(ind_check)
+```
+
+```{r different_agecats?}
+# Looked like some folk used different number of tree age categories. Table of max number of tree age categories used by respondent and round. Found in round 1 DK, NRB and PA had 5,5 and 3 categories respectively. Went into forms and altered. Intent seemed clear in all cases.
 # find max number of tree age categories used by respondent and round
 nages <- c.df %>%
-  filter(sheet_name == "Tree age distribution") %>%
+  filter(sheet_name == this.sheet) %>%
   group_by(round, respondant_name) %>%
   summarise(
     max_age_categories = max(measure, na.rm = TRUE),
     .groups = "drop"
   ) %>% 
-  filter (max_age_categories != 4)
+  filter (max_age_categories != max(max_age_categories))
 
 ```
 
-```{r interpolation_of_vfs}
+Plot of round 2 age structure value functions
+```{r plot-r2_age_structure_vfs}
+# Plot of round 2 age structure value functions
+age_structure_vfs <- c.df %>%
+  filter(sheet_name ==this.sheet & round == 2) %>%
+  ggplot(aes(x = measure, y = value, color = respondant_name)) +
+  geom_line() +
+  labs(
+    title = "Round 2 Tree Age Structure Value Functions",
+    x = "N Tree Age Categories",
+    y = "Value"
+  ) +
+  theme_pubr() +
+  scale_color_manual(values = respondant_colours) +
+  theme(legend.position = "bottom")
+
+age_structure_vfs
+
+
+```
+```{r create temp df}
+c.df1 <- c.df 
+```
+
+
+## Native canopy percentage
+
+```{r curation of incomplete estiamtes}
+this.sheet <- "Native canopy percentage "
+# curation where incomplete (see below check_r2_native_canopy_percentage)
+## "Dean K" min measure 10
+### duplicate row w measure 10 and value 0, then change the measure to 0
+dup.row <- which(c.df1$sheet_name == this.sheet & 
+                  c.df1$round == 2 & 
+                  c.df1$value == 0 & 
+                  c.df1$measure == 10 & 
+                  c.df1$respondant_name == "Dean K") 
+added.row <- c.df1[dup.row, ] # duplicate row
+added.row$measure <- 0 # change measure to 0
+c.df1 <- rbind(c.df1, added.row) # insert row to df
+
+```
+
+Checked that all respondents covered entire range of 0-100% native canopy cover, and that all value functions were within 0-100. They were not, they were curated to include, within code, based on percieved intent (which was deemed clear).
+
+```{r check_r2_native_canopy_percentage}
+ind_check <- ind_checker(c.df1)
+
+call_ind_mess(ind_check)
+```
+
+
+```{r plot_r2_native_canopy_percentage}
+# Plot of round 2 native canopy percentage value functions
+plot_data <- c.df1 %>%
+  filter(sheet_name == this.sheet & round == 2)
+
+native_canopy_vfs <- plot_data %>%
+  ggplot(aes(x = measure, y = value, color = respondant_name)) +
+  geom_line() +
+  labs(
+    title = "Round 2 Native Canopy Percentage Value Functions",
+    x = "Native Canopy Percentage",
+    y = "Value"
+  ) +
+  theme_pubr() +
+  scale_color_manual(values = respondant_colours) +
+  theme(legend.position = "bottom")
+
+native_canopy_vfs
+```
+
+## Vertical structure
+```{r vertical_structure_curation}
+# curation where incomplete
+this.sheet <- "Vertical structure"
+# curation where incomplete (see below check_r2_vertical_structure)
+
+# curation where incomplete (see below check_r2_native_canopy_percentage)
+## A few folk didnt include 5 categories. Judging by vf shapes seems to have not thought of lowest strata - i.e.ground, so will assume same value for lowest 2 value estiamtes... this might have been an issue with the forms
+### function to do that
+add_combine_lowest_measures <- function(df, respondent, sheet_name, round = 2) {
+  # function to add an additional row at lowest measure, adjust every other measure +1 and combine lowest two values
+  
+  # Increase measures by 1
+  df <- df %>%
+    mutate(measure = ifelse(sheet_name == sheet_name & 
+                            round == round & 
+                            respondant_name == respondent, 
+                            measure + 1, measure))
+  
+  # Find row to duplicate
+  dup.row <- which(df$sheet_name == sheet_name & 
+                   df$round == round & 
+                   df$value == 0 & 
+                   df$measure == 2 & 
+                   df$respondant_name == respondent)
+  
+  # If such a row exists, duplicate it and change measure to 1
+  if (length(dup.row) > 0) {
+    added.row <- df[dup.row, ]
+    added.row$measure <- 1
+    df <- rbind(df, added.row)
+  }
+
+  return(df)
+}
+### Bob Epsom
+c.df1 <- add_combine_lowest_measures(c.df1, "Bob Epsom", this.sheet)
+### David L
+c.df1 <- add_combine_lowest_measures(c.df1, "David L", this.sheet)
+### David V
+c.df1 <- add_combine_lowest_measures(c.df1, "David V", this.sheet)
+### Iain Mo
+c.df1 <- add_combine_lowest_measures(c.df1, "Iain Mo", this.sheet)
+### Kylie Jo-Ma
+c.df1 <- add_combine_lowest_measures(c.df1, "Kylie Jo-Ma", this.sheet)
+### Martin Hu
+c.df1 <- add_combine_lowest_measures(c.df1, "Martin Hu", this.sheet)
+### Mick Br
+c.df1 <- add_combine_lowest_measures(c.df1, "Mick Br", this.sheet)
+### Peter Lo
+c.df1 <- add_combine_lowest_measures(c.df1, "Peter Lo", this.sheet)
+### Saul H
+c.df1 <- add_combine_lowest_measures(c.df1, "Saul H", this.sheet)
+### Sonia
+c.df1 <- add_combine_lowest_measures(c.df1, "Sonia", this.sheet)
+
+
+
+# curation where wrong scale used
+## "Henry D" and "Rachel Penn" increase all measures by 1 (went from 0-4, not 1-5)
+c.df1 <- c.df1 %>% 
+  mutate(measure = ifelse(sheet_name == this.sheet & 
+                        round == 2 & 
+                        respondant_name == "Henry D"  , 
+                        measure + 1, measure))
+
+c.df1 <- c.df1 %>%
+  mutate(measure = ifelse(sheet_name == this.sheet & 
+                        round == 2 & 
+                        respondant_name == "Rachel Penn"  , 
+                        measure + 1, measure))
+
+```
+```{r check_r2_vertical_structure}
+ind_check <- ind_checker(c.df1)
+call_ind_mess(ind_check)
+```
+
+## Tree species richness
+
+```{r tree_species_richness_curation}
+this.sheet <- "N tree & shrub spp."
+
+# a fair few have measures of 101, just overwrite to 100
+c.df1 <- c.df1 %>%
+  mutate(measure = ifelse(sheet_name == this.sheet & round == 2 & measure == 101, 100, measure))
+# and a lot start on 1 instead of 0, overwrite to 0
+c.df1 <- c.df1 %>%
+  mutate(measure = ifelse(sheet_name == this.sheet & round == 2 & measure == 1, 0, measure))
+
+# Jim Sm-Wr stopped at 90, duplicate that row and add it in, editing measure to 100
+dup.row <- which(c.df1$sheet_name == this.sheet & 
+                  c.df1$round == 2 & 
+                  c.df1$respondant_name == "Jim Sm-Wr" & 
+                  c.df1$measure == 90)
+added.row <- c.df1[dup.row, ] # duplicate row
+added.row$measure <- 100 # change measure to 100
+c.df1 <- rbind(c.df1, added.row) # insert row to df
+# Mick Br started at 5, duplicate that row and add it in, editing measure to 0
+dup.row <- which(c.df1$sheet_name == this.sheet & 
+                  c.df1$round == 2 & 
+                  c.df1$respondant_name == "Mick Br" & 
+                  c.df1$measure == 5)
+added.row <- c.df1[dup.row, ] # duplicate row
+added.row$measure <- 0 # change measure to 0
+c.df1 <- rbind(c.df1, added.row) # insert row to df
+# Nick RB started at 10, duplicate that row and add it in, editing measure to 0
+dup.row <- which(c.df1$sheet_name == this.sheet & 
+                  c.df1$round == 2 & 
+                  c.df1$respondant_name == "Nick RB" & 
+                  c.df1$measure == 10)
+added.row <- c.df1[dup.row, ] # duplicate row
+added.row$measure <- 0 # change measure to 0
+c.df1 <- rbind(c.df1, added.row) # insert row to df
+```
+
+```{r check_r2_tree_species_richness}
+ind_check <- ind_checker(c.df1)
+call_ind_mess(ind_check)
+```
+
+## Invasives
+```{r invasives_curation}
+this.sheet <- "Invasive plants % cover"
+# curation where incomplete (see below check_r2_invasives)
+```
+```{r check_r2_tree_species_richness}
+ind_check <- ind_checker(c.df1)
+call_ind_mess(ind_check)
+```
+
+## Deadwood
+
+```{r deadwood_curation}
+this.sheet <- "Deadwood"
+# curation where incomplete (see below check_r2_deadwood)
+add_deadwood_measure_zero <- function(df, respondent, the_sheet) {
+  # Get the lowest existing measure for the respondent
+  min_measure <- df %>%
+    filter(sheet_name == the_sheet,
+           round == 2,
+           respondant_name == respondent) %>%
+    summarise(min_measure = min(measure, na.rm = TRUE)) %>%
+    pull(min_measure)
+
+  # Find the row to duplicate
+  dup.row <- which(df$sheet_name == the_sheet & 
+                   df$round == 2 & 
+                   df$respondant_name == respondent & 
+                   df$measure == min_measure)
+
+  # If such a row exists, duplicate and change measure to 0
+  if (length(dup.row) > 0) {
+    added.row <- df[dup.row, ]
+    added.row$measure <- 0
+    df <- rbind(df, added.row)
+  }
+
+  return(df)
+}
+
+## Those  lowest measure is 2, duplicate that row and add it in, editing measure to 0
+
+respondents <- c("Bob Epsom", "Dean K", "Kylie Jo-Ma")
+
+for (name in respondents) {
+  c.df1 <- add_deadwood_measure_zero(c.df1, name, this.sheet)
+}
+
+```
+
+```{r check_r2_deadwood}
+ind_check <- ind_checker(c.df1)
+call_ind_mess(ind_check)
+```
+
+## Veteran trees
+
+```{r veteran_trees_curation}
+this.sheet <- "Veteran trees"
+
+# curation where incomplete (see below check_r2_veteran_trees)
+## Dont have measrure 12, duplicate their max measure row and change the measure to 12
+add_veteran_measure_twelve <- function(df, respondent, the_sheet) {
+  # Get the highest existing measure for the respondent
+  max_measure <- df %>%
+    filter(sheet_name == the_sheet,
+           round == 2,
+           respondant_name == respondent) %>%
+    summarise(max_measure = max(measure, na.rm = TRUE)) %>%
+    pull(max_measure)
+
+  # Find the row to duplicate
+  dup.row <- which(df$sheet_name == the_sheet & 
+                   df$round == 2 & 
+                   df$respondant_name == respondent & 
+                   df$measure == max_measure)
+
+  # If such a row exists, duplicate and change measure to 12
+  if (length(dup.row) > 0) {
+    added.row <- df[dup.row, ]
+    added.row$measure <- 12
+    df <- rbind(df, added.row)
+  }
+return(df)
+}
+
+not_complte_respondents <- c("Bob Epsom", "David L", "David V", "Dean K", "Kylie Jo-Ma", "Rhiannon Hoy", "Saul H")
+# Loop through respondents and add measure 12 where needed
+for (i in not_complte_respondents) {
+  c.df1 <- add_veteran_measure_twelve(c.df1, i, this.sheet)
+}
+
+## Dont start at 0
+### Dean K starts at 1, duplicate that row and add it in, editing measure to 0
+dup.row <- which(c.df1$sheet_name == this.sheet & 
+                  c.df1$round == 2 & 
+                  c.df1$respondant_name == "Dean K" & 
+                  c.df1$measure == 1)
+added.row <- c.df1[dup.row, ] # duplicate row
+added.row$measure <- 0 # change measure to 0
+c.df1 <- rbind(c.df1, added.row) # insert row to df
+
+```
+```{r check_r2_veteran_trees}
+ind_check <- ind_checker(c.df1)
+call_ind_mess(ind_check)
+```
+
+## Regeneration
+
+```{r regeneration_curation}
+this.sheet <- "Regen"
+# curation where incomplete (see below check_r2_regeneration)
+## Bob Epsom lowest measure is 1, duplicate that row and add it in, editing measure to 0
+dup.row <- which(c.df1$sheet_name == this.sheet & 
+                  c.df1$round == 2 & 
+                  c.df1$value == 0 & 
+                  c.df1$measure == 1 & 
+                  c.df1$respondant_name == "Bob Epsom") 
+added.row <- c.df1[dup.row, ] # duplicate row
+added.row$measure <- 0 # change measure to 0
+c.df1 <- rbind(c.df1, added.row) # insert row to df
+```
+```{r check_r2_regeneration}
+ind_check <- ind_checker(c.df1)
+call_ind_mess(ind_check)
+```
+
+## Herbivore damage
+```{r herbivore_damage_curation}
+this.sheet <- "Herbivore damage"
+# curation where incomplete (see below check_r2_herbivore_damage)
+
+c.df1 %>% 
+  filter(sheet_name == this.sheet & round == 2, respondant_name == "Dean K") %>%
+  select(respondant_name, measure, value) %>%
+  arrange(respondant_name, measure)
+
+```
+```{r check_r2_herbivore_damage}
+ind_check <- ind_checker(c.df1)
+call_ind_mess(ind_check)
+```
+
+## Ground flora
+```{r fixing_R1_indicator_plant_info}
+# for all responses in round 1, where there is a value of 100 with a min measure of <25, divide all mesure values by 20 (assumed number of approprate species), multiply by 100 and put a ceiling of 100 on the value
+  ## identify all round-indivator-respondent combinations where the above condition is met
+
+  # TODO more here
+
+
+```
+
+
+# Estimating value functions
+
+Estimated value using a binomial GAM.
+
+```{r binomial_glm_age_structure}
+# binomial GLM for age structure
+age_structure_gam <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 4) + 
+    s(respondant_name, bs = "re"),
+  data = c.df %>% filter(sheet_name == "Tree age distribution" & round == 2),
+  family = binomial(link = "logit")
+)
+
+# 4. Prepare original data with respondent lines
+plot_data <- c.df %>%
+  filter(sheet_name == "Tree age distribution", round == 2) %>%
+  mutate(value_scaled = value.dec * 100)
+
+
+# # summary of the model
+# summary(age_structure_gam)
+
+# dummy data for prediction
+newdata <- data.frame(
+    measure = rep(unique(plot_data$measure), each = length(unique(plot_data$respondant_name))),
+    respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
+)
+
+# 2. Predict on the link (logit) scale
+pred <- predict(age_structure_gam, newdata = newdata, type = "link", se.fit = TRUE)
+
+# 3. Add predictions using plogis
+newdata <- newdata %>%
+  mutate(
+    fit_link = pred$fit,
+    se_link = pred$se.fit,
+    fit_logit_lower = fit_link - 1.96 * se_link,
+    fit_logit_upper = fit_link + 1.96 * se_link,
+    fit_response = plogis(fit_link) * 100,
+    lower_response = plogis(fit_logit_lower) * 100,
+    upper_response = plogis(fit_logit_upper) * 100,
+    value_plot = (fit_response- min(fit_response, na.rm = TRUE)) * (100 / (max(fit_response, na.rm = TRUE) - min(fit_response, na.rm = TRUE)))
+  )
+
+
+# 5. Plot
+ggplot() +
+  # Respondent lines
+  geom_line(
+    data = plot_data,
+    aes(x = measure, y = value_scaled, group = respondant_name),
+    color = "grey70", alpha = 0.5, size = 0.5
+  ) +
+  # #Confidence ribbon
+  # geom_ribbon(
+  #   data = newdata,
+  #   aes(x = measure, ymin = lower_response, ymax = upper_response),
+  #   fill = "lightblue", alpha = 0.4
+  # ) +
+  # Fitted GAM line
+  geom_line(
+    data = newdata,
+    aes(x = measure, y = value_plot),
+    color = "black", size = 1.2
+  ) +
+  labs(
+    x = "Measure",
+    y = "Predicted value (0–100 scale)",
+    title = "Tree Age Structure value function (GAM)"  ) +
+  theme_pubr()
+
+```
+
+### Lookup table
+```{r age_structure_lookup_table}
+age_vf_lookup <- newdata %>%
+  select(measure, value_plot) %>%
+  #remove duplicates
+  distinct() 
+
+age_vf_lookup %>%
+  mutate(
+    measure = as.character(measure),
+    value_plot = round(value_plot, 0)) %>%
+  rename(
+    `N age classes` = measure,
+    Value = value_plot
+  ) %>%
+  kable() %>%
+  kable_styling(full_width = F)
+
+```
+
+
+```{r interpolation_of_vfs, warning=FALSE}
+# interpolation of indivator value functions, using best fit model from linear, binom GLM, GAM, 
+
+# set values for interpolation ----
 # note dependency on sheet_name
 interpolation_measurements <- list(
   "Tree age distribution" = unique(c.df$measure[c.df$sheet_name == "Tree age distribution"]) %>% sort(),
@@ -110,23 +628,43 @@ interpolation_measurements <- list(
   "Anthropogenic damage" = seq(from = 0, to = 100, by = 1)
 )
 
-#create list : sheet_name -> round -> respondent ->  df( measurement and interpolated values), certainties and weights
+# set fixed intercepts ----
+intercept_fixed <- list(
+  "Tree age distribution" = 0,
+  "Native canopy percentage " = 0,
+  "Vertical structure" = 0,
+  "N tree & shrub spp." = 0,
+  "Invasive plants % cover" = 1,
+  "Deadwood" = 0,
+  "Veteran trees" = 0,
+  "Woodland extent" = 0,
+  "Regen" = 0,
+  "Herbivore damage" = 1,
+  "Tree health" = 1,
+  "Ground flora" = 0,
+  "Horizontal complexity" = 0,
+  "Anthropogenic damage" = 1
+)
+
+
+#create interpolated.data list structure: ----
+#sheet_name -> round -> respondent ->  df( measurement and interpolated values), certainties and weights
 
 interpolated.data <- list()
-for (i in unique(c.df$sheet_name)) {
+for (i in unique(c.df$sheet_name)) { # for each indicator
   interpolated.data[[i]] <- list()
-  for (r in unique(c.df$round)) {
+  for (r in unique(c.df$round)) { # for each round
     interpolated.data[[i]][[r]] <- list()
-    for (resp in unique(c.df$respondant_name)) {
-      explanitory <- c.df$measure[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
+    for (resp in unique(c.df$respondant_name)) { # for each respondent
+      explanatory <- c.df$measure[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
       response <- c.df$value[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
       
       
-      # Check conditions for adding value_function
+      # add value_function - if theres more than 1 non-NA value and it actually changes
       if (sum(!is.na(response))>1 && length(response) > 1 && diff(range(response, na.rm = TRUE)) > 0) {
         interpolated.data[[i]][[r]][[resp]] <- list(
           value_function = data.frame("measurement" = interpolation_measurements[[i]]),
-          og_vf = data.frame("measurement" = explanitory, "value" = response),
+          og_vf = data.frame("measurement" = explanatory, "value" = response),
           weight = c.df$weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
           vf_cert = c.df$cert_val_funct[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
           wt_cert = c.df$cert_weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
@@ -148,6 +686,9 @@ for (i in unique(c.df$sheet_name)) {
     }# round
   } # indicator
 
+
+# interpolation of vfs ----
+
 # use data from corresponding round, respondent and indicator to interpolate values
 
 # i <- unique(c.df$sheet_name)[1]
@@ -158,70 +699,102 @@ for (i in unique(c.df$sheet_name)) {
 # resp <- "Martin Hu"
 
 
-library(mgcv)
-for (i in unique(c.df$sheet_name)) {
-  for (r in unique(c.df$round)) {
-    for (resp in unique(c.df$respondant_name)) {
-      # Check if value_function exists for the current combination
+bk2 = 1
+interpolation.warnings <- NA
+for (i in unique(c.df$sheet_name)) { # for each indicator
+  for (r in unique(c.df$round)) { # for each round
+    for (resp in unique(c.df$respondant_name)) { # for each respondent
+      ## if value_function exists
       if (!is.null(interpolated.data[[i]][[r]][[resp]]$value_function)) {
 
-      #measurements for interpolation
-      meas <- interpolated.data[[i]][[r]][[resp]]$value_function$measurement
-      # data from form
-      explanatory <- c.df$measure[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
-      response <- c.df$value[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
-      
-      if(!identical(range(response), c(0,100))) {
-        print(paste("Warning: response range not 0-100 for", i, r, resp))}
+        ## Prepare data for modeling ----
+        ### save dummy explanatory for interpolation, recorded explanatory and recorded response data
+        meas <- interpolated.data[[i]][[r]][[resp]]$value_function$measurement
+        response <- c.df$value[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
+        ### Create a data frame for modeling
+        data <- data.frame(explanatory = c.df$measure[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp], 
+                         response_scaled = (response - min(response)) / (max(response) - min(response)))
+        ### delete duplicated rows
+        data <- data[!duplicated(data), ]
+        
+        ## check response range is 0 100
+        if(!identical(range(response), c(0,100))) {
+          print(paste("Warning: response range for", i, r, resp, "is" , range(response)))}
 
-      # Create a data frame for modeling
-      response_scaled <- (response - min(response)) / (max(response) - min(response))
-      data <- data.frame(explanatory = explanatory, response_scaled = response_scaled)
+      ## Fit models ----
+      # ### glm - linear ----
+      # linear.mod <- glm(response_scaled ~ explanatory, data = data)
+      # 
+      # ### glm binomial ----
+      # binom.glm <- glm(
+      #   response_scaled ~ explanatory,
+      #   family = binomial(link = "logit"),
+      #   data = data
+      # )
       
-      # Fit models
-      ## Binomial GAM
-      binom.spline_model <- gam(
-        response_scaled ~ s(explanatory, bs = "cs", k = length(explanatory) - 1),
-        family = binomial(link = "logit"),
-        data = data,
-        method = "REML"
-      )
+        ### GAM - linear ----
+        gam <- gam(response_scaled ~ s(explanatory, bs = "cs", k = length(data$explanatory)),
+                   data = data,
+                   method = "REML"
+                   )
+        ### GAM - binomial ----
+        binom.gam <- gam(response_scaled ~ s(explanatory, bs = "cs", k = length(data$explanatory)),
+                         family = binomial(link = "logit"),
+                         data = data,
+                         method = "REML"
+                         )
+        ### GAM - binomial with offset ----
+        # binom.spline_model <- gam(
+        #   response_scaled ~ s(explanatory, bs = "cs", k = length(data$explanatory)),
+        #   family = binomial(link = "logit"),
+        #   data = data,
+        #   method = "REML",
+        #   offset = log(response_scaled)
+        # )
       
-      ## Beta GAM
-      beta.spline_model <- gam(
-        response_scaled ~ s(explanatory, bs = "cs", k = length(explanatory) - 1),
-        family = betar(link = "logit"),
-        data = data,
-        method = "REML"
-      )
+        
       
-      ## Linear Model
-      linear.mod <- glm(response ~ explanatory, data = data)
+      # # exponential
+      # data$response_offset <- pmax(data$response_scaled, 1e-5)  # avoid log(0)
+      #       ## Exponential Model
+      # data$response_offset <- pmax(data$response_scaled, 1e-5)  # avoid log(0)
+      # glm_exp <- glm(log(response_offset) ~ explanatory, data = data)
+      # 
+      # 
+      # 
+      # AIC(gam, binom.gam, glm_exp) # compare AIC of models
+
       
-      ## Exponential Model
-      data$log_response <- log(data$response+0.01) # Log-transform response
-      exp.mod <- glm(log_response ~ explanatory, data = data)
+            # data$response_offset <- pmax(data$response_scaled, 1e-5)  # avoid log(0)
+      # glm_exp <- glm(log(response_offset) ~ explanatory, data = data)
+
       
-      ## Negative Exponential Model
-      data$negexp_predictor <- 1 - exp(-data$explanatory)
-      negexp.mod <- glm(response ~ negexp_predictor, data = data)
+      # ## Beta GAM
+      # beta.spline_model <- gam(
+      #   response_scaled ~ s(explanatory, bs = "cs", k = length(explanatory) - 1),
+      #   family = betar(link = "logit"),
+      #   data = data,
+      #   method = "REML"
+      # )
       
-      ## Logarithmic Model
-      data$log_explanatory <- log(data$explanatory+0.001) # Log-transform explanatory
-      log.mod <- glm(response ~ log_explanatory, data = data)
+      # 
+      # 
+      # ## Logarithmic Model
+      # data$log_explanatory <- log(data$explanatory+0.00001) # Log-transform explanatory
+      # log.mod <- glm(response_scaled ~ log_explanatory, data = data)
+      # 
+      # ## Negative Logarithmic Model
+      # neglog.mod <- glm(response_scaled ~ -log_explanatory, data = data)
       
-      ## Negative Logarithmic Model
-      neglog.mod <- glm(response ~ -log_explanatory, data = data)
-      
-      # Compare models using AIC
+      # # Compare models using AIC
       model_aics <- AIC(
-        linear.mod,
-        binom.spline_model,
-        beta.spline_model,
-        exp.mod,
-        negexp.mod,
-        log.mod,
-        neglog.mod
+        # linear.mod,
+        # binom.glm,
+        gam,
+        binom.gam #,
+        # glm_exp,
+        # log.mod,
+        # neglog.mod
       )
       
       # Predict over the interpolation measurements using the best model
@@ -233,26 +806,33 @@ for (i in unique(c.df$sheet_name)) {
       )
       
       if (best_model == 1) {
-        predictions_scaled <- predict(linear.mod, newdata = meas_transformed)
+        predictions_scaled <- predict(gam, newdata = meas_transformed, type = "response")
+        #   predictions_scaled <- predict(linear.mod, newdata = meas_transformed)
       } else if (best_model == 2) {
-        predictions_scaled <- predict(binom.spline_model, newdata = meas_transformed, type = "response")
-      } else if (best_model == 3) {
-        predictions_scaled <- predict(beta.spline_model, newdata = meas_transformed, type = "response")
-      } else if (best_model == 4) {
-        predictions_scaled <- exp(predict(exp.mod, newdata = meas_transformed)) # Back-transform predictions
-      } else if (best_model == 5) {
-        predictions_scaled <- predict(negexp.mod, newdata = meas_transformed)
-      } else if (best_model == 6) {
-        predictions_scaled <- predict(log.mod, newdata = meas_transformed)
-      } else {
-        predictions_scaled <- predict(neglog.mod, newdata = meas_transformed)
-      }
+        predictions_scaled <- predict(binom.gam, newdata = meas_transformed, type = "response")
+}
+      #   predictions_scaled <- predict(binom.spline_model, newdata = meas_transformed, type = "response")
+      # } else if (best_model == 3) {
+      # } else if (best_model == 4) {
+      #   predictions_scaled <- exp(predict(exp.mod, newdata = meas_transformed)) # Back-transform predictions
+      # } else if (best_model == 5) {
+      #   predictions_scaled <- predict(negexp.mod, newdata = meas_transformed)
+      # } else if (best_model == 6) {
+      #   predictions_scaled <- predict(log.mod, newdata = meas_transformed)
+      # } else if (best_model == 7) {
+      #   predictions_scaled <- predict(neglog.mod, newdata = meas_transformed)
+      # } else {
+      #   predictions_scaled <- predict(binom.mod, newdata = meas_transformed, type = "response")
+      # }
 
       # fix to 0-100 bounds
       predictions_fixed <- (predictions_scaled - min(predictions_scaled))*(100/(max(predictions_scaled) - min(predictions_scaled)))
       
+    
             if(!identical(range(predictions_fixed), c(0,100))) {
-        print(paste("Warning: INTERPOLATED response range not 0-100 for", i, r, resp))}
+        interpolation.warnings[bk2] <- paste("Warning: INTERPOLATED response range", range(predictions_fixed)[1], range(predictions_fixed)[2] ,", not 0-100 for", i, r, resp)
+              bk2 = bk2+1
+              }
       
             # add to interpolated.data
       interpolated.data[[i]][[r]][[resp]]$value_function$value <- predictions_fixed
@@ -330,74 +910,155 @@ for (i in unique(c.df$sheet_name)) {
 
 
 ```
-```{r plots_boot}
 
-
-
-library(ggpubr)
-library(grid)
-library(gridExtra)
-library(patchwork)
-
-# Loop through each indicator
-  round_data <- list(list())
-
-for (indicator in names(boot_results)) {
-  # Initialize an empty list to hold plots for the rounds
-  round_plots <- list()
-  
-  # Loop through each round for the current indicator
-  for (round in seq_along(boot_results[[indicator]])) {
-    round_data[[indicator]][[round]] <- boot_results[[indicator]][[round]]
+```{r f_vf_plot_function}
+plot_indicator_rounds <- function(
+    c.df = c.df,
+    boot_results, 
+    interpolated_data, 
+    respondent_colors, 
+    ind.matcher.df, 
+    output_dir = "plots/vfs-av_and_individual/", 
+    include_respondent_lines = TRUE, 
+    include_legend = TRUE
+) {
+  # Generate a dummy data frame and legend if required
+  if (include_legend) {
+    unique_respondents <- unique(unlist(lapply(interpolated_data, function(ind) {
+      unlist(lapply(ind, names))
+    })))
     
-    if (is.null(round_data[[indicator]][[round]]$boot_response) || round_data[[indicator]][[round]]$indicator == "Herbivore Impact" && round == 1) {
-      # Create an empty plot for "Herbivore Impact" round 1 or if data is NULL
-      plot <- ggplot() +
-        theme_void() +
-        ggtitle(paste(indicator, "Round", round, "(No Data)"))
-    } else {
-      # Extract the boot_response data frame
-      plot_data <- round_data[[indicator]][[round]]$boot_response
+    dummy_resps <- data.frame(
+      resp = rep(unique_respondents, each = 2),
+      x = rep(0:1, times = length(unique_respondents)),
+      y = rep(0:1, times = length(unique_respondents))
+    )
+    
+    legend <- get_legend(
+      ggplot() +
+        geom_line(data = dummy_resps, aes(x = x, y = y, color = resp)) +
+        scale_colour_manual(values = respondent_colors,
+                            name = NULL,
+                            guide = guide_legend(ncol = 10)) +
+        theme_pubr() +
+        theme(legend.position = "bottom",
+              legend.text = element_text(size = 8))
+    )
+  }
+  
+  # Iterate over each indicator
+  for (indicator in names(boot_results)) {
+    round_plots <- list()
+    n.respondents <- NA
+    for (round in seq_along(boot_results[[indicator]])) {
+      round_data <- boot_results[[indicator]][[round]]
+      n.respondents[round] <- length(c.df$respondant_name[c.df$sheet_name==indicator & c.df$round == round] %>% unique())
       
-      # Create the ggplot
-      plot <- ggplot(plot_data, aes(x = expl, y = median)) +
-        geom_line(color = "black", linewidth = 2) +
-        geom_ribbon(aes(ymin = lower95, ymax = upper95), alpha = 0.2, fill = "grey13") +
-        labs(
-          title = paste("Round", round, "N =", length(round_data[[indicator]][[round]]$respondents)),
-          x = ind.matcher.df$ind.axis.title[ind.matcher.df$sheet_name == indicator],
-          y = "Value"
-        ) +
-        theme_pubr()
+      
+      if (is.null(round_data$boot_response) || 
+          round_data$indicator == "Herbivore damage" && round == 1) {
+        plot <- ggplot() +
+          theme_void() +
+          ggtitle(paste(indicator, "Round", round, "(No Data)"))
+      } else {
+        plot_data <- round_data$boot_response
+        respondent_data <- data.frame(measurement = NA, value = NA, resp = NA)[0, ]
+        
+        if (include_respondent_lines) {
+          resps <- names(interpolated_data[[indicator]][[round]])
+          for (resp in resps) {
+            if (!is.null(interpolated_data[[indicator]][[round]][[resp]]$value_function)) {
+              respondent_data <- rbind(respondent_data,
+                                       data.frame(
+                                         measurement = interpolated_data[[indicator]][[round]][[resp]]$value_function$measurement,
+                                         value = interpolated_data[[indicator]][[round]][[resp]]$value_function$value,
+                                         resp = resp
+                                       ))
+            }
+          }
+        }
+        
+        plot <- ggplot(plot_data, aes(x = expl, y = median)) +
+          geom_ribbon(aes(ymin = lower95, ymax = upper95), alpha = 0.2, fill = "grey63") +
+          geom_ribbon(aes(ymin = lowerq, ymax = upperq), alpha = 0.2, fill = "grey13") +
+          {if (include_respondent_lines) geom_line(data = respondent_data, 
+                                                   aes(x = measurement, y = value, color = resp),
+                                                   alpha = 0.3, linetype = "longdash")} +
+          geom_line(color = "black", linewidth = 1) +
+          scale_color_manual(values = respondent_colors) +
+          labs(
+          title = paste("Round", round, "N =", n.respondents[round]),
+            y = "Value"
+          ) +
+          theme_pubr() +
+          theme(axis.title.x = element_blank(), legend.position = "none")
+      }
+      
+      round_plots[[round]] <- plot
     }
     
-    # Append the plot to the round_plots list
-    round_plots[[round]] <- plot
+    grid_plots <- plot_grid(
+      plotlist = round_plots,
+      ncol = 2,
+      labels = NULL
+    )
+    
+    shared_title <- ggdraw() +
+      draw_label(
+        label = paste(indicator),
+        fontface = "bold",
+        size = 16,
+        hjust = 0.5
+      )
+    
+    shared_x_axis <- ggdraw() +
+      draw_label(
+        label = ind.matcher.df$ind.axis.title[ind.matcher.df$sheet_name == indicator],
+        fontface = "bold",
+        size = 12,
+        hjust = 0.5
+      )
+    
+    components <- list(shared_title, grid_plots, shared_x_axis)
+    
+    if (include_legend) {
+      components <- c(components, list(legend))
+      rel_heights <- c(1, 10, 1, 4)
+    } else {
+      rel_heights <- c(1, 10, 1)
+    }
+    
+    final_plot <- plot_grid(
+      plotlist = components,
+      ncol = 1,
+      rel_heights = rel_heights
+    )
+    
+    ggsave(
+      filename = file.path(output_dir, paste0(indicator, "_round_plots.png")),
+      plot = final_plot,
+      width = 10, height = if (include_legend) 7 else 6
+    )
+    
+    print(final_plot)
   }
-
-  # Combine the two plots using patchwork
-  ncol <- 2
-  nrow <- ceiling(length(round_plots) / ncol)
-  grid_plots <- arrangeGrob(grobs = round_plots, ncol = ncol)
-  
-  # Add a shared title
-  shared_title <- textGrob(
-    label = paste(indicator),
-    gp = gpar(fontsize = 16, fontface = "bold")
-  )
-  combined_plot <- grid.arrange(shared_title, grid_plots, heights = c(0.1, 0.9), nrow = 2)
-
-  # Save the plot (optional)
-  ggsave(
-    filename = paste0("plots/", indicator, "_round_plots.png"),
-    plot = combined_plot,
-    width = 10, height = 5
-  )
-  
-  # Print the combined plot for this indicator
-  print(combined_plot)
 }
 
+```
+```{r respondent_colours}
+respondent_colors <-  set_resp_col_fun(unique(c.df$respondant_name))
+```
+```{r plots_boot}
+
+plot_indicator_rounds(
+  c.df = c.df,
+  boot_results = boot_results,
+  interpolated_data = interpolated.data,
+  respondent_colors = respondent_colors,
+  ind.matcher.df = ind.matcher.df, output_dir = "plots/just_final vf/", 
+  include_respondent_lines = F,
+  include_legend = F
+)
 
 ```
 
@@ -408,103 +1069,395 @@ Coloured by respondent
 ```{r plot-boot-and-resp}
 # using continuous_vf_fig() function, 
 
-respondant_colours <-  set_resp_col_fun(unique(c.df$respondant_name))
+plot_indicator_rounds(
+  c.df = c.df,
+  boot_results = boot_results,
+  interpolated_data = interpolated.data,
+  respondent_colors = respondent_colors,
+  ind.matcher.df = ind.matcher.df, output_dir = "plots/vfs-av_and_individual/", 
+  include_respondent_lines = T,
+  include_legend = T
+)
 
-# Loop through each indicator
-for (i in names(boot_results)) {
+
+dum.resps = data.frame(resp = rep(unique(c.df$respondant_name), each = 2),
+                       x = rep(0:1, times = length(unique(c.df$respondant_name))),
+                       y = rep(0:1, times = length(unique(c.df$respondant_name))))
+
+
+  # Extract the legend
+  legend <- get_legend(
+    ggplot() +
+      geom_line(data = dum.resps, aes(x = x, y = y, color = resp)) +
+      scale_colour_manual(values = respondant_colours,
+                          name = NULL,
+                          guide = guide_legend(ncol = 10)) + # Adjust the number of columns here
+      theme_pubr() +
+      theme(legend.position = "bottom",
+            legend.text = element_text(size = 8))
+  )
+
+round_data <- list()
+
+for (indicator in names(boot_results)) {
   # Initialize an empty list to hold plots for the rounds
   round_plots <- list()
-  # Loop through each round for the current indicator
-  plot_data <- list()
-  ind_round_vfs <- list()
-
-  for (r in seq_along(boot_results[[i]])) {
-    resps <- names(interpolated.data[[i]][[r]])
-    ind_round_vfs[[r]] <- data.frame(measurement = NA, value = NA, resp = NA)[0,]
-    for (resp in resps){
-      if (!is.null(interpolated.data[[i]][[r]][[resp]]$value_function)){
-              ind_round_vfs[[r]] <- rbind(ind_round_vfs[[r]], 
-                             data.frame(measurement = interpolated.data[[i]][[r]][[resp]]$value_function$measurement,
-                                        value = interpolated.data[[i]][[r]][[resp]]$value_function$value,
-                                        resp = resp))
-
-      }
-    }
+  
+  for (round in seq_along(boot_results[[indicator]])) {
     
-    if (is.null(boot_results[[i]][[r]]$boot_response) || boot_results[[i]][[r]]$indicator == "Herbivore Impact" && round == 1) {
-      # Create an empty plot for "Herbivore Impact" round 1 or if data is NULL
+    round_data[[indicator]][[round]] <- boot_results[[indicator]][[round]]
+    
+    if (is.null(round_data[[indicator]][[round]]$boot_response) || 
+        round_data[[indicator]][[round]]$indicator == "Herbivore damage" && round == 1) {
       plot <- ggplot() +
         theme_void() +
         ggtitle(paste(indicator, "Round", round, "(No Data)"))
     } else {
-      # Extract the boot_response data frame
-      plot_data[[r]] <- boot_results[[i]][[r]]$boot_response
+      plot_data <- round_data[[indicator]][[round]]$boot_response
+      resps <- names(interpolated.data[[indicator]][[round]])
+      respondent_data <- data.frame(measurement = NA, value = NA, resp = NA)[0, ]
       
-      # Create the ggplot
-      plot <- ggplot() +
-        geom_ribbon(aes(x = plot_data[[r]] $expl, 
-                        ymin = plot_data[[r]] $lower95, 
-                        ymax = plot_data[[r]] $upper95
-                        ), alpha = 0.2, fill = "grey63") +
-        geom_line(aes(x = ind_round_vfs[[r]]$measurement, 
-                      y = ind_round_vfs[[r]]$value, 
-                      colour = ind_round_vfs[[r]]$resp), 
-                  linewidth = 1, alpha = 0.3,
+      for (resp in resps) {
+        if (!is.null(interpolated.data[[indicator]][[round]][[resp]]$value_function)) {
+          respondent_data <- rbind(respondent_data,
+                                   data.frame(
+                                     measurement = interpolated.data[[indicator]][[round]][[resp]]$value_function$measurement,
+                                     value = interpolated.data[[indicator]][[round]][[resp]]$value_function$value,
+                                     resp = resp
+                                   ))
+        }
+      }
+      
+      # Create the plot
+      plot <- ggplot(plot_data, aes(x = expl, y = median)) +
+        geom_ribbon(aes(ymin = lower95, ymax = upper95), alpha = 0.2, fill = "grey63") +
+        geom_ribbon(aes(ymin = lowerq, ymax = upperq), alpha = 0.2, fill = "grey13") +
+        geom_line(data = respondent_data, aes(x = measurement, y = value, color = resp),
+                  alpha = 0.3,
                   linetype = "longdash") +
-        scale_colour_manual(values = respondant_colours,
-                            name = NULL,
-                            guide = guide_legend(ncol = 10)) + # Adjust the number of columns here
-        geom_line(aes(x = plot_data[[r]] $expl, 
-                      y = plot_data[[r]] $median), 
-                  color = "black", linewidth = 2) +
+        geom_line(color = "black", linewidth = 1) +
+        scale_color_manual(values = respondent_colors) +
         labs(
-          title = paste("Round", round, "N =", length(boot_results[[i]][[r]]$respondents)),
-          x = ind.matcher.df$ind.axis.title[ind.matcher.df$sheet_name == indicator],
+          title = paste("Round", round, "N =", length(unique(respondent_data$resp))),
           y = "Value"
         ) +
         theme_pubr() +
-        theme(legend.text = element_text(size = 8),
-              legend.position = "bottom")
+        theme(axis.title.x = element_blank(), legend.position = "none")
     }
     
-# Extract the legend from one of the plots
-  legend <- extract_legend(plot)
-
-    # Append the plot to the round_plots list
-    round_plots[[r]] <- plot+ theme(legend.position = "none")
+    round_plots[[round]] <- plot
   }
   
-  # Arrange the plots in a grid
-  grid_plots <- arrangeGrob(grobs = round_plots, ncol = 2)
-  
-  # Create a shared title
-  shared_title <- textGrob(
-    label = paste(i),
-    gp = gpar(fontsize = 16, fontface = "bold")
+  # Combine plots into a grid
+  grid_plots <- plot_grid(
+    plotlist = round_plots,
+    ncol = 2,
+    labels = NULL
   )
   
-  # Combine the title, grid of plots, and legend
-  combined_plot <- grid.arrange(
+  
+  # Create shared title and x-axis
+  shared_title <- ggdraw() +
+    draw_label(
+      label = paste(indicator),
+      fontface = "bold",
+      size = 16,
+      hjust = 0.5
+    )
+  
+  shared_x_axis <- ggdraw() +
+    draw_label(
+      label = ind.matcher.df$ind.axis.title[ind.matcher.df$sheet_name == indicator],
+      fontface = "bold",
+      size = 12,
+      hjust = 0.5
+    )
+  
+  # Combine all components: title, plots, x-axis, and legend
+  final_plot <- plot_grid(
     shared_title,
     grid_plots,
+    shared_x_axis,
     legend,
     ncol = 1,
-    heights = c(1, 9, 2) # Adjust heights for title, plots, and legend
+    rel_heights = c(1, 10, 1, 4) # Adjust relative heights for title, plots, x-axis, and legend
   )
   
-  # Save the plot (optional)
+  # Save the plot
   ggsave(
-    filename = paste0("plots/vfs-av_and_individual/boot_indiv", indicator, ".png"),
-    plot = combined_plot,
-    width = 10, height = 5
+    filename = paste0("plots/vfs-av_and_individual/", indicator, "_round_plots.png"),
+    plot = final_plot,
+    width = 10, height = 7
   )
   
-  # Print the combined plot for this indicator
-  print(combined_plot)
+  print(final_plot)
+}
+
+```
+
+# Weightings
+
+## Round 1
+```{r R1_weights_kable}
+
+# kable of median weightings for each indicator in each round using c.just.one.df
+library(kableExtra)
+
+c.just.one.df %>% 
+  filter(round == 1) %>% 
+  group_by(sheet_name) %>% 
+  summarise(median_weighting = median(weight, na.rm = T),
+            upper_q_weighting = quantile(weight, probs = 0.75, na.rm = T),
+            lower_q_weighting = quantile(weight, probs = 0.25, na.rm = T),
+            indicator_num= indicator_num[1]) %>% 
+  arrange(indicator_num) %>% 
+  mutate(inter_q_range = paste(lower_q_weighting, upper_q_weighting, sep = " - ")) %>%
+  select(sheet_name, median_weighting, inter_q_range) %>%
+  rename("Indicator" = sheet_name, "Median Weighting" = median_weighting, "Interquartile Range" = inter_q_range) %>%
+  kable()
+
+
+
+```
+```{r R1_weights_plot}
+weightings_box(just.one.df = c.just.one.df %>% 
+    filter(round == 1), respondant_colours)
+
+```
+
+
+## Round 2
+
+```{r R2_weights_kable}
+r2_weights_df <- c.just.one.df %>% 
+  filter(round == 2) %>% 
+  group_by(sheet_name) %>% 
+  summarise(median_weighting = median(weight, na.rm = T),
+            upper_q_weighting = quantile(weight, probs = 0.75, na.rm = T),
+            lower_q_weighting = quantile(weight, probs = 0.25, na.rm = T),
+            indicator_num= indicator_num[1]) %>% 
+  arrange(indicator_num) %>% 
+  mutate(inter_q_range = paste(lower_q_weighting, upper_q_weighting, sep = " - ")) %>%
+  select(sheet_name, median_weighting, inter_q_range) %>%
+  rename("Indicator" = sheet_name, "Median Weighting" = median_weighting, "Interquartile Range" = inter_q_range)
+
+r2_weights_df %>%
+  kable()
+
+```
+
+```{r R2_weights_plot}
+weightings_box(just.one.df = c.just.one.df %>% 
+    filter(round == 2), respondant_colours)
+
+```
+
+# Preicting woodland condition for example woodlands
+
+```{r Setting up prediction}
+
+# set parameters
+r = 2
+weights_df = r2_weights_df
+# Save the data as RDS files for shiny app
+saveRDS(boot_results, "Data//boot_results.rds")
+saveRDS(weights_df, "Data//weights_df.rds")
+
+
+set.seed(25631)
+
+
+
+
+prediction_data <- data.frame(
+  "Tree age distribution" =     c(2,3),
+  "Native canopy percentage " = c(100, 50),
+  "Vertical structure" =       c(NA, NA),
+  "N tree & shrub spp." =      c(NA, NA),       
+  "Invasive plants % cover" =  c(NA, NA),
+  "Deadwood" =                 c(NA, NA), 
+  "Veteran trees" =            c(NA, NA), 
+  "Woodland extent" =          c(NA, NA),
+  "Regen" =                    c(NA, NA), 
+  "Herbivore damage" =         c(NA, NA), 
+  "Tree health" =              c(NA, NA), 
+  "Ground flora" =             c(NA, NA),              
+  "Horizontal complexity" =    c(NA, NA), 
+  "Anthropogenic damage" =     c(NA, NA),
+  check.names = FALSE # Prevents automatic renaming
+)
+  
+prediction_values <- prediction_data[0,]
+prediction_weighted_values <- prediction_data[0,]
+
+
+for (y in 1:nrow(prediction_data)){ # each scenario
+  for (i in 1:ncol(prediction_data)){# for each indicator
+  ind = colnames(prediction_data)[i]
+
+  prediction_values[y,i] <- 
+    ifelse(is.na(prediction_data[y,i]),
+           NA,
+           boot_results[[i]][[r]]$boot_response$median[
+             # find the boot_results expl with the closest value to the prediction data
+      which.min(
+        abs(
+          boot_results[[i]][[r]]$boot_response$expl - prediction_data[y,i]
+        )
+      )
+      ])
+  prediction_weighted_values[y,i] <-
+    prediction_values[y,i]* weights_df$`Median Weighting`[weights_df$Indicator == ind]/100
+  }
+} 
+
+condition_score <- NA
+for (y in 1:nrow(prediction_weighted_values)){
+  condition_score[y] <- 100 * sum(prediction_weighted_values[y,], na.rm = T)/
+    sum(weights_df$`Median Weighting`[
+      weights_df$Indicator %in% colnames(prediction_weighted_values)[
+        !is.na(prediction_weighted_values[y,])]
+      ], 
+      na.rm = T) 
+}
+
+condition_score
+```
+
+```{r shiny_calculation}
+library(shiny)
+library(rhandsontable)
+
+# Define the condition scoring function
+calculate_condition_score <- function(prediction_data, boot_results, weights_df, r) {
+  print("Starting calculation of condition score...")  # Debug line
+  
+  prediction_values <- prediction_data[0,]
+  prediction_weighted_values <- prediction_data[0,]
+  
+  for (y in 1:nrow(prediction_data)) { # each scenario
+    for (i in 1:ncol(prediction_data)) { # for each indicator
+      ind = colnames(prediction_data)[i]
+      
+      print(paste("Calculating for row", y, "column", i, "indicator", ind))  # Debug line
+      
+      prediction_values[y,i] <- 
+        ifelse(is.na(prediction_data[y,i]),
+               NA,
+               boot_results[[i]][[r]]$boot_response$median[
+                 which.min(abs(boot_results[[i]][[r]]$boot_response$expl - prediction_data[y,i]))
+               ])
+      prediction_weighted_values[y,i] <- 
+        prediction_values[y,i] * weights_df$`Median Weighting`[weights_df$Indicator == ind] / 100
+    }
+  }
+  
+  condition_score <- NA
+  for (y in 1:nrow(prediction_weighted_values)) {
+    condition_score[y] <- 100 * sum(prediction_weighted_values[y,], na.rm = TRUE) /
+      sum(weights_df$`Median Weighting`[
+        weights_df$Indicator %in% colnames(prediction_weighted_values)[
+          !is.na(prediction_weighted_values[y,])]
+      ], na.rm = TRUE)
+  }
+  
+  print("Condition score calculation complete.")  # Debug line
+  return(condition_score)
+}
+
+# UI
+ui <- fluidPage(
+  titlePanel("Condition Score Calculator"),
+  sidebarLayout(
+    sidebarPanel(
+      h3("Input Prediction Data"),
+      numericInput("num_scenarios", "Number of Scenarios", value = 2, min = 1, max = 10, step = 1),
+      actionButton("update_grid", "Update Grid"),
+      actionButton("calculate", "Calculate Condition Scores"),
+      hr(),
+      h3("Condition Scores"),
+      tableOutput("condition_scores")
+    ),
+    mainPanel(
+      h3("Survey Data"),
+      rHandsontableOutput("prediction_grid")
+    )
+  )
+)
+
+# Server
+server <- function(input, output, session) {
+  
+  # Load boot_results and weights_df from RDS files
+  boot_results <- readRDS("Data//boot_results.rds")
+  weights_df <- readRDS("Data//weights_df.rds")
+  
+  # Reactive expression for number of scenarios
+  num_scenarios_reactive <- reactive({
+    input$num_scenarios
+  })
+  
+  # Initialize prediction data with reactiveVal
+  prediction_data <- reactiveVal(
+    data.frame(
+      matrix(NA, nrow = 14, ncol = 2, dimnames = list(
+        c("Tree age distribution", "Native canopy percentage", "Vertical structure",
+          "N tree & shrub spp.", "Invasive plants % cover", "Deadwood", "Veteran trees", 
+          "Woodland extent", "Regen", "Herbivore damage", "Tree health", "Ground flora", 
+          "Horizontal complexity", "Anthropogenic damage"), 
+        paste0("Scenario ", 1:2)))
+    )
+  )
+  
+  # Update the grid based on the number of scenarios
+  observeEvent(input$update_grid, {
+    num_scenarios <- num_scenarios_reactive()
+    current_data <- prediction_data()
+    new_data <- data.frame(
+      matrix(NA, nrow = nrow(current_data), ncol = num_scenarios,
+             dimnames = list(rownames(current_data), paste0("Scenario ", 1:num_scenarios)))
+    )
+    prediction_data(new_data)
+  })
+  
+  # Render the prediction data grid
+  output$prediction_grid <- renderRHandsontable({
+    rhandsontable(prediction_data(), rowHeaders = TRUE) %>%
+      hot_cols(colWidths = 100, format = "0.0", type = "numeric") # Ensure cells are numeric
+  })
+  
+  # Update prediction data based on user edits
+  observeEvent(input$prediction_grid, {
+    new_data <- hot_to_r(input$prediction_grid)
+    prediction_data(new_data)
+  })
+  
+  # Calculate condition scores when button is clicked
+  output$condition_scores <- renderTable({
+    req(input$calculate) # Wait for the user to click calculate
+    
+
+    # Ensure the input data is not empty
+    prediction_data_current <- prediction_data()
+    
+    if (nrow(prediction_data_current) == 0) {
+      return(data.frame(Scenario = character(0), ConditionScore = numeric(0)))
+    }
+    
+    # Ensure calculation function is returning valid values
+    scores <- calculate_condition_score(prediction_data_current, boot_results, weights_df)
+    
+    if (length(scores) == 0) {
+      return(data.frame(Scenario = character(0), ConditionScore = numeric(0)))
+    }
+    
+    data.frame(Scenario = colnames(prediction_data_current), ConditionScore = round(scores, 2))
+  })
 }
 
 
+# Run the application
+shinyApp(ui = ui, server = server)
 
-  
 
 ```

@@ -1,0 +1,29 @@
+# Exploring "Old" Condition Data
+
+Prior to the WCA project data was collected to inform management on WT estate sites, with condition inferred mainly from the subjective assessment of whether or not management interventions were desirable or practical for the different indicators measured. Notably, the survey employed no structured sampling design, and took a very different approach to the measurement of indicators.
+
+With that in mind, a bowel of salt should be liberally added to any interpretation of the results of any analysis considering or comparing data collected from them with that from the new approach.
+
+### Caveat: a very different approach to indicator estimation and scoring
+
+Indicators are all really estimated at the survey-zone (or "strata") level, rather than at plots of a fixed area. The size of a zone can have a very big impact on indicator measurements: most simply, large areas are expected to contain more variation, just because they are bigger and therefore more likely to contain unusual observations.
+
+The survey's (optional) plot-stops collected detailed information (though, not their location). This was intended to assist the surveyor in making their best judgement to determine each indicator's measurement across the entire survey zone. They are not part of a systematic sampling design, and the method of their aggregation to survey-zone-level was never formalised, they are simply an optional step to assist best-judgement estimation. The Sylva method also typically estimates [average indicator measurements]{.underline} across a survey zone.
+
+Our approach to condition monitoring typically measures and scores indicators at individual plots, using a value function, and then [averages those scores]{.underline} across the survey-zone. Those survey-zone-level indicators are then aggregated - using different importance weightings - for a survey-zone overall condition score. This difference is important (averaging the plot [value scores]{.underline}, rather than estimating their [measurement]{.underline} over the entire survey plot and then scoring that zone-wide average): we are trying to represent ecological condition across actual real-life locations in a survey zone, we are not assessing the condition of an imagined area of woodland that has the average measurement for every indicator. The thought experiment below illustrates the potential implications of these different approaches, considering an indicator where low measurements are considered to represent particularly poor condition.
+
+> we are not assessing the condition of an imagined area of woodland that has the average measurement for every indicator... We are assessing the condition of actual locations, representative of the wider woodland
+
+![](images/a%20thought%20experiment%20on%20aggregation%20of%20scores%20vs%20measurements%202025-04-17%2012.02.58.excalidraw.png)
+
+```{r}
+cond <- read.csv("Data//old condition data//Condition Assessment Data 2025_01.csv")
+```
+
+### Initial exploration of the data
+
+Seems to be structured by strata, with \>1 strata reccomended where sites are \>5 ha
+
+```{r}
+names(cond)
+```

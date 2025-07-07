@@ -29,7 +29,8 @@ book:
     - 18_anthro-damage.qmd
     - 04_Importance weightings.qmd
     - 02_methods.qmd
-
+    - Exploring "Old" condition data.qmd
+    
 number-depth: 0
 
 bibliography: references.bib

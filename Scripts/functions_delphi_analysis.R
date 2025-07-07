@@ -33,14 +33,35 @@ prepare_round_data <- function(round_num, extraction_location, forms_directory, 
   
   delphi.round <- round_num
   config_for_delphi_round(delphi.round)
+  curated_path <- paste0(extraction_location, "curated.RData")
   
-  if(run_extraction == T){
-    source("Scripts\\Extract_expert_info.R")
-    source("Scripts\\curation of extracted data.R")
+  # Get last modified time of curated file
+  curated_mtime <- if (file.exists(curated_path)) {
+    file.info(curated_path)$mtime
+  } else {
+    as.POSIXct(0, origin = "1970-01-01")  # force extraction if curated file doesn't exist
+  }
+  
+  # Get most recent modification time in forms directory
+  form_files <- list.files(paste0(extraction_location, forms_directory), full.names = TRUE, recursive = TRUE)
+  latest_form_mtime <- if (length(form_files) > 0) {
+    max(file.info(form_files)$mtime, na.rm = TRUE)
+  } else {
+    as.POSIXct(0, origin = "1970-01-01")  # no files = no need to extract
+  }
+  
+  should_extract <- run_extraction && latest_form_mtime > curated_mtime
+  
+  if (should_extract) {
+    message("Running extraction and curation scripts...")
+    source("Scripts/Extract_expert_info.R")
+    source("Scripts/curation of extracted data.R")
+  } else {
+    message("Skipping extraction – curated data is up to date.")
   }
   
   # Load curated data
-  load(paste0(extraction_location, "curated.RData"))
+  load(curated_path)
   
   # Return a list of curated data
   list(
@@ -65,6 +86,144 @@ extract_legend <- function(plot) {
   gtable <- ggplotGrob(plot)
   legend <- gtable$grobs[[which(sapply(gtable$grobs, function(x) x$name) == "guide-box")]]
   return(legend)
+}
+
+# weightings boxplot
+
+weightings_box <- function(just.one.df, respondant_colours){
+  
+  respondant.sd <- just.one.df %>%   
+    dplyr::select(respondant_name, weight) %>%   
+    group_by(respondant_name) %>%
+    summarise(sd_weight_respondant = sd(weight)) %>%
+    arrange(desc(sd_weight_respondant))  
+  
+  # ggplot horizontal boxplot of the standard deviation of the weights given by each respondant 
+  p_respondant_sd <- ggplot(respondant.sd, 
+                            aes(y = sd_weight_respondant, x = 0)) +   
+    geom_boxplot(width = 0.5, color="grey60", fill = NA,
+                 outlier.shape = NA) +
+    geom_point_interactive(position = position_jitter(width = 0.2, height = 0),
+                           size = 3, shape = 16,
+                           aes(color = respondant_name,
+                               tooltip = respondant_name,
+                               data_id = respondant_name
+                           )
+    ) +   
+    labs(y = "Standard deviation of weights", x = NULL, title = "Variation by respondent" ) +
+    scale_x_continuous(limits = c(-0.3,0.3)) +
+    scale_y_continuous(limits = c(0,NA)) +
+    scale_colour_manual(values = respondant_colours, name = "Respondant") +
+    theme_pubr()+
+    theme(plot.title = element_text(size = 12),
+          plot.subtitle = element_text(size = 12),
+          legend.title = element_text(size = 12 , face = "bold"),
+          legend.text =  element_text(size = 9),
+          axis.text.y = element_blank(),
+          axis.text.x = element_text(size = 12),
+          axis.title =  element_text(size = 12),
+          axis.ticks.y = element_blank(),
+          axis.title.y = element_blank(),
+          legend.position = "none",
+          plot.margin = margin(0.5, 1, 0.5, 1, "cm")   ) +
+    coord_flip()
+  
+  # girafe(     
+  #   ggobj = p_respondant_sd,     
+  #   width_svg = 12,     
+  #   height_svg = 4,     
+  #   options = list(       
+  #     opts_hover_inv(css = "stroke-opacity:0.01;"),
+  #     opts_hover(css = "stroke:orange;stroke-width:5;fill-opacity:1")
+  #     ) )                 
+  
+  ####################################################################
+  
+  #add a col to just.one.df that is the proportion of all of each respondents weight given to each indicator, and one of weights standardised by respondant
+  just.one.df <- just.one.df %>%
+    group_by(respondant_name) %>%
+    mutate(weight_share = weight/sum(weight, na.rm = T) * 100,
+           weight_standardised = (weight - mean(weight, na.rm = T))/sd(weight, na.rm = T)         ) %>%
+    ungroup()
+  
+  # Order the levels of sheet_name by the median of rank_weight
+  ordered_levels <- just.one.df %>%
+    group_by(sheet_name) %>%
+    summarise(av_weight = median(weight, na.rm = TRUE)) %>%
+    arrange(-av_weight) %>%
+    pull(sheet_name)
+  
+  
+  # Create some background lines to help read the graph ----
+  indicator.lines = data.frame(
+    y = rep(c(0,100), each = length(just.one.df$sheet_name %>% unique())),
+    sheet_name = rep(just.one.df$sheet_name %>% unique(), times = 2) %>% 
+      as.factor()
+  ) %>% 
+    mutate(sheet_name = factor(sheet_name, levels = ordered_levels))
+  
+  
+  # Create raw weights plot ----
+  indiv.weights <- ggplot(data = just.one.df %>% 
+                            mutate(sheet_name = factor(just.one.df$sheet_name, levels = ordered_levels))) +
+    geom_line(data = indicator.lines, color = "grey95",
+              aes(x = sheet_name, y = y,
+                  data_id = sheet_name),
+              show.legend = FALSE) +
+    geom_boxplot(aes(x = sheet_name, y = weight), 
+                 width=0.5, color="grey30", fill = "white", alpha=0.2,
+                 outlier.shape = NA) +
+    geom_point_interactive(position = position_jitter(width = 0.2, height = 0),
+                           size = 2, shape = 16,
+                           aes(x = sheet_name, y = weight,
+                               col = respondant_name,
+                               alpha = cert_weight,
+                               tooltip = paste0(
+                                 respondant_name, 
+                                 "<br>",sheet_name, 
+                                 "<br>Weight = ", weight, 
+                                 "<br>Weight rank = ", rank_weight, 
+                                 "<br> Standardised weight = ", weight_standardised %>% round(digits = 2), 
+                                 "<br>Certainty = ", cert_weight),
+                               data_id = respondant_name #,
+                               # text = map(
+                               #   paste0("<b>", respondant_name, "</b><br>",
+                               #          "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"),
+                               # HTML)
+                           )) +
+    scale_colour_manual(values = respondant_colours, name = "Respondant") +
+    scale_y_continuous(limits = c(0,100)) +
+    guides(color = F#guide_legend(ncol =1)
+           , alpha = F) +
+    labs(y = "Weighting", x = NULL, title = "Indicators weightings") +
+    theme_pubr()+
+    theme(plot.title = element_text(size = 12),
+          plot.subtitle = element_text(size = 12),
+          legend.title = element_text(size = 12 , face = "bold"),
+          legend.text =  element_text(size = 9),
+          axis.text.x = element_text(angle = -60, hjust = 0, size = 10),
+          axis.text.y = element_text(size = 12),
+          axis.title =  element_text(size = 12),
+          legend.box = "vertical",  # Set the legend box to vertical
+          legend.position = "right",
+          plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")
+    ) 
+  
+  plot_grid <-  plot_grid(indiv.weights, p_respondant_sd, 
+                          rel_heights =c(4, 1),
+                          ncol = 1, nrow = 2#,
+                          # align = "h", axis = "l"
+  )
+  
+  
+  girafe(
+    ggobj = plot_grid,
+    width_svg = 10,
+    height_svg = 10, 
+    options = list(
+      opts_hover_inv(css = "stroke-opacity:0.01;"),
+      opts_hover(css = "stroke:orange;stroke-width:5;fill-opacity:1")
+    ) ) 
 }
 
 

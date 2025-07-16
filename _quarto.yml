@@ -29,7 +29,7 @@ book:
     - 18_anthro-damage.qmd
     - 04_Importance weightings.qmd
     - 02_methods.qmd
-    - Exploring "Old" condition data.qmd
+    - Exploring Old Condition Data.qmd
     
 number-depth: 0
 
@@ -38,6 +38,8 @@ bibliography: references.bib
 format:
   html:
     theme: cosmo
+    code-fold: true       # Enables folding
+    code-summary: "Show code"  # Optional: custom label on the fold button
     fig-width: 6
     fig-asp: 0.618
     reference-location: margin

@@ -1,9 +1,34 @@
 ---
-title: "Round 2 analysis"
+title: "Estimating value functions and weightings - Delphi Round 2 analysis"
 author: "Ewan McHenry"
----
 
-```{r libraries}
+format:
+  html:
+    theme: cosmo
+    code-fold: true       # Enables folding
+    code-summary: "Show code"  # Optional: custom label on the fold button
+    toc: true              # Optional: adds a table of contents
+    toc-depth: 2
+    toc-float: true       # Optional: makes the table of contents float on the page
+---
+```{=html}
+<script>
+  function toggleVisibility(id) {
+    const el = document.getElementById(id);
+    if (el.style.display === "none") {
+      el.style.display = "block";
+    } else {
+      el.style.display = "none";
+    }
+  }
+</script>
+```
+
+This page presents the analysis of the 2nd round of the Delphi process to quantitatively define woodland ecological condition: to estimate the value functions and weightings to be associated with each woodland condition indicator measurement when calculating an overall condition score.
+
+The code used in the analysis is embedded within the report
+
+```{r libraries, warning=F, message=FALSE}
 library(tidyverse)
 library(ggpubr)
 library(grid)
@@ -12,11 +37,24 @@ library(cowplot)
 library(mgcv)
 library(kableExtra)
 library(Polychrome)
+library(DT)
+library(qgam)
+
 
 source("Scripts\\functions_delphi_analysis.R") 
 
 ```
-```{r load_data}
+
+```{r config}
+this.round <- 2
+
+DOMIN_classes <- c("0", "1: <4% few", "2: <4% several", "3: <4% many", "4: 4-10%",
+                   "5: 10-25%", "6: 25-33%", "7: 33-50%", "8: 50-75%", "9: 75-90%",
+                   "10: 90-100%")
+
+```
+
+```{r load_data, echo=TRUE, results='hide', message=FALSE, warning=FALSE}
 load("Data\\Delphi round 2\\curated.RData")
 
 r1_data <- prepare_round_data(1, "Data\\Delphi round 1\\", "response sheets\\", run_extraction = T)
@@ -26,10 +64,9 @@ all.respondents <- unique(c(r1_data$df$respondant_name, r2_data$df$respondant_na
 all.indicators <- unique(c(r1_data$df$indicator_name, r2_data$df$indicator_name))
 ```
 
-The value functions etc presented here are based on the `sum(all.respondents %in% r2_data$completed_summary$respondent_names)` respondents that completed round 2 of the Delphi process.
-
 # Survey completion and changes
 
+The value functions and weights presented here are based on the `r sum(all.respondents %in% r2_data$completed_summary$respondent_names)` respondents that completed round 2 of the Delphi process.
 
 ```{r respondent_completion_table}
 # table of respondents by round
@@ -51,7 +88,6 @@ respondent_table %>% arrange(desc(both_rounds)) %>%
 
 ```
 
-
 ```{r combine_rounds}
 combine_rounds <- function(r1, r2, round1 = 1, round2 = 2) {
   bind_rows(
@@ -61,13 +97,23 @@ combine_rounds <- function(r1, r2, round1 = 1, round2 = 2) {
 }
 
 c.df <- combine_rounds(r1_data$df, r2_data$df) %>% 
+  #remove rows with NA for value
+  filter(!is.na(value)) %>%
+  mutate(
+    respondant_name = factor(respondant_name, levels = all.respondents),
+    indicator_name = factor(indicator_name, levels = all.indicators)
+  ) %>%
   arrange(respondant_name,indicator_num, round, measure)
 c.completed_summary <- combine_rounds(r1_data$completed_summary, r2_data$completed_summary)
 c.ind.matcher.df <- combine_rounds(r1_data$ind_matcher_df, r2_data$ind_matcher_df)
 c.has_completed <- combine_rounds(r1_data$has_completed, r2_data$has_completed)
 c.just.one.df <- combine_rounds(r1_data$just_one_df, r2_data$just_one_df)
 
+all.sheets <- unique(c.df$sheet_name)
+
+
 ```
+
 ```{r reduced_df}
 red.df <- c.df %>% 
   arrange(respondant_name,indicator_num, round, measure) %>% 
@@ -77,23 +123,33 @@ red.df <- c.df %>%
 
 ```
 
-# Curation of responses
+# Curation and checking of responses
+
+This section is pretty technical (if you want, skip to [Estimating value functions and generating lookup tables]). It documents the checks and changes done to the raw Delphi survey form data. Best skipped for the more general reader, but useful for those interested in the details of the data curation process.
+
+::: {.toggle-section}
+<button onclick="toggleVisibility('my-section')">Show/hide curation info</button>
+
+<div id="my-section" style="display: none; margin-top: 1em;">
+
 
 ## Unchanged responses between rounds
 
-Checked value function estimates that didn't differ between rounds. Happy that data only contains forms that were actually completed by respondents, and that lack of change is because those respondents were happy with their original answer.
+I individually checked where value functions did not change between a respondent's rounds 1 and 2, to be sure it was not accidentally missed, and was satisfied that - where there was no change - this was intentional.
 
-```{r}
+Table of respondent name - indicator pairs that are identical between rounds.
+
+```{r t-unchanged_responses}
 # find respondent name - indicator pairs that are identical between rounds
 bk = 1
 same_last = data.frame(respondent = NA, indicator = NA)
 
 for (r in all.respondents) {
-  for(i in all.indicators) {
-      r1v <- c.df$value[c.df$respondant_name == r & c.df$indicator_name == i & c.df$round == 1]
-      r2v <- c.df$value[c.df$respondant_name == r & c.df$indicator_name == i & c.df$round == 2]
-      r1m <- c.df$measure[c.df$respondant_name == r & c.df$indicator_name == i & c.df$round == 1]
-      r2m <- c.df$measure[c.df$respondant_name == r & c.df$indicator_name == i & c.df$round == 2]
+  for(i in all.sheets) {
+      r1v <- c.df$value[c.df$respondant_name == r & c.df$sheet_name == i & c.df$round == 1]
+      r2v <- c.df$value[c.df$respondant_name == r & c.df$sheet_name == i & c.df$round == 2]
+      r1m <- c.df$measure[c.df$respondant_name == r & c.df$sheet_name == i & c.df$round == 1]
+      r2m <- c.df$measure[c.df$respondant_name == r & c.df$sheet_name == i & c.df$round == 2]
 
         if ( # responses unchanged between round 1 and 2
           identical(r1v, r2v) & identical(r1m, r2m)) {
@@ -102,18 +158,20 @@ for (r in all.respondents) {
     }
   }
 }
-same_last
+
+datatable(
+  same_last,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Bfrtip',  # 'f' enables the search box
+    buttons = c('copy', 'csv')
+  )
+)
 ```
 
-## Age structure
+## Individual indicator value function curation
 
-Some respondents used different numbers of age categories. 
-
-Went through forms and altered, ensuring that intent (which seemed clear in all cases) was preserved. Now all respondents in both use 4 age classes.
-
-```{r check_r2_age_structure}
-this.sheet <- "Tree age distribution"
-
+```{r functions for ndividual indicator curation}
 # Check that all respondents covered entire range of 0-100% native canopy cover, and that all value functions were within 0-100.
 ind_checker <- function (data = c.df){ data %>%
     filter(sheet_name == this.sheet & round == 2) %>% 
@@ -131,8 +189,6 @@ ind_checker <- function (data = c.df){ data %>%
     )
 }
 
-ind_check <- ind_checker()
-
 call_ind_mess <- function(data = ind_check){
   if(any(!ind_check$full_range_measure)) {
   for (i in which(!ind_check$full_range_measure)) {
@@ -147,8 +203,25 @@ if(any(!ind_check$full_range_value)) {
   }} else {
   print("All respondents have value functions within 0-100")
 }}
+
+```
+
+For every indicator I checked that every respondent covered the full range of measures (e.g. 0-4 for herbivore damage, 0-100 for native canopy percentage) and that all valuescovered the range of 0-100. If not, I curated the data to furfill this, within code, based on perceived intent (which was deemed very clear in all instances).
+
+### Age structure
+
+Some respondents used different numbers of age categories.
+
+Went through forms and altered, ensuring that intent (which seemed clear in all cases) was preserved. Now all respondents in both use 4 age classes.
+
+```{r check_r2_age_structure}
+this.sheet <- "Tree age distribution"
+
+ind_check <- ind_checker()
 call_ind_mess(ind_check)
 ```
+
+Checked that all age categories were used by all respondents.
 
 ```{r different_agecats?}
 # Looked like some folk used different number of tree age categories. Table of max number of tree age categories used by respondent and round. Found in round 1 DK, NRB and PA had 5,5 and 3 categories respectively. Went into forms and altered. Intent seemed clear in all cases.
@@ -164,79 +237,34 @@ nages <- c.df %>%
 
 ```
 
-Plot of round 2 age structure value functions
-```{r plot-r2_age_structure_vfs}
-# Plot of round 2 age structure value functions
-age_structure_vfs <- c.df %>%
-  filter(sheet_name ==this.sheet & round == 2) %>%
-  ggplot(aes(x = measure, y = value, color = respondant_name)) +
-  geom_line() +
-  labs(
-    title = "Round 2 Tree Age Structure Value Functions",
-    x = "N Tree Age Categories",
-    y = "Value"
-  ) +
-  theme_pubr() +
-  scale_color_manual(values = respondant_colours) +
-  theme(legend.position = "bottom")
-
-age_structure_vfs
-
-
-```
-```{r create temp df}
-c.df1 <- c.df 
-```
-
-
-## Native canopy percentage
+### Native canopy percentage
 
 ```{r curation of incomplete estiamtes}
 this.sheet <- "Native canopy percentage "
 # curation where incomplete (see below check_r2_native_canopy_percentage)
 ## "Dean K" min measure 10
 ### duplicate row w measure 10 and value 0, then change the measure to 0
-dup.row <- which(c.df1$sheet_name == this.sheet & 
-                  c.df1$round == 2 & 
-                  c.df1$value == 0 & 
-                  c.df1$measure == 10 & 
-                  c.df1$respondant_name == "Dean K") 
-added.row <- c.df1[dup.row, ] # duplicate row
+dup.row <- which(c.df$sheet_name == this.sheet & 
+                  c.df$round == 2 & 
+                  c.df$value == 0 & 
+                  c.df$measure == 10 & 
+                  c.df$respondant_name == "Dean K") 
+added.row <- c.df[dup.row, ] # duplicate row
 added.row$measure <- 0 # change measure to 0
-c.df1 <- rbind(c.df1, added.row) # insert row to df
+c.df <- rbind(c.df, added.row) # insert row to df
 
 ```
 
 Checked that all respondents covered entire range of 0-100% native canopy cover, and that all value functions were within 0-100. They were not, they were curated to include, within code, based on percieved intent (which was deemed clear).
 
 ```{r check_r2_native_canopy_percentage}
-ind_check <- ind_checker(c.df1)
+ind_check <- ind_checker(c.df)
 
 call_ind_mess(ind_check)
 ```
 
+### Vertical structure
 
-```{r plot_r2_native_canopy_percentage}
-# Plot of round 2 native canopy percentage value functions
-plot_data <- c.df1 %>%
-  filter(sheet_name == this.sheet & round == 2)
-
-native_canopy_vfs <- plot_data %>%
-  ggplot(aes(x = measure, y = value, color = respondant_name)) +
-  geom_line() +
-  labs(
-    title = "Round 2 Native Canopy Percentage Value Functions",
-    x = "Native Canopy Percentage",
-    y = "Value"
-  ) +
-  theme_pubr() +
-  scale_color_manual(values = respondant_colours) +
-  theme(legend.position = "bottom")
-
-native_canopy_vfs
-```
-
-## Vertical structure
 ```{r vertical_structure_curation}
 # curation where incomplete
 this.sheet <- "Vertical structure"
@@ -246,14 +274,14 @@ this.sheet <- "Vertical structure"
 ## A few folk didnt include 5 categories. Judging by vf shapes seems to have not thought of lowest strata - i.e.ground, so will assume same value for lowest 2 value estiamtes... this might have been an issue with the forms
 ### function to do that
 add_combine_lowest_measures <- function(df, respondent, sheet_name, round = 2) {
-  # function to add an additional row at lowest measure, adjust every other measure +1 and combine lowest two values
-  
-  # Increase measures by 1
-  df <- df %>%
-    mutate(measure = ifelse(sheet_name == sheet_name & 
-                            round == round & 
-                            respondant_name == respondent, 
-                            measure + 1, measure))
+  # Shift measures by +1 for this respondent and sheet only
+  df$measure[df$sheet_name == sheet_name & 
+                            df$round == round & 
+                            df$respondant_name == respondent] <- 
+      df$measure[df$sheet_name == sheet_name & 
+                            df$round == round & 
+                            df$respondant_name == respondent] + 1
+
   
   # Find row to duplicate
   dup.row <- which(df$sheet_name == sheet_name & 
@@ -261,8 +289,8 @@ add_combine_lowest_measures <- function(df, respondent, sheet_name, round = 2) {
                    df$value == 0 & 
                    df$measure == 2 & 
                    df$respondant_name == respondent)
-  
-  # If such a row exists, duplicate it and change measure to 1
+
+  # Duplicate row, assign measure = 1
   if (length(dup.row) > 0) {
     added.row <- df[dup.row, ]
     added.row$measure <- 1
@@ -271,103 +299,99 @@ add_combine_lowest_measures <- function(df, respondent, sheet_name, round = 2) {
 
   return(df)
 }
+
 ### Bob Epsom
-c.df1 <- add_combine_lowest_measures(c.df1, "Bob Epsom", this.sheet)
+c.df <- add_combine_lowest_measures(c.df, "Bob Epsom", this.sheet)
 ### David L
-c.df1 <- add_combine_lowest_measures(c.df1, "David L", this.sheet)
+c.df <- add_combine_lowest_measures(c.df, "David L", this.sheet)
 ### David V
-c.df1 <- add_combine_lowest_measures(c.df1, "David V", this.sheet)
+c.df <- add_combine_lowest_measures(c.df, "David V", this.sheet)
 ### Iain Mo
-c.df1 <- add_combine_lowest_measures(c.df1, "Iain Mo", this.sheet)
+c.df <- add_combine_lowest_measures(c.df, "Iain Mo", this.sheet)
 ### Kylie Jo-Ma
-c.df1 <- add_combine_lowest_measures(c.df1, "Kylie Jo-Ma", this.sheet)
+c.df <- add_combine_lowest_measures(c.df, "Kylie Jo-Ma", this.sheet)
 ### Martin Hu
-c.df1 <- add_combine_lowest_measures(c.df1, "Martin Hu", this.sheet)
+c.df <- add_combine_lowest_measures(c.df, "Martin Hu", this.sheet)
 ### Mick Br
-c.df1 <- add_combine_lowest_measures(c.df1, "Mick Br", this.sheet)
+c.df <- add_combine_lowest_measures(c.df, "Mick Br", this.sheet)
 ### Peter Lo
-c.df1 <- add_combine_lowest_measures(c.df1, "Peter Lo", this.sheet)
+c.df <- add_combine_lowest_measures(c.df, "Peter Lo", this.sheet)
 ### Saul H
-c.df1 <- add_combine_lowest_measures(c.df1, "Saul H", this.sheet)
+c.df <- add_combine_lowest_measures(c.df, "Saul H", this.sheet)
 ### Sonia
-c.df1 <- add_combine_lowest_measures(c.df1, "Sonia", this.sheet)
+c.df <- add_combine_lowest_measures(c.df, "Sonia", this.sheet)
 
 
 
 # curation where wrong scale used
 ## "Henry D" and "Rachel Penn" increase all measures by 1 (went from 0-4, not 1-5)
-c.df1 <- c.df1 %>% 
+c.df <- c.df %>% 
   mutate(measure = ifelse(sheet_name == this.sheet & 
                         round == 2 & 
                         respondant_name == "Henry D"  , 
                         measure + 1, measure))
 
-c.df1 <- c.df1 %>%
+c.df <- c.df %>%
   mutate(measure = ifelse(sheet_name == this.sheet & 
                         round == 2 & 
                         respondant_name == "Rachel Penn"  , 
                         measure + 1, measure))
 
 ```
+
 ```{r check_r2_vertical_structure}
-ind_check <- ind_checker(c.df1)
+ind_check <- ind_checker(c.df)
 call_ind_mess(ind_check)
 ```
 
-## Tree species richness
+### Tree species richness
 
 ```{r tree_species_richness_curation}
 this.sheet <- "N tree & shrub spp."
 
-# a fair few have measures of 101, just overwrite to 100
-c.df1 <- c.df1 %>%
-  mutate(measure = ifelse(sheet_name == this.sheet & round == 2 & measure == 101, 100, measure))
-# and a lot start on 1 instead of 0, overwrite to 0
-c.df1 <- c.df1 %>%
-  mutate(measure = ifelse(sheet_name == this.sheet & round == 2 & measure == 1, 0, measure))
-
 # Jim Sm-Wr stopped at 90, duplicate that row and add it in, editing measure to 100
-dup.row <- which(c.df1$sheet_name == this.sheet & 
-                  c.df1$round == 2 & 
-                  c.df1$respondant_name == "Jim Sm-Wr" & 
-                  c.df1$measure == 90)
-added.row <- c.df1[dup.row, ] # duplicate row
+dup.row <- which(c.df$sheet_name == this.sheet & 
+                  c.df$round == 2 & 
+                  c.df$respondant_name == "Jim Sm-Wr" & 
+                  c.df$measure == 90)
+added.row <- c.df[dup.row, ] # duplicate row
 added.row$measure <- 100 # change measure to 100
-c.df1 <- rbind(c.df1, added.row) # insert row to df
+c.df <- rbind(c.df, added.row) # insert row to df
 # Mick Br started at 5, duplicate that row and add it in, editing measure to 0
-dup.row <- which(c.df1$sheet_name == this.sheet & 
-                  c.df1$round == 2 & 
-                  c.df1$respondant_name == "Mick Br" & 
-                  c.df1$measure == 5)
-added.row <- c.df1[dup.row, ] # duplicate row
+dup.row <- which(c.df$sheet_name == this.sheet & 
+                  c.df$round == 2 & 
+                  c.df$respondant_name == "Mick Br" & 
+                  c.df$measure == 5)
+added.row <- c.df[dup.row, ] # duplicate row
 added.row$measure <- 0 # change measure to 0
-c.df1 <- rbind(c.df1, added.row) # insert row to df
+c.df <- rbind(c.df, added.row) # insert row to df
 # Nick RB started at 10, duplicate that row and add it in, editing measure to 0
-dup.row <- which(c.df1$sheet_name == this.sheet & 
-                  c.df1$round == 2 & 
-                  c.df1$respondant_name == "Nick RB" & 
-                  c.df1$measure == 10)
-added.row <- c.df1[dup.row, ] # duplicate row
+dup.row <- which(c.df$sheet_name == this.sheet & 
+                  c.df$round == 2 & 
+                  c.df$respondant_name == "Nick RB" & 
+                  c.df$measure == 10)
+added.row <- c.df[dup.row, ] # duplicate row
 added.row$measure <- 0 # change measure to 0
-c.df1 <- rbind(c.df1, added.row) # insert row to df
+c.df <- rbind(c.df, added.row) # insert row to df
 ```
 
 ```{r check_r2_tree_species_richness}
-ind_check <- ind_checker(c.df1)
+ind_check <- ind_checker(c.df)
 call_ind_mess(ind_check)
 ```
 
-## Invasives
+### Invasives
+
 ```{r invasives_curation}
 this.sheet <- "Invasive plants % cover"
-# curation where incomplete (see below check_r2_invasives)
 ```
-```{r check_r2_tree_species_richness}
-ind_check <- ind_checker(c.df1)
+
+```{r check_r2_invasive_cover}
+ind_check <- ind_checker(c.df)
 call_ind_mess(ind_check)
 ```
 
-## Deadwood
+### Deadwood
 
 ```{r deadwood_curation}
 this.sheet <- "Deadwood"
@@ -397,22 +421,22 @@ add_deadwood_measure_zero <- function(df, respondent, the_sheet) {
   return(df)
 }
 
-## Those  lowest measure is 2, duplicate that row and add it in, editing measure to 0
+## Those  lowest measure is 1 or 2,  with value 0, duplicate that row and add it in, editing measure to 0
 
 respondents <- c("Bob Epsom", "Dean K", "Kylie Jo-Ma")
 
 for (name in respondents) {
-  c.df1 <- add_deadwood_measure_zero(c.df1, name, this.sheet)
+  c.df <- add_deadwood_measure_zero(c.df, name, this.sheet)
 }
 
 ```
 
 ```{r check_r2_deadwood}
-ind_check <- ind_checker(c.df1)
+ind_check <- ind_checker(c.df)
 call_ind_mess(ind_check)
 ```
 
-## Veteran trees
+### Veteran trees
 
 ```{r veteran_trees_curation}
 this.sheet <- "Veteran trees"
@@ -446,167 +470,240 @@ return(df)
 not_complte_respondents <- c("Bob Epsom", "David L", "David V", "Dean K", "Kylie Jo-Ma", "Rhiannon Hoy", "Saul H")
 # Loop through respondents and add measure 12 where needed
 for (i in not_complte_respondents) {
-  c.df1 <- add_veteran_measure_twelve(c.df1, i, this.sheet)
+  c.df <- add_veteran_measure_twelve(c.df, i, this.sheet)
 }
 
 ## Dont start at 0
 ### Dean K starts at 1, duplicate that row and add it in, editing measure to 0
-dup.row <- which(c.df1$sheet_name == this.sheet & 
-                  c.df1$round == 2 & 
-                  c.df1$respondant_name == "Dean K" & 
-                  c.df1$measure == 1)
-added.row <- c.df1[dup.row, ] # duplicate row
+dup.row <- which(c.df$sheet_name == this.sheet & 
+                  c.df$round == 2 & 
+                  c.df$respondant_name == "Dean K" & 
+                  c.df$measure == 1)
+added.row <- c.df[dup.row, ] # duplicate row
 added.row$measure <- 0 # change measure to 0
-c.df1 <- rbind(c.df1, added.row) # insert row to df
+c.df <- rbind(c.df, added.row) # insert row to df
 
 ```
+
 ```{r check_r2_veteran_trees}
-ind_check <- ind_checker(c.df1)
+ind_check <- ind_checker(c.df)
 call_ind_mess(ind_check)
 ```
 
-## Regeneration
+### Regeneration
 
 ```{r regeneration_curation}
 this.sheet <- "Regen"
 # curation where incomplete (see below check_r2_regeneration)
 ## Bob Epsom lowest measure is 1, duplicate that row and add it in, editing measure to 0
-dup.row <- which(c.df1$sheet_name == this.sheet & 
-                  c.df1$round == 2 & 
-                  c.df1$value == 0 & 
-                  c.df1$measure == 1 & 
-                  c.df1$respondant_name == "Bob Epsom") 
-added.row <- c.df1[dup.row, ] # duplicate row
+dup.row <- which(c.df$sheet_name == this.sheet & 
+                  c.df$round == 2 & 
+                  c.df$value == 0 & 
+                  c.df$measure == 1 & 
+                  c.df$respondant_name == "Bob Epsom") 
+added.row <- c.df[dup.row, ] # duplicate row
 added.row$measure <- 0 # change measure to 0
-c.df1 <- rbind(c.df1, added.row) # insert row to df
+c.df <- rbind(c.df, added.row) # insert row to df
 ```
+
 ```{r check_r2_regeneration}
-ind_check <- ind_checker(c.df1)
+ind_check <- ind_checker(c.df)
 call_ind_mess(ind_check)
 ```
 
-## Herbivore damage
+### Herbivore damage
+
 ```{r herbivore_damage_curation}
 this.sheet <- "Herbivore damage"
 # curation where incomplete (see below check_r2_herbivore_damage)
 
-c.df1 %>% 
-  filter(sheet_name == this.sheet & round == 2, respondant_name == "Dean K") %>%
-  select(respondant_name, measure, value) %>%
-  arrange(respondant_name, measure)
-
 ```
+
 ```{r check_r2_herbivore_damage}
-ind_check <- ind_checker(c.df1)
+ind_check <- ind_checker(c.df)
 call_ind_mess(ind_check)
 ```
 
-## Ground flora
-```{r fixing_R1_indicator_plant_info}
-# for all responses in round 1, where there is a value of 100 with a min measure of <25, divide all mesure values by 20 (assumed number of approprate species), multiply by 100 and put a ceiling of 100 on the value
-  ## identify all round-indivator-respondent combinations where the above condition is met
+### Tree health
 
-  # TODO more here
+```{r tree_health_curation}
+this.sheet <- "Tree health"
+
+# Bob Epsom min measure is 10, duplicate that row and add it in, editing measure to 0
+dup.row <- which(c.df$sheet_name == this.sheet & 
+                  c.df$round == 2 & 
+                  c.df$value == 100 & 
+                  c.df$measure == 10 & 
+                  c.df$respondant_name == "Bob Epsom")
+added.row <- c.df[dup.row, ] # duplicate row
+added.row$measure <- 0 # change measure to 0
+c.df <- rbind(c.df, added.row) # insert row to df
 
 
 ```
 
+```{r check_r2_tree_health}
+ind_check <- ind_checker(c.df)
+call_ind_mess(ind_check)
+```
 
-# Estimating value functions
+### Ground flora
 
-Estimated value using a binomial GAM.
+```{r ground_flora_curation}
+this.sheet <- "Ground flora"
+```
 
-```{r binomial_glm_age_structure}
-# binomial GLM for age structure
-age_structure_gam <- gam(
-  value.dec ~ s(measure, bs = "cs", k = 4) + 
-    s(respondant_name, bs = "re"),
-  data = c.df %>% filter(sheet_name == "Tree age distribution" & round == 2),
-  family = binomial(link = "logit")
-)
+```{r check_r2_ground_flora}
+ind_check <- ind_checker(c.df)
+call_ind_mess(ind_check)
+```
 
-# 4. Prepare original data with respondent lines
-plot_data <- c.df %>%
-  filter(sheet_name == "Tree age distribution", round == 2) %>%
-  mutate(value_scaled = value.dec * 100)
+```{r temporary dataset}
+c.df <- c.df 
+```
 
+### Horizontal complexity
 
-# # summary of the model
-# summary(age_structure_gam)
+```{r horizontal_complexity_curation}
+this.sheet <- "Horizontal complexity"
 
-# dummy data for prediction
-newdata <- data.frame(
-    measure = rep(unique(plot_data$measure), each = length(unique(plot_data$respondant_name))),
-    respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
-)
+# a lot have min measure 1, duplicate that row and add it in, editing measure to 0
+respondents_with_issues <- c("Martin Hu", "Bob Epsom", "Dean K", "Kylie Jo-Ma", 
+                            "Nick RB", "Sonia", "Mick Br", "Lou Ha", "Peter Lo")
+for (respondent in respondents_with_issues) {
+  dup.row <- which(c.df$sheet_name == this.sheet & 
+                    c.df$round == 2 & 
+                    c.df$value == 0 & 
+                    c.df$measure == 1 & 
+                    c.df$respondant_name == respondent) 
+  added.row <- c.df[dup.row, ] # duplicate row
+  added.row$measure <- 0 # change measure to 0
+  c.df <- rbind(c.df, added.row) # insert row to df
+}
 
-# 2. Predict on the link (logit) scale
-pred <- predict(age_structure_gam, newdata = newdata, type = "link", se.fit = TRUE)
-
-# 3. Add predictions using plogis
-newdata <- newdata %>%
-  mutate(
-    fit_link = pred$fit,
-    se_link = pred$se.fit,
-    fit_logit_lower = fit_link - 1.96 * se_link,
-    fit_logit_upper = fit_link + 1.96 * se_link,
-    fit_response = plogis(fit_link) * 100,
-    lower_response = plogis(fit_logit_lower) * 100,
-    upper_response = plogis(fit_logit_upper) * 100,
-    value_plot = (fit_response- min(fit_response, na.rm = TRUE)) * (100 / (max(fit_response, na.rm = TRUE) - min(fit_response, na.rm = TRUE)))
-  )
+# Mick Br has a measure 4 with value 100, but no measure 5, so duplicate that row and add it in, editing measure to 5
+dup.row <- which(c.df$sheet_name == this.sheet & 
+                  c.df$round == 2 & 
+                  c.df$value == 100 & 
+                  c.df$measure == 4 & 
+                  c.df$respondant_name == "Mick Br")
+added.row <- c.df[dup.row, ] # duplicate row
+added.row$measure <- 5 # change measure to 5
+c.df <- rbind(c.df, added.row) # insert row to df
 
 
-# 5. Plot
-ggplot() +
-  # Respondent lines
-  geom_line(
-    data = plot_data,
-    aes(x = measure, y = value_scaled, group = respondant_name),
-    color = "grey70", alpha = 0.5, size = 0.5
-  ) +
-  # #Confidence ribbon
-  # geom_ribbon(
-  #   data = newdata,
-  #   aes(x = measure, ymin = lower_response, ymax = upper_response),
-  #   fill = "lightblue", alpha = 0.4
-  # ) +
-  # Fitted GAM line
-  geom_line(
-    data = newdata,
-    aes(x = measure, y = value_plot),
-    color = "black", size = 1.2
-  ) +
-  labs(
-    x = "Measure",
-    y = "Predicted value (0–100 scale)",
-    title = "Tree Age Structure value function (GAM)"  ) +
-  theme_pubr()
+# All with measure = 1 above value = 0 have their values of measure >= 1 rescaled so that value at measure 1 = 0
+respondents_with_issues <- c.df %>%
+  filter(sheet_name == this.sheet & 
+         round == 2 & 
+         measure == 1 & 
+         value != 0) %>%
+  select(respondant_name) %>%
+  distinct() %>%
+  pull(respondant_name)
+
+for (respondent in respondents_with_issues) {
+  # get value at measure 1 for this respondent
+  value_at_measure_1 <- c.df %>%
+    filter(sheet_name == this.sheet, 
+           round == 2, 
+           respondant_name == respondent, 
+           measure == 1) %>%
+    summarise(value = unique(value)) %>%
+    pull(value)
+  # rescale values where measure >= 1 for this respondent
+  c.df$value[c.df$sheet_name == this.sheet & 
+              c.df$round == 2 & 
+              c.df$respondant_name == respondent & 
+              c.df$measure >= 1] <- 
+    (c.df$value[c.df$sheet_name == this.sheet & 
+                c.df$round == 2 & 
+                c.df$respondant_name == respondent & 
+                c.df$measure >= 1] - value_at_measure_1)*
+    (100 / (100 - value_at_measure_1))
+}
 
 ```
 
-### Lookup table
-```{r age_structure_lookup_table}
-age_vf_lookup <- newdata %>%
-  select(measure, value_plot) %>%
-  #remove duplicates
-  distinct() 
+```{r check_r2_horizontal_complexity}
+ind_check <- ind_checker(c.df)
+call_ind_mess(ind_check)
+```
 
-age_vf_lookup %>%
-  mutate(
-    measure = as.character(measure),
-    value_plot = round(value_plot, 0)) %>%
-  rename(
-    `N age classes` = measure,
-    Value = value_plot
-  ) %>%
-  kable() %>%
-  kable_styling(full_width = F)
+### Antropogenic damage
+
+```{r anthropogenic_damage_curation}
+this.sheet <- "Anthropogenic damage"
+
+# Dean K has a measure 90 with value 0, but no measure 100, so duplicate that row and add it in, editing measure to 100
+dup.row <- which(c.df$sheet_name == this.sheet & 
+                  c.df$round == 2 & 
+                  c.df$value == 0 & 
+                  c.df$measure == 90 & 
+                  c.df$respondant_name == "Dean K")
+added.row <- c.df[dup.row, ] # duplicate row
+added.row$measure <- 100 # change measure to 100
+c.df <- rbind(c.df, added.row) # insert row to df
 
 ```
 
+```{r check_r2_anthropogenic_damage}
+ind_check <- ind_checker(c.df)
+call_ind_mess(ind_check)
+```
 
-```{r interpolation_of_vfs, warning=FALSE}
+### Microhabitats
+
+Microhabitats was not included within the Delphi metric, being added after the surveys. So the value function is based on the consensus of the expert opinion of EM, SH and MH.
+
+</div>
+:::
+
+
+# Estimating value functions and generating lookup tables
+
+Here, I go through each indicator, take each respondent's value function and:
+
+1.  Interpolate data along that value function, so that every respondent's value function has the same number of data points (where required).
+2.  Fit a model to the interpolated data from all respondents, using a GAM or qunatile GAM in most instances, estimating the "average" value function for that indicator.
+3.  Use that model to predict values for each measure, generating a lookup table and figure of the value function.
+4.  4\. Add a column to that look up table with the corresponding observations from the field-data, where necessary (i.e. when field data uses DOMIN score, but the value function used raw %).
+
+```{r curation for interpolation and estimation}
+c.df$value.dec = c.df$value/100 # a decimal version of value to work in the later binomial gams
+```
+
+```{r function-addpredictions_to_newdata}
+add_gam_predictions <- function(model, newdata, scale_to_100 = TRUE) {
+  # Predict from model
+  pred <- predict(model, newdata = newdata, type = "link", se.fit = TRUE)
+  
+  # Add predictions to data
+  newdata <- newdata %>%
+    mutate(
+      fit_link = pred$fit,
+      se_link = pred$se.fit,
+      fit_logit_lower = fit_link - 1.96 * se_link,
+      fit_logit_upper = fit_link + 1.96 * se_link,
+      fit_response = plogis(fit_link) * 100,
+      lower_response = plogis(fit_logit_lower) * 100,
+      upper_response = plogis(fit_logit_upper) * 100
+    )
+  
+  # Optionally scale to 0–100
+  if (scale_to_100) {
+    rng <- range(newdata$fit_response, na.rm = TRUE)
+    newdata <- newdata %>%
+      mutate(
+        value_plot = (fit_response - rng[1]) * (100 / (rng[2] - rng[1]))
+      )
+  }
+
+  return(newdata)
+}
+```
+
+```{r config for interpolation_of_vfs, warning=FALSE}
 # interpolation of indivator value functions, using best fit model from linear, binom GLM, GAM, 
 
 # set values for interpolation ----
@@ -617,847 +714,1860 @@ interpolation_measurements <- list(
   "Vertical structure" = unique(c.df$measure[c.df$sheet_name == "Vertical structure"]) %>% sort(),
   "N tree & shrub spp." = seq(from = 0, to = 100, by = 1),
   "Invasive plants % cover" = seq(from = 0, to = 100, by = 1),
-  "Deadwood" = 0:12,
-  "Veteran trees" = seq(from = 0, to = 12, by = 0.5),
-  "Woodland extent" = seq(from = 0, to = 100, by = 1),
-  "Regen" = 0:3,
-  "Herbivore damage" = 0:4,
+  "Deadwood" = 0:max(c.df$measure[c.df$sheet_name == "Deadwood"]),
+  "Veteran trees" = seq(from = 0, to = max(c.df$measure[c.df$sheet_name == "Veteran trees"] ), by = 0.1),
+  # "Woodland extent" = seq(from = 0, to = 100, by = 1),
+  "Regen" = 0:max(c.df$measure[c.df$sheet_name == "Regen"]),
+  "Herbivore damage" = min(c.df$measure[c.df$sheet_name == "Herbivore damage"]):max(c.df$measure[c.df$sheet_name == "Herbivore damage"]),
   "Tree health" = seq(from = 0, to = 100, by = 1),
   "Ground flora" = seq(from = 0, to = 100, by = 1),
   "Horizontal complexity" = 0:5,
-  "Anthropogenic damage" = seq(from = 0, to = 100, by = 1)
+  "Anthropogenic damage" = seq(from = 0, to = 100, by = 1),
+  "Microhabitats" = seq(from = 0, to = 100, by = 10)
 )
 
-# set fixed intercepts ----
-intercept_fixed <- list(
-  "Tree age distribution" = 0,
+# set fixed x - intercepts ----
+x_intercept_fixed <- list(
+  "Tree age distribution" = 1,
   "Native canopy percentage " = 0,
-  "Vertical structure" = 0,
+  "Vertical structure" = 1,
   "N tree & shrub spp." = 0,
-  "Invasive plants % cover" = 1,
+  "Invasive plants % cover" = 0,
   "Deadwood" = 0,
   "Veteran trees" = 0,
-  "Woodland extent" = 0,
+  # "Woodland extent" = 0,
   "Regen" = 0,
-  "Herbivore damage" = 1,
-  "Tree health" = 1,
+  "Herbivore damage" = 0,
+  "Tree health" = 0,
   "Ground flora" = 0,
   "Horizontal complexity" = 0,
-  "Anthropogenic damage" = 1
-)
-
-
-#create interpolated.data list structure: ----
-#sheet_name -> round -> respondent ->  df( measurement and interpolated values), certainties and weights
-
-interpolated.data <- list()
-for (i in unique(c.df$sheet_name)) { # for each indicator
-  interpolated.data[[i]] <- list()
-  for (r in unique(c.df$round)) { # for each round
-    interpolated.data[[i]][[r]] <- list()
-    for (resp in unique(c.df$respondant_name)) { # for each respondent
-      explanatory <- c.df$measure[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
-      response <- c.df$value[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
-      
-      
-      # add value_function - if theres more than 1 non-NA value and it actually changes
-      if (sum(!is.na(response))>1 && length(response) > 1 && diff(range(response, na.rm = TRUE)) > 0) {
-        interpolated.data[[i]][[r]][[resp]] <- list(
-          value_function = data.frame("measurement" = interpolation_measurements[[i]]),
-          og_vf = data.frame("measurement" = explanatory, "value" = response),
-          weight = c.df$weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
-          vf_cert = c.df$cert_val_funct[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
-          wt_cert = c.df$cert_weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
-          round = r,
-          respondent = resp,
-          indicator = i
-          
-        )
-      } else {
-        interpolated.data[[i]][[r]][[resp]] <- list(
-          weight = c.df$weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
-          vf_cert = c.df$cert_val_funct[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1],
-          wt_cert = c.df$cert_weight[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp][1]
-        )
-      }
-      
-
-      } # resp
-    }# round
-  } # indicator
-
-
-# interpolation of vfs ----
-
-# use data from corresponding round, respondent and indicator to interpolate values
-
-# i <- unique(c.df$sheet_name)[1]
-# r <- unique(c.df$round)[1]
-# resp <- unique(c.df$respondant_name)[1]
-# i <- "Horizontal complexity"
-# r <- 1
-# resp <- "Martin Hu"
-
-
-bk2 = 1
-interpolation.warnings <- NA
-for (i in unique(c.df$sheet_name)) { # for each indicator
-  for (r in unique(c.df$round)) { # for each round
-    for (resp in unique(c.df$respondant_name)) { # for each respondent
-      ## if value_function exists
-      if (!is.null(interpolated.data[[i]][[r]][[resp]]$value_function)) {
-
-        ## Prepare data for modeling ----
-        ### save dummy explanatory for interpolation, recorded explanatory and recorded response data
-        meas <- interpolated.data[[i]][[r]][[resp]]$value_function$measurement
-        response <- c.df$value[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
-        ### Create a data frame for modeling
-        data <- data.frame(explanatory = c.df$measure[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp], 
-                         response_scaled = (response - min(response)) / (max(response) - min(response)))
-        ### delete duplicated rows
-        data <- data[!duplicated(data), ]
-        
-        ## check response range is 0 100
-        if(!identical(range(response), c(0,100))) {
-          print(paste("Warning: response range for", i, r, resp, "is" , range(response)))}
-
-      ## Fit models ----
-      # ### glm - linear ----
-      # linear.mod <- glm(response_scaled ~ explanatory, data = data)
-      # 
-      # ### glm binomial ----
-      # binom.glm <- glm(
-      #   response_scaled ~ explanatory,
-      #   family = binomial(link = "logit"),
-      #   data = data
-      # )
-      
-        ### GAM - linear ----
-        gam <- gam(response_scaled ~ s(explanatory, bs = "cs", k = length(data$explanatory)),
-                   data = data,
-                   method = "REML"
-                   )
-        ### GAM - binomial ----
-        binom.gam <- gam(response_scaled ~ s(explanatory, bs = "cs", k = length(data$explanatory)),
-                         family = binomial(link = "logit"),
-                         data = data,
-                         method = "REML"
-                         )
-        ### GAM - binomial with offset ----
-        # binom.spline_model <- gam(
-        #   response_scaled ~ s(explanatory, bs = "cs", k = length(data$explanatory)),
-        #   family = binomial(link = "logit"),
-        #   data = data,
-        #   method = "REML",
-        #   offset = log(response_scaled)
-        # )
-      
-        
-      
-      # # exponential
-      # data$response_offset <- pmax(data$response_scaled, 1e-5)  # avoid log(0)
-      #       ## Exponential Model
-      # data$response_offset <- pmax(data$response_scaled, 1e-5)  # avoid log(0)
-      # glm_exp <- glm(log(response_offset) ~ explanatory, data = data)
-      # 
-      # 
-      # 
-      # AIC(gam, binom.gam, glm_exp) # compare AIC of models
-
-      
-            # data$response_offset <- pmax(data$response_scaled, 1e-5)  # avoid log(0)
-      # glm_exp <- glm(log(response_offset) ~ explanatory, data = data)
-
-      
-      # ## Beta GAM
-      # beta.spline_model <- gam(
-      #   response_scaled ~ s(explanatory, bs = "cs", k = length(explanatory) - 1),
-      #   family = betar(link = "logit"),
-      #   data = data,
-      #   method = "REML"
-      # )
-      
-      # 
-      # 
-      # ## Logarithmic Model
-      # data$log_explanatory <- log(data$explanatory+0.00001) # Log-transform explanatory
-      # log.mod <- glm(response_scaled ~ log_explanatory, data = data)
-      # 
-      # ## Negative Logarithmic Model
-      # neglog.mod <- glm(response_scaled ~ -log_explanatory, data = data)
-      
-      # # Compare models using AIC
-      model_aics <- AIC(
-        # linear.mod,
-        # binom.glm,
-        gam,
-        binom.gam #,
-        # glm_exp,
-        # log.mod,
-        # neglog.mod
-      )
-      
-      # Predict over the interpolation measurements using the best model
-      best_model <- which.min(model_aics$AIC)
-      meas_transformed <- data.frame(
-        explanatory = meas,
-        log_explanatory = log(meas),
-        negexp_predictor = 1 - exp(-meas)
-      )
-      
-      if (best_model == 1) {
-        predictions_scaled <- predict(gam, newdata = meas_transformed, type = "response")
-        #   predictions_scaled <- predict(linear.mod, newdata = meas_transformed)
-      } else if (best_model == 2) {
-        predictions_scaled <- predict(binom.gam, newdata = meas_transformed, type = "response")
-}
-      #   predictions_scaled <- predict(binom.spline_model, newdata = meas_transformed, type = "response")
-      # } else if (best_model == 3) {
-      # } else if (best_model == 4) {
-      #   predictions_scaled <- exp(predict(exp.mod, newdata = meas_transformed)) # Back-transform predictions
-      # } else if (best_model == 5) {
-      #   predictions_scaled <- predict(negexp.mod, newdata = meas_transformed)
-      # } else if (best_model == 6) {
-      #   predictions_scaled <- predict(log.mod, newdata = meas_transformed)
-      # } else if (best_model == 7) {
-      #   predictions_scaled <- predict(neglog.mod, newdata = meas_transformed)
-      # } else {
-      #   predictions_scaled <- predict(binom.mod, newdata = meas_transformed, type = "response")
-      # }
-
-      # fix to 0-100 bounds
-      predictions_fixed <- (predictions_scaled - min(predictions_scaled))*(100/(max(predictions_scaled) - min(predictions_scaled)))
-      
-    
-            if(!identical(range(predictions_fixed), c(0,100))) {
-        interpolation.warnings[bk2] <- paste("Warning: INTERPOLATED response range", range(predictions_fixed)[1], range(predictions_fixed)[2] ,", not 0-100 for", i, r, resp)
-              bk2 = bk2+1
-              }
-      
-            # add to interpolated.data
-      interpolated.data[[i]][[r]][[resp]]$value_function$value <- predictions_fixed
-      }
-    }
-  }
-}
-
-```
-
-```{r bootstrap_predictions}
-
-set.seed(5448)
-boot_results <- list(indicator = list(NA))
-
-boot_results <- list()
-
-for (i in unique(c.df$sheet_name)) {
-    boot_results[[i]] <- list()  
-  for (r in unique(c.df$round)) {
-    if(paste0(i,r) != "Herbivore damage1" ){
-          resp_list <- NA
-    bk = 1
-    for (resp.n in 1:length(names(interpolated.data[[i]][[r]]))){
-      response <- c.df$value[c.df$sheet_name == i & c.df$round == r & c.df$respondant_name == resp]
-      if(length(response)>2){
-        resp_list[bk] <- names(interpolated.data[[i]][[r]])[resp.n]
-        bk = bk + 1
-      }
-    }
-    
-    boot_expl <- interpolated.data[[i]][[r]][[resp_list[1]]]$value_function$measurement
-    
-    # sample by respondent
-    boot_resps <- sample(resp_list, 1000, replace = TRUE)
-    boot_res_pre = data.frame(expl = numeric(length(boot_expl)),
-                              median = numeric(length(boot_expl)),
-                              mean = numeric(length(boot_expl)),
-                              upper95 = numeric(length(boot_expl)),
-                              lower95 = numeric(length(boot_expl)),
-                              upperq = numeric(length(boot_expl)),
-                              lowerq = numeric(length(boot_expl)))
-        for(e in 1:length(boot_expl)){
-          y = map(boot_resps, ~ interpolated.data[[i]][[r]][[.x]]$value_function$value[e]) %>%
-    flatten_dbl()
-          
-          boot_res_pre$expl[e] <- boot_expl[e]
-          boot_res_pre$median[e] <- median(y)
-          boot_res_pre$mean[e] <- mean(y)
-          boot_res_pre$upper95[e] <- quantile(y, 0.975)
-          boot_res_pre$lower95[e] <- quantile(y, 0.025)
-          boot_res_pre$lowerq[e] <- quantile(y, 0.25)
-          boot_res_pre$upperq[e] <- quantile(y, 0.75)
-          
-        }
-    
-        boot_results[[i]][[r]] <- list(indicator = i,             # Indicator name
-                                   round = r,                 # Round number
-                                   respondents = resp_list, # Vector of respondent names
-                                   boot_response = data.frame( # Data frame with explanatory and response data
-                                     expl = boot_res_pre$expl,
-                                     median = boot_res_pre$median,
-                                     mean = boot_res_pre$mean,
-                                     upper95 = boot_res_pre$upper95,
-                                     lower95 = boot_res_pre$lower95,
-                                     lowerq = boot_res_pre$lowerq,
-                                     upperq = boot_res_pre$upperq
-                                   )
-      )
-    }
-  }
-}
-
-
-
-
-```
-
-```{r f_vf_plot_function}
-plot_indicator_rounds <- function(
-    c.df = c.df,
-    boot_results, 
-    interpolated_data, 
-    respondent_colors, 
-    ind.matcher.df, 
-    output_dir = "plots/vfs-av_and_individual/", 
-    include_respondent_lines = TRUE, 
-    include_legend = TRUE
-) {
-  # Generate a dummy data frame and legend if required
-  if (include_legend) {
-    unique_respondents <- unique(unlist(lapply(interpolated_data, function(ind) {
-      unlist(lapply(ind, names))
-    })))
-    
-    dummy_resps <- data.frame(
-      resp = rep(unique_respondents, each = 2),
-      x = rep(0:1, times = length(unique_respondents)),
-      y = rep(0:1, times = length(unique_respondents))
-    )
-    
-    legend <- get_legend(
-      ggplot() +
-        geom_line(data = dummy_resps, aes(x = x, y = y, color = resp)) +
-        scale_colour_manual(values = respondent_colors,
-                            name = NULL,
-                            guide = guide_legend(ncol = 10)) +
-        theme_pubr() +
-        theme(legend.position = "bottom",
-              legend.text = element_text(size = 8))
-    )
-  }
-  
-  # Iterate over each indicator
-  for (indicator in names(boot_results)) {
-    round_plots <- list()
-    n.respondents <- NA
-    for (round in seq_along(boot_results[[indicator]])) {
-      round_data <- boot_results[[indicator]][[round]]
-      n.respondents[round] <- length(c.df$respondant_name[c.df$sheet_name==indicator & c.df$round == round] %>% unique())
-      
-      
-      if (is.null(round_data$boot_response) || 
-          round_data$indicator == "Herbivore damage" && round == 1) {
-        plot <- ggplot() +
-          theme_void() +
-          ggtitle(paste(indicator, "Round", round, "(No Data)"))
-      } else {
-        plot_data <- round_data$boot_response
-        respondent_data <- data.frame(measurement = NA, value = NA, resp = NA)[0, ]
-        
-        if (include_respondent_lines) {
-          resps <- names(interpolated_data[[indicator]][[round]])
-          for (resp in resps) {
-            if (!is.null(interpolated_data[[indicator]][[round]][[resp]]$value_function)) {
-              respondent_data <- rbind(respondent_data,
-                                       data.frame(
-                                         measurement = interpolated_data[[indicator]][[round]][[resp]]$value_function$measurement,
-                                         value = interpolated_data[[indicator]][[round]][[resp]]$value_function$value,
-                                         resp = resp
-                                       ))
-            }
-          }
-        }
-        
-        plot <- ggplot(plot_data, aes(x = expl, y = median)) +
-          geom_ribbon(aes(ymin = lower95, ymax = upper95), alpha = 0.2, fill = "grey63") +
-          geom_ribbon(aes(ymin = lowerq, ymax = upperq), alpha = 0.2, fill = "grey13") +
-          {if (include_respondent_lines) geom_line(data = respondent_data, 
-                                                   aes(x = measurement, y = value, color = resp),
-                                                   alpha = 0.3, linetype = "longdash")} +
-          geom_line(color = "black", linewidth = 1) +
-          scale_color_manual(values = respondent_colors) +
-          labs(
-          title = paste("Round", round, "N =", n.respondents[round]),
-            y = "Value"
-          ) +
-          theme_pubr() +
-          theme(axis.title.x = element_blank(), legend.position = "none")
-      }
-      
-      round_plots[[round]] <- plot
-    }
-    
-    grid_plots <- plot_grid(
-      plotlist = round_plots,
-      ncol = 2,
-      labels = NULL
-    )
-    
-    shared_title <- ggdraw() +
-      draw_label(
-        label = paste(indicator),
-        fontface = "bold",
-        size = 16,
-        hjust = 0.5
-      )
-    
-    shared_x_axis <- ggdraw() +
-      draw_label(
-        label = ind.matcher.df$ind.axis.title[ind.matcher.df$sheet_name == indicator],
-        fontface = "bold",
-        size = 12,
-        hjust = 0.5
-      )
-    
-    components <- list(shared_title, grid_plots, shared_x_axis)
-    
-    if (include_legend) {
-      components <- c(components, list(legend))
-      rel_heights <- c(1, 10, 1, 4)
-    } else {
-      rel_heights <- c(1, 10, 1)
-    }
-    
-    final_plot <- plot_grid(
-      plotlist = components,
-      ncol = 1,
-      rel_heights = rel_heights
-    )
-    
-    ggsave(
-      filename = file.path(output_dir, paste0(indicator, "_round_plots.png")),
-      plot = final_plot,
-      width = 10, height = if (include_legend) 7 else 6
-    )
-    
-    print(final_plot)
-  }
-}
-
-```
-```{r respondent_colours}
-respondent_colors <-  set_resp_col_fun(unique(c.df$respondant_name))
-```
-```{r plots_boot}
-
-plot_indicator_rounds(
-  c.df = c.df,
-  boot_results = boot_results,
-  interpolated_data = interpolated.data,
-  respondent_colors = respondent_colors,
-  ind.matcher.df = ind.matcher.df, output_dir = "plots/just_final vf/", 
-  include_respondent_lines = F,
-  include_legend = F
+  "Anthropogenic damage" = 0,
+  "Microhabitats" = 0
 )
 
 ```
 
-# Plots of respondent value functions
-
-Coloured by respondent
-
-```{r plot-boot-and-resp}
-# using continuous_vf_fig() function, 
-
-plot_indicator_rounds(
-  c.df = c.df,
-  boot_results = boot_results,
-  interpolated_data = interpolated.data,
-  respondent_colors = respondent_colors,
-  ind.matcher.df = ind.matcher.df, output_dir = "plots/vfs-av_and_individual/", 
-  include_respondent_lines = T,
-  include_legend = T
-)
-
-
-dum.resps = data.frame(resp = rep(unique(c.df$respondant_name), each = 2),
-                       x = rep(0:1, times = length(unique(c.df$respondant_name))),
-                       y = rep(0:1, times = length(unique(c.df$respondant_name))))
-
-
-  # Extract the legend
-  legend <- get_legend(
-    ggplot() +
-      geom_line(data = dum.resps, aes(x = x, y = y, color = resp)) +
-      scale_colour_manual(values = respondant_colours,
-                          name = NULL,
-                          guide = guide_legend(ncol = 10)) + # Adjust the number of columns here
-      theme_pubr() +
-      theme(legend.position = "bottom",
-            legend.text = element_text(size = 8))
-  )
-
-round_data <- list()
-
-for (indicator in names(boot_results)) {
-  # Initialize an empty list to hold plots for the rounds
-  round_plots <- list()
+```{r function-interpolation }
+generate_plot_data <- function(this.sheet, this.round, c.df, interpolation_measurements) {
   
-  for (round in seq_along(boot_results[[indicator]])) {
+  # Step 1: Filter for sheet and round
+  df_filtered <- c.df %>%
+    filter(sheet_name == this.sheet, round == this.round) %>%
+    arrange(respondant_name, measure)
+  
+  # Step 2: Check whether all respondents have the same measure series
+  measure_check <- df_filtered %>%
+    group_by(respondant_name) %>%
+    summarise(measure_series = paste(measure, collapse = "|"), .groups = "drop") %>%
+    pull(measure_series) %>%
+    unique()
+  
+  # Step 3: Decide whether interpolation is needed
+  interpolate <- length(measure_check) != 1
+  
+  if (interpolate) {
+    message("❌ Interpolation needed - not all respondents have the same series of measure values for '", this.sheet, "'.")
+  } else {
+    message("✅ No interpolation needed - all respondents have the same series of measure values for '", this.sheet, "'.")
+  }
+
+  # Step 4: If no interpolation needed, return the existing data as-is
+  if (!interpolate) {
+      respondents <- unique(df_filtered$respondant_name)
+
+      interpolated.df <- df_filtered %>%
+      mutate(value = value.dec * 100) %>%
+      select(respondant_name, measure, value)
+  }
+  
+  # Step 5: Interpolate if needed (your original logic)
+    if (interpolate) {
+  respondents <- unique(df_filtered$respondant_name)
+  meas <- interpolation_measurements[[this.sheet]]
+  interpolated.df <- data.frame()
+  
+  for (resp in respondents) {
+    sub <- df_filtered %>% filter(respondant_name == resp)
+    if (nrow(sub) < 2 || diff(range(sub$value, na.rm = TRUE)) == 0) next
     
-    round_data[[indicator]][[round]] <- boot_results[[indicator]][[round]]
+    response_scaled <- (sub$value - min(sub$value)) / (max(sub$value) - min(sub$value))
+    dat <- data.frame(explanatory = sub$measure, response_scaled)
     
-    if (is.null(round_data[[indicator]][[round]]$boot_response) || 
-        round_data[[indicator]][[round]]$indicator == "Herbivore damage" && round == 1) {
-      plot <- ggplot() +
-        theme_void() +
-        ggtitle(paste(indicator, "Round", round, "(No Data)"))
-    } else {
-      plot_data <- round_data[[indicator]][[round]]$boot_response
-      resps <- names(interpolated.data[[indicator]][[round]])
-      respondent_data <- data.frame(measurement = NA, value = NA, resp = NA)[0, ]
-      
-      for (resp in resps) {
-        if (!is.null(interpolated.data[[indicator]][[round]][[resp]]$value_function)) {
-          respondent_data <- rbind(respondent_data,
-                                   data.frame(
-                                     measurement = interpolated.data[[indicator]][[round]][[resp]]$value_function$measurement,
-                                     value = interpolated.data[[indicator]][[round]][[resp]]$value_function$value,
-                                     resp = resp
-                                   ))
-        }
-      }
-      
-      # Create the plot
-      plot <- ggplot(plot_data, aes(x = expl, y = median)) +
-        geom_ribbon(aes(ymin = lower95, ymax = upper95), alpha = 0.2, fill = "grey63") +
-        geom_ribbon(aes(ymin = lowerq, ymax = upperq), alpha = 0.2, fill = "grey13") +
-        geom_line(data = respondent_data, aes(x = measurement, y = value, color = resp),
-                  alpha = 0.3,
-                  linetype = "longdash") +
-        geom_line(color = "black", linewidth = 1) +
-        scale_color_manual(values = respondent_colors) +
-        labs(
-          title = paste("Round", round, "N =", length(unique(respondent_data$resp))),
-          y = "Value"
-        ) +
-        theme_pubr() +
-        theme(axis.title.x = element_blank(), legend.position = "none")
+    # gam_linear <- gam(response_scaled ~ s(explanatory, bs = "cs", k = length(unique(sub$measure)) - 1),
+    #                   data = dat, method = "REML")
+    gam_binom <- gam(response_scaled ~ s(explanatory, bs = "cs", k = length(unique(sub$measure)) - 1),
+                     family = binomial(link = "logit"), data = dat, method = "REML")
+    
+    best_model <- gam_binom#if (AIC(gam_linear) < AIC(gam_binom)) gam_linear else gam_binom
+    
+    newdat <- data.frame(explanatory = meas)
+    preds <- predict(best_model, newdata = newdat, type = "response")
+    preds <- (preds - min(preds)) / (max(preds) - min(preds))
+    
+    pred_df <- data.frame(
+      respondant_name = resp,
+      measure = meas,
+      value = preds * 100
+    )
+    interpolated.df <- bind_rows(interpolated.df, pred_df)
+  }
     }
+  interpolated.df$value.dec <- interpolated.df$value / 100 # convert to decimal
+  interpolated.df$respondant_name <- factor(interpolated.df$respondant_name, levels = respondents)
+  return(interpolated.df)
+
+}
+
+interpolate_value_function <- function(this.sheet, this.round, c.df, interpolation_measurements) {
+  # Get all respondents for this indicator and round
+  respondents <- unique(c.df$respondant_name[c.df$sheet_name == this.sheet & c.df$round == this.round])
+  
+  # Measurements to interpolate over
+  meas <- interpolation_measurements[[this.sheet]]
+  
+  # Prepare an empty data frame to store results
+  interpolated.df <- data.frame()
+  
+  for (resp in respondents) {
+    # Subset data for one respondent
+    sub <- c.df %>%
+      filter(sheet_name == this.sheet,
+             round == this.round,
+             respondant_name == resp)
     
-    round_plots[[round]] <- plot
+    # Skip if insufficient or constant data
+    if (nrow(sub) < 2 || diff(range(sub$value, na.rm = TRUE)) == 0) next
+    
+    # Scale response to 0–1
+    response_scaled <- (sub$value - min(sub$value)) / (max(sub$value) - min(sub$value))
+    dat <- data.frame(explanatory = sub$measure, response_scaled)
+    
+    # Fit two GAMs
+    gam_linear <- gam(response_scaled ~ s(explanatory, bs = "cs", k = length(unique(sub$measure))-1), 
+                      data = dat, method = "REML")
+    gam_binom <- gam(response_scaled ~ s(explanatory, bs = "cs", k = length(unique(sub$measure))-1), 
+                     family = binomial(link = "logit"), data = dat, method = "REML")
+    
+    # Select better model by AIC
+    best_model <- if (AIC(gam_linear) < AIC(gam_binom)) gam_linear else gam_binom
+    
+    # Predict across range
+    newdat <- data.frame(explanatory = meas)
+    preds <- predict(best_model, newdata = newdat, type = "response")
+    preds <- (preds - min(preds)) / (max(preds) - min(preds)) # scale to 0-1
+    
+    # Rescale to 0–100
+    preds_rescaled <- (preds - min(preds)) * 100 / (max(preds) - min(preds))
+    
+    # Get static values from one of the rows
+    template_row <- sub[1, , drop = FALSE]
+    
+    # Create output rows
+    pred_df <- data.frame(
+      indicator_name = template_row$indicator_name,
+      respondant_name = resp,
+      indicator_num = template_row$indicator_num,
+      measure = meas,
+      value = preds_rescaled,
+      cert_val_funct = template_row$cert_val_funct,
+      vf.sentance = template_row$vf.sentance,
+      weight = template_row$weight,
+      cert_weight = template_row$cert_weight,
+      sheet_name = this.sheet,
+      weight.name = template_row$weight.name,
+      ind.axis.title = template_row$ind.axis.title,
+      weight_rank = template_row$weight_rank,
+      value.dec = preds / max(preds),
+      round = this.round
+    )
+    
+    # Bind to the full df
+    interpolated.df <- bind_rows(interpolated.df, pred_df)
   }
-  
-  # Combine plots into a grid
-  grid_plots <- plot_grid(
-    plotlist = round_plots,
-    ncol = 2,
-    labels = NULL
-  )
-  
-  
-  # Create shared title and x-axis
-  shared_title <- ggdraw() +
-    draw_label(
-      label = paste(indicator),
-      fontface = "bold",
-      size = 16,
-      hjust = 0.5
-    )
-  
-  shared_x_axis <- ggdraw() +
-    draw_label(
-      label = ind.matcher.df$ind.axis.title[ind.matcher.df$sheet_name == indicator],
-      fontface = "bold",
-      size = 12,
-      hjust = 0.5
-    )
-  
-  # Combine all components: title, plots, x-axis, and legend
-  final_plot <- plot_grid(
-    shared_title,
-    grid_plots,
-    shared_x_axis,
-    legend,
-    ncol = 1,
-    rel_heights = c(1, 10, 1, 4) # Adjust relative heights for title, plots, x-axis, and legend
-  )
-  
-  # Save the plot
-  ggsave(
-    filename = paste0("plots/vfs-av_and_individual/", indicator, "_round_plots.png"),
-    plot = final_plot,
-    width = 10, height = 7
-  )
-  
-  print(final_plot)
+
+  interpolated.df$value.dec <- interpolated.df$value / 100 # convert to decimal
+  return(interpolated.df)
 }
+#function to check if every respondent has the same measures for this indicator
+check_identical_measure_series <- function(df, this.sheet, this.round = 2) {
+  # Filter the data for the given indicator sheet
+  df_filtered <- df %>% 
+    filter(sheet_name == this.sheet & round == this.round) %>%
+    select(respondant_name, measure, value) %>%
+    arrange(respondant_name, measure)
+# Group by respondent and collapse the measure values into a single string
+measure_strings <- df_filtered %>%
+    group_by(respondant_name) %>%
+    summarise(measure_series = paste(measure, collapse = "|"), .groups = "drop")
+
+  # Check how many unique series there are
+  unique_series <- unique(measure_strings$measure_series)
+  
+  if (length(unique_series) == 1) {
+    message("✅ No interpolation needed - all respondents have the same series of measure values for '", this.sheet, "'.")
+  } else {
+    message("❌  Interpolation needed  - not all respondents have the same series of measure values for '", this.sheet, "'., interpolation needed")
+  }
+}
+```
+
+## Age structure
+
+```{r age_structure_function_interpolation, warning=FALSE, message=FALSE}
+this.sheet <- "Tree age distribution"
+x.axis_title <- "N Tree Age Categories"
+plot_data <- generate_plot_data(this.sheet, this.round, c.df, interpolation_measurements)
 
 ```
 
-# Weightings
+Estimated value using a binomial GAM.
 
-## Round 1
-```{r R1_weights_kable}
+```{r binomial_glm_age_structure, warning=FALSE, message=FALSE}
 
-# kable of median weightings for each indicator in each round using c.just.one.df
-library(kableExtra)
-
-c.just.one.df %>% 
-  filter(round == 1) %>% 
-  group_by(sheet_name) %>% 
-  summarise(median_weighting = median(weight, na.rm = T),
-            upper_q_weighting = quantile(weight, probs = 0.75, na.rm = T),
-            lower_q_weighting = quantile(weight, probs = 0.25, na.rm = T),
-            indicator_num= indicator_num[1]) %>% 
-  arrange(indicator_num) %>% 
-  mutate(inter_q_range = paste(lower_q_weighting, upper_q_weighting, sep = " - ")) %>%
-  select(sheet_name, median_weighting, inter_q_range) %>%
-  rename("Indicator" = sheet_name, "Median Weighting" = median_weighting, "Interquartile Range" = inter_q_range) %>%
-  kable()
-
-
-
-```
-```{r R1_weights_plot}
-weightings_box(just.one.df = c.just.one.df %>% 
-    filter(round == 1), respondant_colours)
-
-```
-
-
-## Round 2
-
-```{r R2_weights_kable}
-r2_weights_df <- c.just.one.df %>% 
-  filter(round == 2) %>% 
-  group_by(sheet_name) %>% 
-  summarise(median_weighting = median(weight, na.rm = T),
-            upper_q_weighting = quantile(weight, probs = 0.75, na.rm = T),
-            lower_q_weighting = quantile(weight, probs = 0.25, na.rm = T),
-            indicator_num= indicator_num[1]) %>% 
-  arrange(indicator_num) %>% 
-  mutate(inter_q_range = paste(lower_q_weighting, upper_q_weighting, sep = " - ")) %>%
-  select(sheet_name, median_weighting, inter_q_range) %>%
-  rename("Indicator" = sheet_name, "Median Weighting" = median_weighting, "Interquartile Range" = inter_q_range)
-
-r2_weights_df %>%
-  kable()
-
-```
-
-```{r R2_weights_plot}
-weightings_box(just.one.df = c.just.one.df %>% 
-    filter(round == 2), respondant_colours)
-
-```
-
-# Preicting woodland condition for example woodlands
-
-```{r Setting up prediction}
-
-# set parameters
-r = 2
-weights_df = r2_weights_df
-# Save the data as RDS files for shiny app
-saveRDS(boot_results, "Data//boot_results.rds")
-saveRDS(weights_df, "Data//weights_df.rds")
-
-
-set.seed(25631)
-
-
-
-
-prediction_data <- data.frame(
-  "Tree age distribution" =     c(2,3),
-  "Native canopy percentage " = c(100, 50),
-  "Vertical structure" =       c(NA, NA),
-  "N tree & shrub spp." =      c(NA, NA),       
-  "Invasive plants % cover" =  c(NA, NA),
-  "Deadwood" =                 c(NA, NA), 
-  "Veteran trees" =            c(NA, NA), 
-  "Woodland extent" =          c(NA, NA),
-  "Regen" =                    c(NA, NA), 
-  "Herbivore damage" =         c(NA, NA), 
-  "Tree health" =              c(NA, NA), 
-  "Ground flora" =             c(NA, NA),              
-  "Horizontal complexity" =    c(NA, NA), 
-  "Anthropogenic damage" =     c(NA, NA),
-  check.names = FALSE # Prevents automatic renaming
+# binomial GAM for age structure
+age_structure_gam <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 4)  ,
+  data = plot_data,
+  family = binomial(link = "logit")
 )
-  
-prediction_values <- prediction_data[0,]
-prediction_weighted_values <- prediction_data[0,]
+# dummy data for prediction
+newdata <- data.frame(
+    measure = rep(unique(plot_data$measure), each = 1)#,
+    #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
+)
+
+newdata <- add_gam_predictions(age_structure_gam, newdata, scale_to_100 = TRUE)
+
+original_points <- c.df %>%
+  filter(sheet_name == this.sheet, round == this.round)
+
+ggplot() +
+  # Original data points
+  # geom_point(
+  #   data = original_points,
+  #   aes(x = measure, y = value, color = respondant_name),
+  #   alpha = 0.8, size = 0.2
+  # ) +
+  # Respondent interpolated lines
+  geom_line(
+    data = original_points,
+    aes(x = measure, y = value, color = respondant_name, group = respondant_name),
+    alpha = 0.2, size = 0.6
+  ) +
+  # Fitted overall GAM line
+  geom_line(
+    data = newdata,
+    aes(x = measure, y = value_plot),
+    color = "black", size = 1.2
+  ) +
+  scale_color_manual(values = respondant_colours) +
+  labs(
+    x = x.axis_title,
+    y = "Value",
+    color = "Respondent",
+    title = paste(this.sheet, "estimated value function")
+  ) +
+  theme_pubr()+
+  theme(legend.position = "none") 
 
 
-for (y in 1:nrow(prediction_data)){ # each scenario
-  for (i in 1:ncol(prediction_data)){# for each indicator
-  ind = colnames(prediction_data)[i]
-
-  prediction_values[y,i] <- 
-    ifelse(is.na(prediction_data[y,i]),
-           NA,
-           boot_results[[i]][[r]]$boot_response$median[
-             # find the boot_results expl with the closest value to the prediction data
-      which.min(
-        abs(
-          boot_results[[i]][[r]]$boot_response$expl - prediction_data[y,i]
-        )
-      )
-      ])
-  prediction_weighted_values[y,i] <-
-    prediction_values[y,i]* weights_df$`Median Weighting`[weights_df$Indicator == ind]/100
-  }
-} 
-
-condition_score <- NA
-for (y in 1:nrow(prediction_weighted_values)){
-  condition_score[y] <- 100 * sum(prediction_weighted_values[y,], na.rm = T)/
-    sum(weights_df$`Median Weighting`[
-      weights_df$Indicator %in% colnames(prediction_weighted_values)[
-        !is.na(prediction_weighted_values[y,])]
-      ], 
-      na.rm = T) 
-}
-
-condition_score
 ```
 
-```{r shiny_calculation}
-library(shiny)
-library(rhandsontable)
+Look-up table
 
-# Define the condition scoring function
-calculate_condition_score <- function(prediction_data, boot_results, weights_df, r) {
-  print("Starting calculation of condition score...")  # Debug line
-  
-  prediction_values <- prediction_data[0,]
-  prediction_weighted_values <- prediction_data[0,]
-  
-  for (y in 1:nrow(prediction_data)) { # each scenario
-    for (i in 1:ncol(prediction_data)) { # for each indicator
-      ind = colnames(prediction_data)[i]
-      
-      print(paste("Calculating for row", y, "column", i, "indicator", ind))  # Debug line
-      
-      prediction_values[y,i] <- 
-        ifelse(is.na(prediction_data[y,i]),
-               NA,
-               boot_results[[i]][[r]]$boot_response$median[
-                 which.min(abs(boot_results[[i]][[r]]$boot_response$expl - prediction_data[y,i]))
-               ])
-      prediction_weighted_values[y,i] <- 
-        prediction_values[y,i] * weights_df$`Median Weighting`[weights_df$Indicator == ind] / 100
-    }
-  }
-  
-  condition_score <- NA
-  for (y in 1:nrow(prediction_weighted_values)) {
-    condition_score[y] <- 100 * sum(prediction_weighted_values[y,], na.rm = TRUE) /
-      sum(weights_df$`Median Weighting`[
-        weights_df$Indicator %in% colnames(prediction_weighted_values)[
-          !is.na(prediction_weighted_values[y,])]
-      ], na.rm = TRUE)
-  }
-  
-  print("Condition score calculation complete.")  # Debug line
-  return(condition_score)
-}
+```{r age_structure_lookup_table, warning=FALSE}
+age_vf_lookup <- newdata %>%
+  select(measure, value_plot) %>%
+    rename(!!x.axis_title := measure,
+           value = value_plot) %>%
+  #remove duplicates
+  distinct() 
 
-# UI
-ui <- fluidPage(
-  titlePanel("Condition Score Calculator"),
-  sidebarLayout(
-    sidebarPanel(
-      h3("Input Prediction Data"),
-      numericInput("num_scenarios", "Number of Scenarios", value = 2, min = 1, max = 10, step = 1),
-      actionButton("update_grid", "Update Grid"),
-      actionButton("calculate", "Calculate Condition Scores"),
-      hr(),
-      h3("Condition Scores"),
-      tableOutput("condition_scores")
-    ),
-    mainPanel(
-      h3("Survey Data"),
-      rHandsontableOutput("prediction_grid")
-    )
+# save lookup table as csv
+write.csv(age_vf_lookup, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup.csv"), row.names = FALSE)
+
+
+datatable(
+  age_vf_lookup,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
   )
 )
 
-# Server
-server <- function(input, output, session) {
+```
+
+## Native canopy percentage
+
+```{r native_canopy_percentage_function_interpolation, warning=FALSE}
+this.sheet <- "Native canopy percentage "
+x.axis_title <- "Native Canopy Percentage"
+plot_data <- generate_plot_data(this.sheet, this.round, c.df, interpolation_measurements)
+```
+
+Estimated value using a linear GAM.
+
+```{r native_canopy_percentage_model, warning=FALSE}
+# test binomial and linear GAMs
+## binomial GAM 
+native_canopy_gam1 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = plot_data,
+  family = binomial(link = "logit")
+)
+## linear GAM
+native_canopy_gam2 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = plot_data,
+  family = gaussian(link = "identity")
+)
+# Compare AIC
+aic_native_canopy <- AIC(native_canopy_gam1, native_canopy_gam2)
+# Choose the best model based on AIC
+native_canopy_gam <- native_canopy_gam2 ####!!!!!
+
+# dummy data for prediction
+newdata <- data.frame(
+    measure = rep(unique(plot_data$measure), each = 1)#,
+    #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
+)
+newdata <- add_gam_predictions(native_canopy_gam, newdata, scale_to_100 = TRUE)
+```
+
+```{r native_canopy_percentage_plot, warning=FALSE}
+
+# 5. Plot
+original_points <- c.df %>%
+  filter(sheet_name == this.sheet, round == this.round)
+
+ggplot() +
+  # Original data points
+  # geom_point(
+  #   data = original_points,
+  #   aes(x = measure, y = value, color = respondant_name),
+  #   alpha = 0.8, size = 0.2
+  # ) +
+  # Respondent interpolated lines
+  geom_line(
+    data = original_points,
+    aes(x = measure, y = value, color = respondant_name, group = respondant_name),
+    alpha = 0.2, size = 0.6
+  ) +
+  # Fitted overall GAM line
+  geom_line(
+    data = newdata,
+    aes(x = measure, y = value_plot),
+    color = "black", size = 1.2
+  ) +
+  scale_color_manual(values = respondant_colours) +
+  labs(
+    x = x.axis_title,
+    y = "Value",
+    color = "Respondent",
+    title = paste(this.sheet, "estimated value function")
+  ) +
+  theme_pubr()+
+  theme(legend.position = "none") 
+
+```
+
+Lookup table
+
+```{r native_canopy_percentage_lookup_table, warning=FALSE}
+native_canopy_vf_lookup <- newdata %>%
+  select(measure, value_plot) %>%
+    rename(!!x.axis_title := measure,
+           value = value_plot) %>%
+  #remove duplicates
+  distinct()
+# save lookup table as csv
+write.csv(native_canopy_vf_lookup, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup.csv"), row.names = FALSE)
+datatable(
+  native_canopy_vf_lookup %>% 
+    mutate(value = round(value, 2)),
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
+```
+
+## Vertical structure
+
+```{r vertical_structure_function_interpolation, warning=FALSE}
+this.sheet <- "Vertical structure"
+x.axis_title <- "N Vertical Structure Categories" 
+plot_data <- generate_plot_data(this.sheet, this.round, c.df, interpolation_measurements)
+```
+
+Estimated value using a linear GAM.
+
+```{r vertical_structure_model, warning=FALSE}
+# test binomial and linear GAMs
+## binomial GAM
+vertical_structure_gam1 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 4)  ,
+  data = plot_data,
+  family = binomial(link = "logit")
+)
+## linear GAM
+vertical_structure_gam2 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 4)  ,
+  data = plot_data,
+  family = gaussian(link = "identity")
+)
+# Compare AIC
+aic_vertical_structure <- AIC(vertical_structure_gam1, vertical_structure_gam2)
+# Choose the best model based on AIC
+vertical_structure_gam <- vertical_structure_gam2 ####!!!!!
+# dummy data for prediction
+newdata <- data.frame(
+    measure = rep(unique(plot_data$measure), each = 1)#,
+    #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
+)
+newdata <- add_gam_predictions(vertical_structure_gam, newdata, scale_to_100 = TRUE)
+```
+
+```{r vertical_structure_plot, warning=FALSE}
+# 5. Plot
+original_points <- c.df %>%
+  filter(sheet_name == this.sheet, round == this.round)
+ggplot() +
+  # Original data points
+  # geom_point(
+  #   data = original_points,
+  #   aes(x = measure, y = value, color = respondant_name),
+  #   alpha = 0.8, size = 0.2
+  # ) +
+  # Respondent interpolated lines
+  geom_line(
+    data = original_points,
+    aes(x = measure, y = value, color = respondant_name, group = respondant_name),
+    alpha = 0.2, size = 0.6
+  ) +
+  # Fitted overall GAM line
+  geom_line(
+    data = newdata,
+    aes(x = measure, y = value_plot),
+    color = "black", size = 1.2
+  ) +
+  scale_color_manual(values = respondant_colours) +
+  labs(
+    x = x.axis_title,
+    y = "Value",
+    color = "Respondent",
+    title = paste(this.sheet, "estimated value function" )
+  ) +
+  theme_pubr()+
+  theme(legend.position = "none")
+```
+
+Lookup table
+
+```{r vertical_structure_lookup_table, warning=FALSE}
+vertical_structure_vf_lookup <- newdata %>%
+  select(measure, value_plot) %>%
+    rename(!!x.axis_title := measure,
+           value = value_plot) %>%
+  #remove duplicates
+  distinct()
+# save lookup table as csv
+write.csv(vertical_structure_vf_lookup, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup.csv"), row.names = FALSE)
+datatable(
+  vertical_structure_vf_lookup %>% 
+    mutate(value = round(value, 2)),
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
+```
+
+## Tree species richness
+
+```{r n_tree_shrub_spp_function_interpolation, warning=FALSE, message=FALSE}
+this.sheet <- "N tree & shrub spp."
+x.axis_title <- "Proportion of appropriate Tree & Shrub Species"
+plot_data <- generate_plot_data(this.sheet, this.round, c.df, interpolation_measurements)
+```
+
+Estimated value using a linear GAM.
+
+```{r n_tree_shrub_spp_model, warning=FALSE, message=FALSE}
+# test binomial and linear GAMs
+## binomial GAM
+n_tree_shrub_spp_gam1 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = plot_data,
+  family = binomial(link = "logit")
+)
+## linear GAM
+n_tree_shrub_spp_gam2 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = plot_data,
+  family = gaussian(link = "identity")
+)
+# Compare AIC
+aic_n_tree_shrub_spp <- AIC(n_tree_shrub_spp_gam1, n_tree_shrub_spp_gam2)
+# Choose the best model based on AIC
+n_tree_shrub_spp_gam <- n_tree_shrub_spp_gam2 ####!!!!!
+# dummy data for prediction
+newdata <- data.frame(
+    measure = rep(unique(plot_data$measure), each = 1)#,
+    #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
+)
+newdata <- add_gam_predictions(n_tree_shrub_spp_gam, newdata, scale_to_100 = TRUE)
+```
+
+```{r n_tree_shrub_spp_plot, warning=FALSE, message=FALSE}
+# 5. Plot
+original_points <- c.df %>%
+  filter(sheet_name == this.sheet, round == this.round)
+ggplot() +
+  # Original data points
+  # geom_point(
+  #   data = original_points,
+  #   aes(x = measure, y = value, color = respondant_name),
+  #   alpha = 0.8, size = 0.2
+  # ) +
+  # Respondent interpolated lines
+  geom_line(
+    data = original_points,
+    aes(x = measure, y = value, color = respondant_name, group = respondant_name),
+    alpha = 0.2, size = 0.6
+  ) +
+  # Fitted overall GAM line
+  geom_line(
+    data = newdata,
+    aes(x = measure, y = value_plot),
+    color = "black", size = 1.2
+  ) +
+  scale_color_manual(values = respondant_colours) +
+  labs(
+    x = x.axis_title,
+    y = "Value",
+    color = "Respondent",
+    title = paste(this.sheet, "estimated value function")
+  ) +
+  theme_pubr()+
+  theme(legend.position = "none")
+```
+
+Look-up table
+
+```{r n_tree_shrub_spp_lookup_table, warning=FALSE, message=FALSE}
+n_tree_shrub_spp_vf_lookup <- newdata %>%
+  select(measure, value_plot) %>%
+    rename(!!x.axis_title := measure,
+           value = value_plot) %>%
+  #remove duplicates
+  distinct()
+# save lookup table as csv
+write.csv(n_tree_shrub_spp_vf_lookup, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup.csv"), row.names = FALSE)
+datatable(
+  n_tree_shrub_spp_vf_lookup %>% 
+    mutate(value = round(value, 2)),
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
+```
+
+## Invasive plants
+
+```{r invasive_plants_function_interpolation, warning=FALSE}
+this.sheet <- "Invasive plants % cover"
+x.axis_title <- "Invasive Plants % Cover"
+plot_data <- generate_plot_data(this.sheet, this.round, c.df, interpolation_measurements)
+```
+
+I first estimated value using a linear GAM, but it was influenced a lot by outlier value functions, because it kind of represents the mean value at each measure. So, experimented with a quantile GAM, tuning the quantile manually to hit the approximate median of values at key measurements along the function (10, 20 and 30% invasive cover). Nifty, if a little hack!
+
+```{r invasive_plants_model, warning=FALSE, messge=FALSE}
+# test binomial and linear GAMs
+## binomial GAM
+invasive_plants_gam1 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = plot_data,
+  family = binomial(link = "logit")
+)
+## linear GAM
+invasive_plants_gam2 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = plot_data,
+  family = gaussian(link = "identity")
+)
+## Quantile GAM
+invasive_plants_gam3 <- qgam(
+  value.dec ~ s(measure, bs = "cs", k = 10),
+  data = plot_data,
+  qu = 0.28
+  )
+# Compare AIC
+aic_invasive_plants <- AIC(invasive_plants_gam1, invasive_plants_gam2, invasive_plants_gam3)
+# Choose the best model based on AIC
+invasive_plants_gam <- invasive_plants_gam3 ####!!!!!
+# dummy data for prediction
+newdata <- data.frame(
+    measure = rep(unique(plot_data$measure), each = 1)#,
+    #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
+)
+newdata <- add_gam_predictions(invasive_plants_gam, newdata, scale_to_100 = TRUE)
+```
+
+```{r invasive_plants_plot, warning=FALSE}
+# original points
+original_points <- c.df %>%
+  filter(sheet_name == this.sheet, round == this.round) 
+# add prediction
+original_points <- original_points %>%
+  mutate(pred_value = predict(
+    invasive_plants_gam, 
+    newdata = data.frame(measure = measure), 
+    type = "response"
+    ))
+range_pred <- range(original_points$pred_value, na.rm = TRUE)
+original_points$pred_value <- (original_points$pred_value - range_pred[1]) * 100 / (range_pred[2] - range_pred[1]) 
+test_measures_considered <-  c(10, 20, 30)
   
-  # Load boot_results and weights_df from RDS files
-  boot_results <- readRDS("Data//boot_results.rds")
-  weights_df <- readRDS("Data//weights_df.rds")
-  
-  # Reactive expression for number of scenarios
-  num_scenarios_reactive <- reactive({
-    input$num_scenarios
+# pull pred down? - is value bigger than prediction?
+test_pred <- original_points [original_points$measure %in%test_measures_considered, ] # where prediction is less than value
+# table(test_pred$pred_value > test_pred$value)
+
+ggplot() +
+  # Original data points
+  # geom_point(
+  #   data = original_points,
+  #   aes(x = measure, y = value, color = respondant_name),
+  #   alpha = 0.8, size = 0.2
+  # ) +
+  # Respondent interpolated lines
+  geom_line(
+    data = original_points,
+    aes(x = measure, y = value, color = respondant_name, group = respondant_name),
+    alpha = 0.2, size = 0.6
+  ) +
+  # Fitted overall GAM line
+  geom_line(
+    data = newdata,
+    aes(x = measure, y = value_plot),
+    color = "black", size = 1.2
+  ) +
+  scale_color_manual(values = respondant_colours) +
+  labs(
+    x = x.axis_title,
+    y = "Value",
+    color = "Respondent",
+    title = paste(this.sheet, "estimated value function")
+  ) +
+  theme_pubr()+
+  theme(legend.position = "none")
+```
+
+Lookup table
+
+```{r f-make_domin_lookup, warning=FALSE}
+make_domin_lookup <- function(value_data, summary_func = median) {
+  # Define fixed DOMIN ranges
+  domin_ranges <- list(
+    "0"                  = function(x) x == 0,
+    "1: <4% few"         = function(x) x < 4,
+    "2: <4% several"     = function(x) x < 4,
+    "3: <4% many"        = function(x) x < 4,
+    "4: 4-10%"           = function(x) x >= 4 & x < 10,
+    "5: 10-25%"          = function(x) x >= 10 & x < 25,
+    "6: 25-33%"          = function(x) x >= 25 & x < 33,
+    "7: 33-50%"          = function(x) x >= 33 & x < 50,
+    "8: 50-75%"          = function(x) x >= 50 & x < 75,
+    "9: 75-90%"          = function(x) x >= 75 & x < 90,
+    "10: 90-100%"        = function(x) x >= 90
+  )
+
+  # Apply the summary function (default = median) to each DOMIN class range
+  domin_values <- sapply(names(domin_ranges), function(class) {
+    range_filter <- domin_ranges[[class]]
+    values <- value_data$value_plot[range_filter(value_data$measure)]
+    summary_func(values, na.rm = TRUE)
   })
+
+  # Return lookup table
+  data.frame(
+    domin = names(domin_ranges),
+    value = domin_values,
+    row.names = NULL
+  )
+}
+```
+
+```{r invasive_plants_lookup_table, warning=FALSE}
+invasive_plants_vf_lookup <- newdata %>%
+  select(measure, value_plot) %>%
+  mutate(value_plot = round(value_plot, 2)) 
+
+# make an alternative DOMIN class lookup table, taking the median value across the range of measurements
+invasive_plants_vf_lookup_domin <- make_domin_lookup(invasive_plants_vf_lookup, summary_func = median) %>% 
+  mutate(value = round(value, 2)) 
+
+
+invasive_plants_vf_lookup <- invasive_plants_vf_lookup %>% 
+    rename(!!x.axis_title := measure,
+           value = value_plot) %>%
+  #remove duplicates
+  distinct()
+
+# save lookup table as csv
+write.csv(invasive_plants_vf_lookup_domin, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup_domin.csv"), row.names = FALSE)
+write.csv(invasive_plants_vf_lookup, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup.csv"), row.names = FALSE)
+datatable(
+  invasive_plants_vf_lookup,
+    rownames = FALSE,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
+```
+
+DOMIN class lookup table
+
+```{r invasive_plants_lookup_table_domin, warning=FALSE}
+datatable(
+  invasive_plants_vf_lookup_domin,
+  rownames = FALSE,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
+```
+
+## Deadwood
+
+```{r deadwood_function_interpolation, warning=FALSE}
+this.sheet <- "Deadwood"
+x.axis_title <- "N Deadwood Categories"
+plot_data <- generate_plot_data(this.sheet, this.round, c.df, interpolation_measurements)
+```
+
+Estimated value using a linear GAM.
+
+```{r deadwood_model, warning=FALSE, message=FALSE}
+# test binomial and linear GAMs
+## binomial GAM
+deadwood_gam1 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = plot_data,
+  family = binomial(link = "logit")
+)
+## linear GAM
+deadwood_gam2 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = plot_data,
+  family = gaussian(link = "identity")
+)
+# Compare AIC
+aic_deadwood <- AIC(deadwood_gam1, deadwood_gam2)
+# Choose the best model based on AIC
+deadwood_gam <- deadwood_gam2 ####!!!!!
+# dummy data for prediction
+newdata <- data.frame(
+    measure = rep(unique(plot_data$measure), each = 1)#,
+    #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
+)
+newdata <- add_gam_predictions(deadwood_gam, newdata, scale_to_100 = TRUE)
+```
+
+```{r deadwood_plot, warning=FALSE}
+# 5. Plot
+original_points <- c.df %>%
+  filter(sheet_name == this.sheet, round == this.round)
+ggplot() +
+  # Original data points
+  # geom_point(
+  #   data = original_points,
+  #   aes(x = measure, y = value, color = respondant_name),
+  #   alpha = 0.8, size = 0.2
+  # ) +
+  # Respondent interpolated lines
+  geom_line(
+    data = original_points,
+    aes(x = measure, y = value, color = respondant_name, group = respondant_name),
+    alpha = 0.2, size = 0.6
+  ) +
+  # Fitted overall GAM line
+  geom_line(
+    data = newdata,
+    aes(x = measure, y = value_plot),
+    color = "black", size = 1.2
+  ) +
+  scale_color_manual(values = respondant_colours) +
+  labs(
+    x = x.axis_title,
+    y = "Value",
+    color = "Respondent",
+    title = paste(this.sheet, "estimated value function")
+  ) +
+  theme_pubr()+
+  theme(legend.position = "none")
+```
+
+Lookup table
+
+```{r deadwood_lookup_table, warning=FALSE}
+deadwood_vf_lookup <- newdata %>%
+  select(measure, value_plot) %>%
+    rename(!!x.axis_title := measure,
+           value = value_plot) %>%
+  #remove duplicates
+  distinct()
+# save lookup table as csv
+write.csv(deadwood_vf_lookup, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup.csv"), row.names = FALSE)
+datatable(
+  deadwood_vf_lookup %>% 
+    mutate(value = round(value, 2)), # round to 2 decimal places
+  rownames = FALSE,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
+```
+
+## Veteran trees
+
+```{r veteran_trees_function_interpolation, warning=FALSE}
+this.sheet <- "Veteran trees"
+x.axis_title <- "N Veteran Trees per ha"
+plot_data <- generate_plot_data(this.sheet, this.round, c.df, interpolation_measurements)
+```
+
+Initially estimated value using a linear GAM, but influenced too much by respondents who required many AVTs for good condition. So, as with invasive plants indicator above, I experimented with a quantile GAM, tuning the quantile manually to hit the approximate median of values at key measurements along the function (1, 2 and 3 AVTs per ha). This means, at least at these points, the value function is aproximately in the middle of the estimations from the respondents.
+
+```{r veteran_trees_model, warning=FALSE, message=FALSE}
+# test binomial and linear GAMs
+## binomial GAM
+veteran_trees_gam1 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = plot_data,
+  family = binomial(link = "logit")
+)
+## linear GAM
+veteran_trees_gam2 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = plot_data,
+  family = gaussian(link = "identity")
+)
+## Quantile GAM
+veteran_trees_gam3 <- qgam(
+  value.dec ~ s(measure, bs = "cs", k = 10),
+  data = plot_data,
+  qu = 0.81
+)
+
+# Compare AIC
+aic_veteran_trees <- AIC(veteran_trees_gam1, veteran_trees_gam2, veteran_trees_gam3)
+# Choose the best model based on AIC
+veteran_trees_gam <- veteran_trees_gam3 ####!!!!!
+# dummy data for prediction
+newdata <- data.frame(
+    measure = rep(unique(plot_data$measure), each = 1)#,
+    #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
+)
+newdata <- add_gam_predictions(veteran_trees_gam, newdata, scale_to_100 = TRUE)
+
+# original points
+original_points <- c.df %>%
+  filter(sheet_name == this.sheet, round == this.round) 
+# add prediction
+original_points <- original_points %>%
+  mutate(pred_value = predict(
+    veteran_trees_gam, 
+    newdata = data.frame(measure = measure), 
+    type = "response"
+    ))
+range_pred <- range(original_points$pred_value, na.rm = TRUE)
+original_points$pred_value <- (original_points$pred_value - range_pred[1]) * 100 / (range_pred[2] - range_pred[1]) 
+test_measures_considered <-  1:5
   
-  # Initialize prediction data with reactiveVal
-  prediction_data <- reactiveVal(
+# pull pred down? - is value bigger than prediction?
+test_pred <- original_points [original_points$measure %in%test_measures_considered, ] # where prediction is less than value
+# table(test_pred$pred_value > test_pred$value)
+
+# Plot
+ggplot() +
+  # Original data points
+  # geom_point(
+  #   data = original_points,
+  #   aes(x = measure, y = value, color = respondant_name),
+  #   alpha = 0.8, size = 0.2
+  # ) +
+  # Respondent interpolated lines
+  geom_line(
+    data = original_points,
+    aes(x = measure, y = value, color = respondant_name, group = respondant_name),
+    alpha = 0.2, size = 0.6
+  ) +
+  # Fitted overall GAM line
+  geom_line(
+    data = newdata,
+    aes(x = measure, y = value_plot),
+    color = "black", size = 1.2
+  ) +
+  scale_color_manual(values = respondant_colours) +
+  labs(
+    x = x.axis_title,
+    y = "Value",
+    color = "Respondent",
+    title = paste(this.sheet, "estimated value function")
+  ) +
+  theme_pubr()+
+  theme(legend.position = "none")
+```
+
+Lookup table
+
+```{r veteran_trees_lookup_table, warning=FALSE}
+veteran_trees_vf_lookup <- newdata %>%
+  select(measure, value_plot) %>%
+  mutate(measure = round(measure, 2)) %>% 
+  rename(!!x.axis_title := measure,
+           value = value_plot) %>%
+  #remove duplicates
+  distinct()
+# save lookup table as csv
+write.csv(veteran_trees_vf_lookup, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup.csv"), row.names = FALSE)
+datatable(
+  veteran_trees_vf_lookup %>% 
+    mutate(value = round(value, 2)), # round to 2 decimal places
+  rownames = FALSE,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
+```
+
+## Regen of trees & shrubs
+
+```{r regen_function_interpolation, warning=FALSE}
+this.sheet <- "Regen"
+x.axis_title <- "N Regen classes present"
+plot_data <- generate_plot_data(this.sheet, this.round, c.df, interpolation_measurements)
+```
+
+```{r regen_model, warning=FALSE, message=FALSE}
+# test binomial and linear GAMs
+## binomial GAM
+regen_gam1 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 3)  ,
+  data = plot_data,
+  family = binomial(link = "logit")
+)
+## linear GAM
+regen_gam2 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 3)  ,
+  data = plot_data,
+  family = gaussian(link = "identity")
+)
+# Compare AIC
+aic_regen <- AIC(regen_gam1, regen_gam2)
+# Choose the best model based on AIC
+regen_gam <- regen_gam2 ####!!!!!
+# dummy data for prediction
+newdata <- data.frame(
+    measure = rep(unique(plot_data$measure), each = 1)#,
+    #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
+)
+newdata <- add_gam_predictions(regen_gam, newdata, scale_to_100 = TRUE)
+
+# original points
+original_points <- c.df %>%
+  filter(sheet_name == this.sheet, round == this.round) 
+# add prediction
+original_points <- original_points %>%
+  mutate(pred_value = predict(
+    regen_gam, 
+    newdata = data.frame(measure = measure), 
+    type = "response"
+    ))
+range_pred <- range(original_points$pred_value, na.rm = TRUE)
+original_points$pred_value <- (original_points$pred_value - range_pred[1]) * 100 / (range_pred[2] - range_pred[1]) 
+test_measures_considered <-  1:3
+  
+# pull pred down? - is value bigger than prediction?
+test_pred <- original_points [original_points$measure %in%test_measures_considered, ] # where prediction is less than value
+# table(test_pred$pred_value > test_pred$value)
+
+
+```
+
+```{r regen_plot, warning=FALSE}
+# 5. Plot
+original_points <- c.df %>%
+  filter(sheet_name == this.sheet, round == this.round)
+ggplot() +
+  # Original data points
+  # geom_point(
+  #   data = original_points,
+  #   aes(x = measure, y = value, color = respondant_name),
+  #   alpha = 0.8, size = 0.2
+  # ) +
+  # Respondent interpolated lines
+  geom_line(
+    data = original_points,
+    aes(x = measure, y = value, color = respondant_name, group = respondant_name),
+    alpha = 0.2, size = 0.6
+  ) +
+  # Fitted overall GAM line
+  geom_line(
+    data = newdata,
+    aes(x = measure, y = value_plot),
+    color = "black", size = 1.2
+  ) +
+  scale_color_manual(values = respondant_colours) +
+  labs(
+    x = x.axis_title,
+    y = "Value",
+    color = "Respondent",
+    title = paste(this.sheet, "estimated value function")
+  ) +
+  theme_pubr()+
+  theme(legend.position = "none")
+```
+
+Lookup table
+
+```{r regen_lookup_table, warning=FALSE}
+regen_vf_lookup <- newdata %>%
+  select(measure, value_plot) %>%
+  mutate(measure = round(measure, 2)) %>% 
+  rename(!!x.axis_title := measure,
+           value = value_plot) %>%
+  #remove duplicates
+  distinct()
+# save lookup table as csv
+write.csv(regen_vf_lookup, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup.csv"), row.names = FALSE)
+datatable(
+  regen_vf_lookup %>% 
+    mutate(value = round(value, 2)), # round to 2 decimal places
+  rownames = FALSE,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
+```
+
+## Herbivore damage
+
+```{r herbivore_damage_function_interpolation, warning=FALSE}
+this.sheet <- "Herbivore damage"
+x.axis_title <- "Damage class: potential 12-month growth removed"
+plot_data <- generate_plot_data(this.sheet, this.round, c.df, interpolation_measurements)
+```
+
+Originally estimated value using a linear GAM, but it was influenced too much by VFs that improved condition very quickly from the highest herbivore impact. So, as with invasive plants and regen indicators above, I experimented with a quantile GAM, tuning the quantile manually to hit the approximate median of values at key measurements along the function (Classes 1, 2 and 3). This means, at least at these points, the value function is aproximately in the middle of the estimations from the respondents.
+
+```{r herbivore_damage_model, warning=FALSE, message=FALSE}
+# test binomial and linear GAMs
+## binomial GAM
+herbivore_damage_gam1 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 5)  ,
+  data = plot_data,
+  family = binomial(link = "logit")
+)
+## linear GAM
+herbivore_damage_gam2 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 5)  ,
+  data = plot_data,
+  family = gaussian(link = "identity")
+)
+## Quantile GAM
+herbivore_damage_gam3 <- qgam(
+  value.dec ~ s(measure, bs = "cs", k = 5),
+  data = plot_data,
+  qu = 0.49
+)
+
+# Compare AIC
+aic_herbivore_damage <- AIC(herbivore_damage_gam1, herbivore_damage_gam2, herbivore_damage_gam3)
+# Choose the best model based on AIC
+herbivore_damage_gam <- herbivore_damage_gam3 ####!!!!!
+# dummy data for prediction
+newdata <- data.frame(
+    measure = rep(unique(plot_data$measure), each = 1)#,
+    #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
+)
+newdata <- add_gam_predictions(herbivore_damage_gam, newdata, scale_to_100 = TRUE)
+
+# original points
+original_points <- c.df %>%
+  filter(sheet_name == this.sheet, round == this.round) 
+# add prediction
+original_points <- original_points %>%
+  mutate(pred_value = predict(
+    herbivore_damage_gam, 
+    newdata = data.frame(measure = measure), 
+    type = "response"
+    ))
+range_pred <- range(original_points$pred_value, na.rm = TRUE)
+original_points$pred_value <- (original_points$pred_value - range_pred[1]) * 100 / (range_pred[2] - range_pred[1]) 
+test_measures_considered <-  1:3
+  
+# pull pred down? - is value bigger than prediction?
+test_pred <- original_points [original_points$measure %in%test_measures_considered, ] # where prediction is less than value
+# table(test_pred$pred_value > test_pred$value)
+
+
+ggplot() +
+  # Original data points
+  # geom_point(
+  #   data = original_points,
+  #   aes(x = measure, y = value, color = respondant_name),
+  #   alpha = 0.8, size = 0.2
+  # ) +
+  # Respondent interpolated lines
+  geom_line(
+    data = original_points,
+    aes(x = measure, y = value, color = respondant_name, group = respondant_name),
+    alpha = 0.2, size = 0.6
+  ) +
+  # Fitted overall GAM line
+  geom_line(
+    data = newdata,
+    aes(x = measure, y = value_plot),
+    color = "black", size = 1.2
+  ) +
+  scale_color_manual(values = respondant_colours) +
+  labs(
+    x = x.axis_title,
+    y = "Value",
+    color = "Respondent",
+    title = paste(this.sheet, "estimated value function")
+  ) +
+  theme_pubr()+
+  theme(legend.position = "none")
+```
+
+Lookup table
+
+```{r herbivore_damage_lookup_table}
+herbivore_damage_vf_lookup <- newdata %>%
+  select(measure, value_plot) %>%
+  mutate(measure = round(measure, 2)) 
+
+herbivore_damage_vf_lookup$measure_alt <- factor(
+  herbivore_damage_vf_lookup$measure,
+  levels = 0:4,
+  labels = c("Negligable damage: <25% of palatable",
+             "Low damage: 25-75% of palatable", 
+             "Moderate damage: >75% of palatable and <25% unpalatable", 
+             "High damage: >75% of palatable and 25-75%% unpalatable",
+             "Very high damage: >75% of palatable and >75% unpalatable")
+)
+
+
+herbivore_damage_vf_lookup <- herbivore_damage_vf_lookup %>% 
+  rename('Potential 12-month growth removed'= measure,
+           value = value_plot) %>%
+  select(measure_alt, value) %>%
+  rename(!!x.axis_title := measure_alt) %>%
+  #remove duplicates
+  distinct()
+# save lookup table as csv
+write.csv(herbivore_damage_vf_lookup, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup.csv"), row.names = FALSE)
+datatable(
+  herbivore_damage_vf_lookup %>% 
+    mutate(value = round(value, 2)), # round to 2 decimal places
+  rownames = FALSE,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
+```
+
+## Tree health
+
+```{r tree_health_function_interpolation, warning=FALSE}
+this.sheet <- "Tree health"
+x.axis_title <- "Dieback or sudden mortality (%)"
+plot_data <- generate_plot_data(this.sheet, this.round, c.df, interpolation_measurements)
+```
+
+Fitted model using a quantile GAM, tuned to hit the approximate median of values at key measurements along the function (10, 20, 30 and 40% dieback or mortality). This means, at least at these measures, the value function is aproximately in the middle of the respondent estimation data.
+
+I think that bootstrapping a median and fitting a spline to that would be better, but I don't have the time to do that now.
+
+```{r tree_health_model, warning=FALSE, message=FALSE}
+# test binomial and linear GAMs
+## binomial GAM
+tree_health_gam1 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = plot_data,
+  family = binomial(link = "logit")
+)
+## linear GAM
+tree_health_gam2 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = plot_data,
+  family = gaussian(link = "identity")
+)
+## Quantile GAM
+tree_health_gam3 <- qgam(
+  value.dec ~ s(measure, bs = "cs", k = 10),
+  data = plot_data,
+  qu = 0.33
+)
+# Compare AIC
+aic_tree_health <- AIC(tree_health_gam1, tree_health_gam2, tree_health_gam3)
+# Choose the best model based on AIC
+tree_health_gam <- tree_health_gam3 ####!!!!!
+# dummy data for prediction
+newdata <- data.frame(
+    measure = rep(unique(plot_data$measure), each = 1)#,
+    #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
+)
+newdata <- add_gam_predictions(tree_health_gam, newdata, scale_to_100 = TRUE)
+# original points
+original_points <- c.df %>%
+  filter(sheet_name == this.sheet, round == this.round)
+# add prediction
+original_points <- original_points %>%
+  mutate(pred_value = predict(
+    tree_health_gam, 
+    newdata = data.frame(measure = measure), 
+    type = "response"
+    ))
+range_pred <- range(original_points$pred_value, na.rm = TRUE)
+original_points$pred_value <- (original_points$pred_value - range_pred[1]) * 100 / (range_pred[2] - range_pred[1])
+test_measures_considered <-  c(10, 20, 30, 40)
+# pull pred down? - is value bigger than prediction?
+test_pred <- original_points [original_points$measure %in%test_measures_considered, ] # where prediction is less than value
+# table(test_pred$pred_value > test_pred$value)
+
+ggplot() +
+  # Original data points
+  # geom_point(
+  #   data = original_points,
+  #   aes(x = measure, y = value, color = respondant_name),
+  #   alpha = 0.8, size = 0.2
+  # ) +
+  # Respondent interpolated lines
+  geom_line(
+    data = original_points,
+    aes(x = measure, y = value, color = respondant_name, group = respondant_name),
+    alpha = 0.2, size = 0.6
+  ) +
+  # Fitted overall GAM line
+  geom_line(
+    data = newdata,
+    aes(x = measure, y = value_plot),
+    color = "black", size = 1.2
+  ) +
+  scale_color_manual(values = respondant_colours) +
+  labs(
+    x = x.axis_title,
+    y = "Value",
+    color = "Respondent",
+    title = paste(this.sheet, "estimated value function")
+  ) +
+  theme_pubr()+
+  theme(legend.position = "none")
+```
+
+Lookup table
+
+```{r tree_health_lookup_table, warning=FALSE}
+tree_health_vf_lookup <- newdata %>%
+  select(measure, value_plot) %>%
+  mutate(measure = round(measure, 2))
+
+# make an alternative DOMIN class lookup table, taking the median value across the range of measurements
+tree_health_vf_lookup_domin <- make_domin_lookup(tree_health_vf_lookup, summary_func = median) %>% 
+  mutate(value = round(value, 2))
+
+tree_health_vf_lookup <- tree_health_vf_lookup %>% 
+  rename(!!x.axis_title := measure,
+           value = value_plot) %>%
+  #remove duplicates
+  distinct()
+# save lookup table as csv
+write.csv(tree_health_vf_lookup_domin, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup_domin.csv"), row.names = FALSE)
+write.csv(tree_health_vf_lookup, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup.csv"), row.names = FALSE)
+datatable(
+  tree_health_vf_lookup %>% 
+    mutate(value = round(value, 2)), # round to 2 decimal places
+  rownames = FALSE,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
+```
+
+DOMIN class lookup table
+
+```{r tree_health_lookup_table_domin, warning=FALSE}
+datatable(
+  tree_health_vf_lookup_domin,
+  rownames = FALSE,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
+```
+
+## Ground flora
+
+```{r ground_flora_function_interpolation, warning=FALSE}
+this.sheet <- "Ground flora"
+x.axis_title <- "% Appropraite ground flora species"
+plot_data <- generate_plot_data(this.sheet, this.round, c.df, interpolation_measurements)
+```
+
+Again used a quantile GAM, because outlier value functions requiring more species were influencing a linear estimate too much. Tuned the quantile manually to hit the approximate median of values at key measurements along the function (25, 50 and 75% appropriate species). This means, at least at these points, the value function is aproximately in the middle of the estimations from the respondents.
+
+```{r ground_flora_model, warning=FALSE, message=FALSE}
+# test binomial and linear GAMs
+## binomial GAM
+ground_flora_gam1 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = plot_data,
+  family = binomial(link = "logit")
+)
+## linear GAM
+ground_flora_gam2 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = plot_data,
+  family = gaussian(link = "identity")
+)
+## Quantile GAM
+ground_flora_gam3 <- qgam(
+  value.dec ~ s(measure, bs = "cs", k = 10),
+  data = plot_data,
+  qu = 0.51
+)
+# Compare AIC
+aic_ground_flora <- AIC(ground_flora_gam1, ground_flora_gam2, ground_flora_gam3)
+# Choose the best model based on AIC
+ground_flora_gam <- ground_flora_gam3 ####!!!!!
+# dummy data for prediction
+newdata <- data.frame(
+    measure = rep(unique(plot_data$measure), each = 1)#,
+    #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
+)
+newdata <- add_gam_predictions(ground_flora_gam, newdata, scale_to_100 = TRUE)
+# original points
+original_points <- c.df %>%
+  filter(sheet_name == this.sheet, round == this.round)
+# add prediction
+original_points <- original_points %>%
+  mutate(pred_value = predict(
+    ground_flora_gam, 
+    newdata = data.frame(measure = measure), 
+    type = "response"
+    ))
+range_pred <- range(original_points$pred_value, na.rm = TRUE)
+original_points$pred_value <- (original_points$pred_value - range_pred[1]) * 100 / (range_pred[2] - range_pred[1])
+test_measures_considered <-  c(25, 50, 75)
+# pull pred down? - is value bigger than prediction?
+test_pred <- original_points [original_points$measure %in%test_measures_considered, ] # where prediction is less than value
+# table(test_pred$pred_value > test_pred$value)
+
+ggplot() +
+  # Original data points
+  # geom_point(
+  #   data = original_points,
+  #   aes(x = measure, y = value, color = respondant_name),
+  #   alpha = 0.8, size = 0.2
+  # ) +
+  # Respondent interpolated lines
+  geom_line(
+    data = original_points,
+    aes(x = measure, y = value, color = respondant_name, group = respondant_name),
+    alpha = 0.2, size = 0.6
+  ) +
+  # Fitted overall GAM line
+  geom_line(
+    data = newdata,
+    aes(x = measure, y = value_plot),
+    color = "black", size = 1.2
+  ) +
+  scale_color_manual(values = respondant_colours) +
+  labs(
+    x = x.axis_title,
+    y = "Value",
+    color = "Respondent",
+    title = paste(this.sheet, "estimated value function")
+  ) +
+  theme_pubr()+
+  theme(legend.position = "none")
+```
+
+Lookup table
+
+```{r ground_flora_lookup_table, warning=FALSE}
+ground_flora_vf_lookup <- newdata %>%
+  select(measure, value_plot) %>%
+  mutate(measure = round(measure, 2)) %>% 
+  rename(!!x.axis_title := measure,
+           value = value_plot) %>%
+  #remove duplicates
+  distinct()
+# save lookup table as csv
+write.csv(ground_flora_vf_lookup, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup.csv"), row.names = FALSE)
+datatable(
+  ground_flora_vf_lookup %>% 
+    mutate(value = round(value, 2)), # round to 2 decimal places
+  rownames = FALSE,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
+```
+
+## Horizontal complexity
+
+```{r horizontal_complexity_function_interpolation, warning=FALSE}
+this.sheet <- "Horizontal complexity"
+x.axis_title <- "Horizontal Complexity Classes"
+plot_data <- generate_plot_data(this.sheet, this.round, c.df, interpolation_measurements) %>% 
+  #filter out all rows where measure is 0. Will add back in later
+  filter(measure != 0) 
+# scale to 0-1
+plot_data$value.dec <- plot_data$value.dec - min(plot_data$value.dec, na.rm = TRUE)
+plot_data$value.dec <- plot_data$value.dec / max(plot_data$value.dec, na.rm = TRUE)
+
+
+```
+
+Estimates trend using a linear GAM. First cut out all rows where measure is 0, so as not to affect the smooth (value was always 0 for both 0 and 1 categories), then add back in to prediction after for figure and lookup table. It just gives an option in the unlikley event that no vegetation of any height is detected.
+
+```{r horizontal_complexity_model, warning=FALSE, message=FALSE}
+# test binomial and linear GAMs
+## binomial GAM
+horizontal_complexity_gam1 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 5)  ,
+  data = plot_data,
+  family = binomial(link = "logit")
+)
+## linear GAM
+horizontal_complexity_gam2 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 4)  ,
+  data = plot_data,
+  family = gaussian(link = "identity")
+)
+## Quantile GAM
+horizontal_complexity_gam3 <- qgam(
+  value.dec ~ s(measure, bs = "cs", k = 5),
+  data = plot_data,
+  qu = 0.5
+)
+# Compare AIC
+aic_horizontal_complexity <- AIC(horizontal_complexity_gam1, horizontal_complexity_gam2, horizontal_complexity_gam3)
+# Choose the best model based on AIC
+horizontal_complexity_gam <- horizontal_complexity_gam2 ####!!!!!
+# dummy data for prediction
+newdata <- data.frame(
+    measure = rep(unique(plot_data$measure), each = 1)#,
+    #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
+)
+newdata <- add_gam_predictions(horizontal_complexity_gam, newdata, scale_to_100 = TRUE)
+# add a row with 0,0
+newdata <- bind_rows(
+  newdata,
+  data.frame(measure = 0, value_plot = 0)
+)
+# original points
+original_points <- c.df %>%
+  filter(sheet_name == this.sheet, round == this.round)
+# add prediction
+original_points <- original_points %>%
+  mutate(pred_value = predict(
+    horizontal_complexity_gam, 
+    newdata = data.frame(measure = measure), 
+    type = "response"
+    ))
+range_pred <- range(original_points$pred_value, na.rm = TRUE)
+original_points$pred_value <- (original_points$pred_value - range_pred[1]) * 100 / (range_pred[2] - range_pred[1])
+test_measures_considered <-  c( 2, 4)
+# pull pred down? - is value bigger than prediction?
+test_pred <- original_points [original_points$measure %in%test_measures_considered, ] # where prediction is less than value
+# table(test_pred$pred_value > test_pred$value)
+
+ggplot() +
+  # Original data points
+  # geom_point(
+  #   data = original_points,
+  #   aes(x = measure, y = value, color = respondant_name),
+  #   alpha = 0.8, size = 0.2
+  # ) +
+  # Respondent interpolated lines
+  geom_line(
+    data = original_points,
+    aes(x = measure, y = value, color = respondant_name, group = respondant_name),
+    alpha = 0.2, size = 0.6
+  ) +
+  # Fitted overall GAM line
+  geom_line(
+    data = newdata,
+    aes(x = measure, y = value_plot),
+    color = "black", size = 1.2
+  ) +
+  scale_color_manual(values = respondant_colours) +
+  labs(
+    x = x.axis_title,
+    y = "Value",
+    color = "Respondent",
+    title = paste(this.sheet, "estimated value function")
+  ) +
+  theme_pubr()+
+  theme(legend.position = "none")
+```
+
+Lookup table
+
+```{r horizontal_complexity_lookup_table, warning=FALSE}
+horizontal_complexity_vf_lookup <- newdata %>%
+  select(measure, value_plot) %>%
+  mutate(measure = round(measure, 2)) %>% 
+  rename(!!x.axis_title := measure,
+           value = value_plot) %>%
+  #remove duplicates
+  distinct()
+# save lookup table as csv
+write.csv(horizontal_complexity_vf_lookup, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup.csv"), row.names = FALSE)
+datatable(
+  horizontal_complexity_vf_lookup %>% 
+    mutate(value = round(value, 2)), # round to 2 decimal places
+  rownames = FALSE,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
+```
+
+## Anthropogenic damage
+
+```{r anthropogenic_damage_function_interpolation, warning=FALSE}
+this.sheet <- "Anthropogenic damage"
+x.axis_title <- "Anthropogenic Damage cover (%)"
+plot_data <- generate_plot_data(this.sheet, this.round, c.df, interpolation_measurements)
+
+```
+
+Here I used a quantile GAM again, its definitly the least reliable of the indicators and was difficult to tune (here trying to hit hte median over measures at 10, 20 and 30% cover). The linear GAM definitly gave too much weight to outlier vfs that suggested a very slow decline in value with increasing anthropogenic damage.
+
+I think bootstrapping by respondent, finding mediand and fitting a spline to that would be a good way to improve this model, but I didn't have time to implement it here.
+
+```{r anthropogenic_damage_model, warning=FALSE, message=FALSE}
+# test binomial and linear GAMs
+## binomial GAM
+anthropogenic_damage_gam1 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = plot_data,
+  family = binomial(link = "logit")
+)
+## linear GAM
+anthropogenic_damage_gam2 <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = plot_data,
+  family = gaussian(link = "identity")
+)
+## Quantile GAM
+anthropogenic_damage_gam3 <- qgam(
+  value.dec ~ s(measure, bs = "cs", k = 10),
+  data = plot_data,
+  qu = 0.2
+)
+# Compare AIC
+aic_anthropogenic_damage <- AIC(anthropogenic_damage_gam1, anthropogenic_damage_gam2, anthropogenic_damage_gam3)
+# Choose the best model based on AIC
+anthropogenic_damage_gam <- anthropogenic_damage_gam3 ####!!!!!
+# dummy data for prediction
+newdata <- data.frame(
+    measure = rep(unique(plot_data$measure), each = 1)#,
+    #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
+)
+newdata <- add_gam_predictions(anthropogenic_damage_gam, newdata, scale_to_100 = TRUE)
+# original points
+original_points <- c.df %>%
+  filter(sheet_name == this.sheet, round == this.round)
+# add prediction
+original_points <- original_points %>%
+  mutate(pred_value = predict(
+    anthropogenic_damage_gam, 
+    newdata = data.frame(measure = measure), 
+    type = "response"
+    ))
+range_pred <- range(original_points$pred_value, na.rm = TRUE)
+original_points$pred_value <- (original_points$pred_value - range_pred[1]) * 100 / (range_pred[2] - range_pred[1])
+test_measures_considered <-  c(10, 20)
+# pull pred down? - is value bigger than prediction?
+test_pred <- original_points [original_points$measure %in%test_measures_considered, ] # where prediction is less than value
+# table(test_pred$pred_value > test_pred$value)
+
+ggplot() +
+  # Original data points
+  # geom_point(
+  #   data = original_points,
+  #   aes(x = measure, y = value, color = respondant_name),
+  #   alpha = 0.8, size = 0.2
+  # ) +
+  # Respondent interpolated lines
+  geom_line(
+    data = original_points,
+    aes(x = measure, y = value, color = respondant_name, group = respondant_name),
+    alpha = 0.2, size = 0.6
+  ) +
+  # Fitted overall GAM line
+  geom_line(
+    data = newdata,
+    aes(x = measure, y = value_plot),
+    color = "black", size = 1.2
+  ) +
+  scale_color_manual(values = respondant_colours) +
+  labs(
+    x = x.axis_title,
+    y = "Value",
+    color = "Respondent",
+    title = paste(this.sheet, "estimated value function")
+  ) +
+  theme_pubr()+
+  theme(legend.position = "none")
+```
+
+Lookup table
+
+```{r anthropogenic_damage_lookup_table, warning=FALSE}
+anthropogenic_damage_vf_lookup <- newdata %>%
+  select(measure, value_plot) %>%
+  mutate(measure = round(measure, 2))
+
+# make an alternative DOMIN class lookup table, taking the median value across the range of measurements
+anthropogenic_damage_vf_lookup_domin <- make_domin_lookup(anthropogenic_damage_vf_lookup, summary_func = median) %>% 
+  mutate(value = round(value, 2))
+
+anthropogenic_damage_vf_lookup <- anthropogenic_damage_vf_lookup %>% 
+  rename(!!x.axis_title := measure,
+           value = value_plot) %>%
+  #remove duplicates
+  distinct()
+# save lookup table as csv
+write.csv(anthropogenic_damage_vf_lookup_domin, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup_domin.csv"), row.names = FALSE)
+write.csv(anthropogenic_damage_vf_lookup, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup.csv"), row.names = FALSE)
+datatable(
+  anthropogenic_damage_vf_lookup %>% 
+    mutate(value = round(value, 2)), # round to 2 decimal places
+  rownames = FALSE,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
+```
+
+DOMIN class lookup table
+
+```{r anthropogenic_damage_lookup_table_domin, warning=FALSE}
+datatable(
+  anthropogenic_damage_vf_lookup_domin,
+  rownames = FALSE,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
+```
+
+## Microhabitats
+
+The microhabitats vf was not covered in the delphi process, and instead was estimated based on the concensus expert opinion of EMcH, SH and MH.
+
+```{r microhabitats_curation, warning=FALSE}
+this.sheet <- "Microhabitats"
+x.axis_title <- "Proportion of microhabitats present (%)"
+
+# No curation just a value function based on expert opinion
+microhab_vf <- data.frame(
+  measure = seq(0,100, by = 10),
+  value = c(0, 5, 15, 30, 50, 70,
+            85, 95, 100, 100, 100) # expert opinion
+)
+microhab_vf <- microhab_vf %>%
+  mutate(value.dec = value / 100) # scale to 0-1
+
+anthropogenic_damage_gam <- gam(
+  value.dec ~ s(measure, bs = "cs", k = 10)  ,
+  data = microhab_vf,
+  family = gaussian(link = "identity")
+)
+
+# dummy data for prediction
+newdata <- data.frame(
+    measure = seq(min(microhab_vf$measure), max(microhab_vf$measure, length = 100 ))#,
+    #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
+)
+newdata <- add_gam_predictions(anthropogenic_damage_gam, newdata, scale_to_100 = TRUE)
+
+# fix all the values after the first 100 to 100
+newdata$value_plot[newdata$measure > newdata$measure[newdata$value_plot == max(newdata$value_plot)]] <- 100
+
+
+# plot
+ggplot() +
+  # Original data points
+  geom_point(
+    data = microhab_vf,
+    aes(x = measure, y = value),
+    color = "blue", size = 2
+  ) +
+  # Fitted overall GAM line
+  geom_line(
+    data = newdata,
+    aes(x = measure, y = value_plot),
+    color = "black", size = 1.2
+  ) +
+  labs(
+    x = "Microhabitats Measure (%)",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function")
+  ) +
+  theme_pubr()+
+  theme(legend.position = "none")
+
+
+```
+
+```{r microhabitats_lookup_table, warning=FALSE}
+microhab_vf_lookup <- newdata %>%
+  select(measure, value_plot) %>%
+  rename('Proportion of microhabitats present'= measure,
+           value = value_plot) %>%
+  #remove duplicates
+  distinct()
+# save lookup table as csv
+write.csv(microhab_vf_lookup, paste0("outputs\\lookup_tables\\", this.sheet, "_vf_lookup.csv"), row.names = FALSE)
+datatable(
+  microhab_vf_lookup %>% 
+    mutate(value = round(value, 2)), # round to 2 decimal places
+  rownames = FALSE,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
+```
+
+# Estimating weights
+
+The median weight for each indicator was estimated, and then scaled to be out of 100.
+
+Note that the microhabitats indicator was not included in the delphi process. Its weight was set to 100, based on expert concensus of EMcH, MH and SH, as it is considered to be of equal importance to the most important indicator.
+
+
+```{r weights_estimation, warning=FALSE, message=FALSE}
+# distill down to just one row from each indicator-respondent combination from this.round
+
+weights.df <- c.df %>%
+  filter(round == this.round) %>%
+  # filter just first for each indicator-respondent combination
+  group_by(sheet_name, respondant_name) %>%
+  slice(1) %>%
+  ungroup() %>% 
+  arrange(sheet_name, respondant_name) 
+
+# calcualte median for each indicator and scale to max 100
+weights.df_ind <- weights.df %>%
+  group_by(sheet_name) %>%
+  summarise(
+    median_weight = median(weight, na.rm = TRUE),
+    indicator_name = first(sheet_name),
+  ) %>%
+  ungroup() %>%
+  mutate(median_weight_scaled = median_weight / max(median_weight, na.rm = TRUE) * 100) %>% 
+  # remove woodland extent and add microhabitats, with a median_weight_scaled of 100
+  bind_rows(
     data.frame(
-      matrix(NA, nrow = 14, ncol = 2, dimnames = list(
-        c("Tree age distribution", "Native canopy percentage", "Vertical structure",
-          "N tree & shrub spp.", "Invasive plants % cover", "Deadwood", "Veteran trees", 
-          "Woodland extent", "Regen", "Herbivore damage", "Tree health", "Ground flora", 
-          "Horizontal complexity", "Anthropogenic damage"), 
-        paste0("Scenario ", 1:2)))
+      indicator_name = "Microhabitats",
+      median_weight = 100,
+      median_weight_scaled = 100
     )
   )
-  
-  # Update the grid based on the number of scenarios
-  observeEvent(input$update_grid, {
-    num_scenarios <- num_scenarios_reactive()
-    current_data <- prediction_data()
-    new_data <- data.frame(
-      matrix(NA, nrow = nrow(current_data), ncol = num_scenarios,
-             dimnames = list(rownames(current_data), paste0("Scenario ", 1:num_scenarios)))
-    )
-    prediction_data(new_data)
-  })
-  
-  # Render the prediction data grid
-  output$prediction_grid <- renderRHandsontable({
-    rhandsontable(prediction_data(), rowHeaders = TRUE) %>%
-      hot_cols(colWidths = 100, format = "0.0", type = "numeric") # Ensure cells are numeric
-  })
-  
-  # Update prediction data based on user edits
-  observeEvent(input$prediction_grid, {
-    new_data <- hot_to_r(input$prediction_grid)
-    prediction_data(new_data)
-  })
-  
-  # Calculate condition scores when button is clicked
-  output$condition_scores <- renderTable({
-    req(input$calculate) # Wait for the user to click calculate
-    
+```
+```{r weights_plot, warning=FALSE, message=FALSE, caption="Estimated importance weights for each indicator of woodland  condition (Black). Background coloured points show the individual respondants estiamtes, and the grey circles indicate their median. These medain scores were scaled to max 100 for the final estiamtes (black circles)"}
 
-    # Ensure the input data is not empty
-    prediction_data_current <- prediction_data()
-    
-    if (nrow(prediction_data_current) == 0) {
-      return(data.frame(Scenario = character(0), ConditionScore = numeric(0)))
-    }
-    
-    # Ensure calculation function is returning valid values
-    scores <- calculate_condition_score(prediction_data_current, boot_results, weights_df)
-    
-    if (length(scores) == 0) {
-      return(data.frame(Scenario = character(0), ConditionScore = numeric(0)))
-    }
-    
-    data.frame(Scenario = colnames(prediction_data_current), ConditionScore = round(scores, 2))
-  })
-}
+# plot weights
+## in background weights.df weights, coloured by respondant, then median, with transparency, then rescaled version over top in black
 
+ggplot()+
+  geom_point(
+    data = weights.df,
+    aes(x = sheet_name, y = weight, color = respondant_name),
+    alpha = 0.2, size = 1
+  ) +
+  geom_point(
+    data = weights.df_ind,
+    aes(x = indicator_name, y = median_weight),
+    color = "black", alpha = 0.2, size = 3
+  ) +
+  geom_point(
+    data = weights.df_ind,
+    aes(x = indicator_name, y = median_weight_scaled),
+    color = "black", size = 5
+  ) +
+  coord_flip() +
+  labs(
+    x = "Indicator",
+    y = "Weight",
+    title = paste("Importance Weights for indicators from Delphi round", this.round)
+  ) +
+  scale_color_manual(values = respondant_colours) +
+  theme_pubr() +
+  theme(legend.position = "none")
 
-# Run the application
-shinyApp(ui = ui, server = server)
+```
 
-
+Lookup table
+```{r weights_lookup_table, warning=FALSE}
+weights_lookup <- weights.df_ind %>%
+  select(indicator_name, median_weight_scaled) %>%
+  rename('Indicator' = indicator_name,
+         'Weight (scaled to max 100)' = median_weight_scaled) %>%
+  #remove duplicates
+  distinct()
+# save lookup table as csv
+write.csv(weights_lookup, paste0("outputs\\lookup_tables\\weights_lookup.csv"), row.names = FALSE)
+datatable(
+  weights_lookup %>% 
+    mutate(`Weight (scaled to max 100)` = round(`Weight (scaled to max 100)`, 2)), # round to 2 decimal places
+  rownames = FALSE,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Btip',  
+    buttons = c('copy', 'csv')
+  )
+)
 ```

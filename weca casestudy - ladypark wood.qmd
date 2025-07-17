@@ -1,0 +1,30 @@
+---
+title: "WECA Casestudy - Ladypark Wood"
+author: "Ewan McHenry"
+---
+
+```{r libraries and scripts}
+source("function-extract plot data.R")
+```
+
+This doc walks through the calculation of WECA score for each indicator at each plot, and zone level, focusing on Ladypark Wood.
+
+I have written a [function](D:/Users/Ewan McHenry/OneDrive - the Woodland Trust/WEC/Woodland-condition/function-extract plot data.R) that extracts the WECA survey info from the [field survey form]("D:\Users\Ewan McHenry\OneDrive - the Woodland Trust\WEC\Woodland-condition\Data\Field Test\Ladypark Wood, Wye valley - Non-intervention 70yrs broadleaf SSSI ASNW\WCA - Lady park wood - Field test - 12.06.2025.xlsx") and converts it to the point prior to comparison with the value function lookup tables and weightings that were calculated in [Estimating value functions and weightings - Delphi Round 2 analysis](D:/Users/Ewan McHenry/OneDrive - the Woodland Trust/WEC/Woodland-condition/Estimating value functions and weightings - Delphi Round 2 analysis.qmd).
+
+```{r extract_survey_data}
+
+appropriate_tree_path <- "Data\\Appropriate_tree_spp_list.csv"
+appropriate_flora_path <- "Data\\Appropriate_groundflora_spp_list.csv"
+high_threat_invasives_path <- "Data\\high_threat_invasives_list.csv"
+
+
+survey_data <- extract_plot_survey_data(
+  excel_sheet_folderpath = "Data\\Field Test\\Ladypark Wood, Wye valley - Non-intervention 70yrs broadleaf SSSI ASNW\\",
+  excel_sheet_filename = "WCA - Lady park wood - Field test - 12.06.2025.xlsx",
+  list_appropriate_ground_flora = read.csv(appropriate_flora_path)$species ,
+  list_appropriate_tree_spp = read.csv(appropriate_tree_path)$species ,
+  list_high_threat_invasives = read.csv(high_threat_invasives_path)$species # list of high threat invasive species, used to check if any are present in the plot data
+)
+
+
+```

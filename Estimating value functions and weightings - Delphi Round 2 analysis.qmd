@@ -4,6 +4,7 @@ author: "Ewan McHenry"
 
 format:
   html:
+    embed-resources: true
     theme: cosmo
     code-fold: true       # Enables folding
     code-summary: "Show code"  # Optional: custom label on the fold button
@@ -428,6 +429,10 @@ respondents <- c("Bob Epsom", "Dean K", "Kylie Jo-Ma")
 for (name in respondents) {
   c.df <- add_deadwood_measure_zero(c.df, name, this.sheet)
 }
+
+#multiply all deadwood measures by 16/12
+c.df <- c.df %>%
+  mutate(measure = ifelse(sheet_name == this.sheet & round == 2, measure * (16/12), measure))
 
 ```
 

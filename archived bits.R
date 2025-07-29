@@ -1,3 +1,20 @@
+# set up survey extract function
+excel_sheet_folderpath = "Data\\Field Test\\Ladypark Wood, Wye valley - Non-intervention 70yrs broadleaf SSSI ASNW\\"
+excel_sheet_filename = "WCA - Lady park wood - Field test - 12.06.2025.xlsx"
+write_plot.csv = F
+verticle_dont_contribute = c("Absent", "< 4%", "4 - 10%")
+n.deadwood_types = 4 # total number of deadwood categories - hard coded
+last.micohabitat.listed = "Heavy resinosis" # last microhabitat listed in the sheet, used to find the last row of microhabitats
+list_appropriate_ground_flora = read.csv("Data\\Appropriate_groundflora_spp_list.csv")$species 
+list_appropriate_tree_spp = read.csv("Data\\Appropriate_tree_spp_list.csv")$species 
+list_high_threat_invasives = read.csv("Data\\high_threat_invasives_list.csv")$species # list of high threat invasive species, used to check if any are present in the plot data
+herbivory_category_names = c("Low damage", "Moderate damage", "High damage", "Very high damage", "Extreme damage") # names of the herbivory categories
+domin.absent = "0% Absent" # value of absent domin, used to replace NAs in tree species counts
+avt_search_radius_m = 10
+
+
+
+
 # pull to examine
 c.df1 %>% 
   filter(sheet_name == this.sheet & round == 2, respondant_name == "Dean K") %>%

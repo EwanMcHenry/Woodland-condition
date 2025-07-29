@@ -943,6 +943,10 @@ newdata <- data.frame(
 
 newdata <- add_gam_predictions(age_structure_gam, newdata, scale_to_100 = TRUE)
 
+age_structure_predictions <- newdata %>%
+  select(measure, value_plot) %>%
+  rename(value = value_plot)
+
 original_points <- c.df %>%
   filter(sheet_name == this.sheet, round == this.round)
 
@@ -1038,6 +1042,10 @@ newdata <- data.frame(
     #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
 )
 newdata <- add_gam_predictions(native_canopy_gam, newdata, scale_to_100 = TRUE)
+
+native_canopy_predictions <- newdata %>%
+  select(measure, value_plot) %>%
+  rename(value = value_plot)
 ```
 
 ```{r native_canopy_percentage_plot, warning=FALSE}
@@ -1133,6 +1141,11 @@ newdata <- data.frame(
     #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
 )
 newdata <- add_gam_predictions(vertical_structure_gam, newdata, scale_to_100 = TRUE)
+
+vertical_structure_predictions <- newdata %>%
+  select(measure, value_plot) %>%
+  rename(value = value_plot)
+
 ```
 
 ```{r vertical_structure_plot, warning=FALSE}
@@ -1225,6 +1238,10 @@ newdata <- data.frame(
     #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
 )
 newdata <- add_gam_predictions(n_tree_shrub_spp_gam, newdata, scale_to_100 = TRUE)
+n_tree_shrub_spp_predictions <- newdata %>%
+  select(measure, value_plot) %>%
+  rename(value = value_plot)
+
 ```
 
 ```{r n_tree_shrub_spp_plot, warning=FALSE, message=FALSE}
@@ -1323,6 +1340,11 @@ newdata <- data.frame(
     #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
 )
 newdata <- add_gam_predictions(invasive_plants_gam, newdata, scale_to_100 = TRUE)
+
+invasive_plants_predictions <- newdata %>%
+  select(measure, value_plot) %>%
+  rename(value = value_plot)
+
 ```
 
 ```{r invasive_plants_plot, warning=FALSE}
@@ -1380,17 +1402,17 @@ Lookup table
 make_domin_lookup <- function(value_data, summary_func = median) {
   # Define fixed DOMIN ranges
   domin_ranges <- list(
-    "0"                  = function(x) x == 0,
-    "1: <4% few"         = function(x) x < 4,
-    "2: <4% several"     = function(x) x < 4,
-    "3: <4% many"        = function(x) x < 4,
-    "4: 4-10%"           = function(x) x >= 4 & x < 10,
-    "5: 10-25%"          = function(x) x >= 10 & x < 25,
-    "6: 25-33%"          = function(x) x >= 25 & x < 33,
-    "7: 33-50%"          = function(x) x >= 33 & x < 50,
-    "8: 50-75%"          = function(x) x >= 50 & x < 75,
-    "9: 75-90%"          = function(x) x >= 75 & x < 90,
-    "10: 90-100%"        = function(x) x >= 90
+    "0% Absent"                  = function(x) x == 0,
+    "< 4% ( Rare - 1 Few individuals)"         = function(x) x < 4,
+    "< 4% ( Rare - 2 Several individuals)"     = function(x) x < 4,
+    "< 4% ( Rare - 3 Many individuals)"        = function(x) x < 4,
+    "4 - 10% (Rare - 4)"           = function(x) x >= 4 & x < 10,
+    "10 – 25% ( Occasional - 5)"          = function(x) x >= 10 & x < 25,
+    "26 – 33% (Frequent - 6)"          = function(x) x >= 25 & x < 33,
+    "33 – 50% (Frequent - 7)"          = function(x) x >= 33 & x < 50,
+    "50 – 75% (Abundant - 8)"          = function(x) x >= 50 & x < 75,
+    "75 – 90% (Dominant - 9)"          = function(x) x >= 75 & x < 90,
+    "90 – 100% (Dominant - 10)"        = function(x) x >= 90
   )
 
   # Apply the summary function (default = median) to each DOMIN class range
@@ -1487,6 +1509,11 @@ newdata <- data.frame(
     #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
 )
 newdata <- add_gam_predictions(deadwood_gam, newdata, scale_to_100 = TRUE)
+
+deadwood_predictions <- newdata %>%
+  select(measure, value_plot) %>%
+  rename(value = value_plot)
+
 ```
 
 ```{r deadwood_plot, warning=FALSE}
@@ -1587,6 +1614,10 @@ newdata <- data.frame(
     #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
 )
 newdata <- add_gam_predictions(veteran_trees_gam, newdata, scale_to_100 = TRUE)
+
+veteran_trees_predictions <- newdata %>%
+  select(measure, value_plot) %>%
+  rename(value = value_plot)
 
 # original points
 original_points <- c.df %>%
@@ -1693,6 +1724,10 @@ newdata <- data.frame(
     #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
 )
 newdata <- add_gam_predictions(regen_gam, newdata, scale_to_100 = TRUE)
+
+regen_predictions <- newdata %>%
+  select(measure, value_plot) %>%
+  rename(value = value_plot)
 
 # original points
 original_points <- c.df %>%
@@ -1814,6 +1849,10 @@ newdata <- data.frame(
     #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
 )
 newdata <- add_gam_predictions(herbivore_damage_gam, newdata, scale_to_100 = TRUE)
+
+herbivore_damage_predictions <- newdata %>%
+  select(measure, value_plot) %>%
+  rename(value = value_plot)
 
 # original points
 original_points <- c.df %>%
@@ -1945,6 +1984,11 @@ newdata <- data.frame(
     #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
 )
 newdata <- add_gam_predictions(tree_health_gam, newdata, scale_to_100 = TRUE)
+
+tree_health_predictions <- newdata %>%
+  select(measure, value_plot) %>%
+  rename(value = value_plot)
+
 # original points
 original_points <- c.df %>%
   filter(sheet_name == this.sheet, round == this.round)
@@ -2077,6 +2121,11 @@ newdata <- data.frame(
     #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
 )
 newdata <- add_gam_predictions(ground_flora_gam, newdata, scale_to_100 = TRUE)
+
+ground_flora_predictions <- newdata %>%
+  select(measure, value_plot) %>%
+  rename(value = value_plot)
+
 # original points
 original_points <- c.df %>%
   filter(sheet_name == this.sheet, round == this.round)
@@ -2195,11 +2244,21 @@ newdata <- data.frame(
     #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
 )
 newdata <- add_gam_predictions(horizontal_complexity_gam, newdata, scale_to_100 = TRUE)
+
 # add a row with 0,0
 newdata <- bind_rows(
   newdata,
   data.frame(measure = 0, value_plot = 0)
 )
+
+newdata <- newdata %>%
+  arrange(measure) 
+
+# save predictions
+horizontal_complexity_predictions <- newdata %>%
+  select(measure, value_plot) %>%
+  rename(value = value_plot)
+
 # original points
 original_points <- c.df %>%
   filter(sheet_name == this.sheet, round == this.round)
@@ -2314,6 +2373,11 @@ newdata <- data.frame(
     #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
 )
 newdata <- add_gam_predictions(anthropogenic_damage_gam, newdata, scale_to_100 = TRUE)
+
+anthropogenic_damage_predictions <- newdata %>%
+  select(measure, value_plot) %>%
+  rename(value = value_plot)
+
 # original points
 original_points <- c.df %>%
   filter(sheet_name == this.sheet, round == this.round)
@@ -2439,6 +2503,10 @@ newdata <- add_gam_predictions(anthropogenic_damage_gam, newdata, scale_to_100 =
 # fix all the values after the first 100 to 100
 newdata$value_plot[newdata$measure > newdata$measure[newdata$value_plot == max(newdata$value_plot)]] <- 100
 
+# save predictions
+microhab_vf_predictions <- newdata %>%
+  select(measure, value_plot) %>%
+  rename(value = value_plot)
 
 # plot
 ggplot() +
@@ -2574,5 +2642,26 @@ datatable(
     dom = 'Btip',  
     buttons = c('copy', 'csv')
   )
+)
+```
+```{r save_all_value_functions, warning=FALSE}
+# save all value functions at once
+save(
+  age_structure_predictions,
+  native_canopy_predictions,
+  vertical_structure_predictions,
+  n_tree_shrub_spp_predictions,
+  invasive_plants_predictions,
+  deadwood_predictions,
+  veteran_trees_predictions,
+  regen_predictions,
+  herbivore_damage_predictions,
+  tree_health_predictions,
+  ground_flora_predictions,
+  horizontal_complexity_predictions,
+  anthropogenic_damage_predictions,
+  microhab_vf_predictions,
+  
+  file = "outputs\\all_value_functions.RData"
 )
 ```

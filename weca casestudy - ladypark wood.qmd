@@ -1,23 +1,90 @@
 ---
 title: "WECA Casestudy - Ladypark Wood"
 author: "Ewan McHenry"
+
+format:
+  html:
+    self-contained: true
+    embed-resources: true
+    theme: cosmo
+    code-fold: true       # Enables folding
+    code-summary: "Show code"  # Optional: custom label on the fold button
+    toc: true              # Optional: adds a table of contents
+    toc-depth: 2
+    toc-float: true       # Optional: makes the table of contents float on the page
 ---
-
-```{r libraries and scripts}
-source("function-extract plot data.R")
+```{=html}
+<script>
+  function toggleVisibility(id) {
+    const el = document.getElementById(id);
+    if (el.style.display === "none") {
+      el.style.display = "block";
+    } else {
+      el.style.display = "none";
+    }
+  }
+</script>
 ```
+```{r libraries and scripts, warning=F, message=F}
 
-This doc walks through the calculation of WECA score for each indicator at each plot, and zone level, focusing on Ladypark Wood.
+# LIBRARIES ---------------------------------------------------------------
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(DT)
+library(htmltools)
+library(ggpubr)
+library(U.utilities)
+library(fuzzyjoin)
+library(tidyselect)
 
-I have written a [function](D:/Users/Ewan McHenry/OneDrive - the Woodland Trust/WEC/Woodland-condition/function-extract plot data.R) that extracts the WECA survey info from the [field survey form]("D:\Users\Ewan McHenry\OneDrive - the Woodland Trust\WEC\Woodland-condition\Data\Field Test\Ladypark Wood, Wye valley - Non-intervention 70yrs broadleaf SSSI ASNW\WCA - Lady park wood - Field test - 12.06.2025.xlsx") and converts it to the point prior to comparison with the value function lookup tables and weightings that were calculated in [Estimating value functions and weightings - Delphi Round 2 analysis](D:/Users/Ewan McHenry/OneDrive - the Woodland Trust/WEC/Woodland-condition/Estimating value functions and weightings - Delphi Round 2 analysis.qmd).
-
-```{r extract_survey_data}
+source("function-extract plot data.R")
 
 appropriate_tree_path <- "Data\\Appropriate_tree_spp_list.csv"
 appropriate_flora_path <- "Data\\Appropriate_groundflora_spp_list.csv"
 high_threat_invasives_path <- "Data\\high_threat_invasives_list.csv"
 
+# Load the lookup tables
+age_lookup <- read.csv("outputs\\lookup_tables\\Tree age distribution_vf_lookup.csv")
+tree_spp_lookup <- read.csv("outputs\\lookup_tables\\N tree & shrub spp._vf_lookup.csv")
+antropogenic_damage_lookup <- read.csv("outputs\\lookup_tables\\Anthropogenic damage_vf_lookup_domin.csv")
+deadwood_lookup <- read.csv("outputs\\lookup_tables\\Deadwood_vf_lookup.csv")
+ground_flora_lookup <- read.csv("outputs\\lookup_tables\\Ground flora_vf_lookup.csv")
+Herbivore_impact_lookup <- read.csv("outputs\\lookup_tables\\Herbivore damage_vf_lookup.csv")
+Horizontal_complexity_lookup <- read.csv("outputs\\lookup_tables\\Horizontal complexity_vf_lookup.csv")
+invasives_lookup <- read.csv("outputs\\lookup_tables\\Invasive plants % cover_vf_lookup_domin.csv")
+microhabitats_lookup <- read.csv("outputs\\lookup_tables\\Microhabitats_vf_lookup.csv")
+native_canopy_lookup <- read.csv("outputs\\lookup_tables\\Native canopy percentage _vf_lookup.csv")
+regen_lookup <- read.csv("outputs\\lookup_tables\\Regen_vf_lookup.csv")
+tree_health_lookup <- read.csv("outputs\\lookup_tables\\Tree health_vf_lookup.csv")
+vertical_structure_lookup <- read.csv("outputs\\lookup_tables\\Vertical structure_vf_lookup.csv")
+veteran_trees_lookup <- read.csv("outputs\\lookup_tables\\Veteran trees_vf_lookup.csv")
 
+weights_lookup <- read.csv("outputs\\lookup_tables\\weights_lookup.csv")
+
+microhabitats_list <- read.csv("Data\\microhabitats_list.csv")
+
+# load value function predictions
+load("outputs\\all_value_functions.RData")
+```
+```{r configuration, echo=FALSE}
+
+vert_structure_categories <- data.frame(
+  index = 1:6,
+  strata = c("Ground layer (0 - 0.1m)",
+             "Field layer (0.1 - 1m)",
+             "Shrub (1 - 5m)",
+             "Lower (5 -12m)",
+             "Middle (12 -20m)",
+             "Upper (20m+)")
+  )
+```
+
+This doc walks through the calculation of WECA score for each indicator at each plot, and zone level, focusing on Ladypark Wood.
+
+I have written a [function](D:/Users/Ewan%20McHenry/OneDrive%20-%20the%20Woodland%20Trust/WEC/Woodland-condition/function-extract%20plot%20data.R) that extracts the WECA survey info from the [field survey form](%22D:\Users\Ewan%20McHenry\OneDrive%20-%20the%20Woodland%20Trust\WEC\Woodland-condition\Data\Field%20Test\Ladypark%20Wood,%20Wye%20valley%20-%20Non-intervention%2070yrs%20broadleaf%20SSSI%20ASNW\WCA%20-%20Lady%20park%20wood%20-%20Field%20test%20-%2012.06.2025.xlsx%22) and converts it to the point prior to comparison with the value function lookup tables and weightings that were produced in [Estimating value functions and weightings - Delphi Round 2 analysis](D:/Users/Ewan%20McHenry/OneDrive%20-%20the%20Woodland%20Trust/WEC/Woodland-condition/Estimating%20value%20functions%20and%20weightings%20-%20Delphi%20Round%202%20analysis.qmd).
+
+```{r extract_survey_data, message=F, warning=FALSE}
 survey_data <- extract_plot_survey_data(
   excel_sheet_folderpath = "Data\\Field Test\\Ladypark Wood, Wye valley - Non-intervention 70yrs broadleaf SSSI ASNW\\",
   excel_sheet_filename = "WCA - Lady park wood - Field test - 12.06.2025.xlsx",
@@ -25,6 +92,811 @@ survey_data <- extract_plot_survey_data(
   list_appropriate_tree_spp = read.csv(appropriate_tree_path)$species ,
   list_high_threat_invasives = read.csv(high_threat_invasives_path)$species # list of high threat invasive species, used to check if any are present in the plot data
 )
+
+
+```
+
+## Tree info
+
+At each plot and supplementary plot info was gathered on tree and shrub species present, the number in each age class and the cover of seedlings and saplings. This info is used to calulate multiple indicators, including the number of tree species, the number of age classes, the number of native species and the cover of seedlings and saplings.
+
+The survey data can be explored below
+
+```{r tree_info, results='asis'}
+
+outputs <- list()
+
+for (i in seq_along(survey_data)) {
+  section_outputs <- list()
+
+  for (df_name in c("trees_main_df", "trees_supp_df")) {
+    df <- survey_data[[i]]$trees_df[[df_name]] %>%
+      mutate(across(c(seedlings, saplings), as.character))
+
+    totals <- df %>%
+      summarise(across(c(young, semi_mature, early_mature, mature, spp_total_trees), ~ sum(.x, na.rm = TRUE))) %>%
+      mutate(tree_species = "Total", seedlings = "", saplings = "") %>%
+      select(names(df))
+
+    df_total <- bind_rows(df, totals)
+
+    section_outputs[[df_name]] <- datatable(
+      df_total,
+      caption = paste0("Tree Data - ", ifelse(df_name == "trees_main_df", "Main", "Supplementary")),
+      rownames = FALSE,
+      options = list(
+        pageLength = nrow(df_total),
+        dom = 't',
+        ordering = FALSE
+      )
+    )
+  }
+
+  # Wrap in a <details> HTML element with <summary> title
+plot_section <- tags$details(
+  tags$summary(paste("Plot", i)),
+
+  tags$details(
+    tags$summary(style = "margin-left: 1em;", "Main Plot"),
+    section_outputs$trees_main_df
+  ),
+
+  tags$details(
+    tags$summary(style = "margin-left: 1em;", "Supplementary Plot"),
+    section_outputs$trees_supp_df
+  )
+)
+
+  outputs[[i]] <- plot_section
+}
+
+# Render all collapsible plot sections
+tagList(outputs)
+```
+
+
+## Tree age structure
+
+```{r age_structure_scoring}
+
+this.sheet <- "Tree Age distribution"
+x.axis_title <- "Number of tree age classes"
+age_summary <- map_dfr(seq_along(survey_data), function(i) {
+  ind <- survey_data[[i]]$indicators
+  tibble(
+    plot = i,
+    plot_type = c("main", "supp"),
+    age_classes_n = c(ind$tree_age_classes$ind.age_classes_n.main, ind$tree_age_classes$ind.age_classes_n.supp),
+    shannon = c(ind$tree_age_classes$ind.tree_age_classes_shannon.main, ind$tree_age_classes$ind.tree_age_classes_shannon.supp) %>% round(2),
+  ) %>%
+    bind_cols(
+      bind_rows(ind$tree_age_classes$main_ages, ind$tree_age_classes$supp_ages)
+    )
+}) %>% 
+  # add corresponding value from lookup table
+  left_join(age_lookup, by = c("age_classes_n" = "N.Tree.Age.Categories")) %>% 
+  #reorder
+  select(plot, plot_type, value, age_classes_n, shannon, everything()) %>% 
+  mutate(plottype = factor(plot_type, levels = c("main", "supp")),
+         plot = factor(plot)) %>%
+  rename()
+
+
+
+
+```
+
+The mean age structure value across the zone is `r round(mean(age_summary$value, na.rm = TRUE), 2)`.
+
+Age structure value is a function of the number of different age classes present in each plot and is presented in the table below.
+
+A Shannon diversity index could be an alternative measure with which to infer value, it considers the the number of trees in each age class and the degree to which age classes might dominate.
+
+```{r age_structure_table, results='asis'}
+
+datatable(
+  age_summary %>% 
+    mutate(
+      value = round(value, 2),
+      shannon = round(shannon, 2),
+      plot = as.factor(plot),
+      plot_type = as.factor(plot_type)
+    ), 
+  rownames = FALSE,
+  caption = "Tree Age Class Summary by Plot and Subplot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE
+  )
+)
+```
+```{r age_structure_plot, warnin=FALSE, message=FALSE}
+ggplot() +
+  geom_line(
+    data = age_structure_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = 1.2
+  ) +
+  geom_point(
+    data = age_summary,
+    aes(
+      x = age_classes_n,
+      y = value,
+      colour = plot,
+      shape = plottype
+    ),
+    alpha = 0.8, 
+    size = 2,
+    position = position_jitter(width = 0.1, height = 3)
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  scale_shape_manual(values = c(16, 18)) +
+  # Axes and titles
+  labs(
+    x = x.axis_title,
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+
+## Tree species richness
+```{r tree_species_richness_scoring}
+this.sheet <- "Native tree and shrub species: proportion of appropraite present"
+x.axis_title <- "Proportion of appropriate tree/shrub species present"
+
+tree_species_summary <- map_dfr(seq_along(survey_data), function(i) {
+  ind <- survey_data[[i]]$indicators$tree_spp
+
+  # Add plot and type columns to each tibble
+  main <- ind$trees_main_spp_present %>%
+    mutate(plot = i, plot_type = "main")
+  
+  supp <- ind$trees_supp_spp_present %>%
+    mutate(plot = i, plot_type = "supp")
+
+  # Combine and pivot wider (species as columns)
+  bind_rows(main, supp) %>%
+    pivot_wider(
+      names_from = tree_species,
+      values_from = spp_total_trees,
+      values_fill = 0
+    ) %>%
+    left_join(
+      tibble(
+        plot = i,
+        plot_type = c("main", "supp"),
+        prop_of_appropriate_species = c(ind$ind.tree_spp_prop_appropriate.main, ind$ind.tree_spp_prop_appropriate.supp),
+        spp_n = c(ind$ind.tree_spp_n.main, ind$ind.tree_spp_n.supp),
+        shannon_index = round(c(ind$ind.tree_spp_shannon.main, ind$ind.tree_spp_shannon.supp), 2)
+      ),
+      by = c("plot", "plot_type")
+    )
+})
+
+# Closest match join using fuzzyjoin
+tree_species_summary_matched <- tree_species_summary %>%
+  fuzzyjoin::difference_inner_join(tree_spp_lookup,
+    by = c("spp_n" = "Proportion.of.appropriate.Tree...Shrub.Species"),
+    max_dist = Inf,
+    distance_col = "dist"
+  ) %>%
+  group_by(plot, plot_type) %>%
+  slice_min(order_by = dist, n = 1) %>%  # Keep only the closest match
+  ungroup()  %>% 
+  # replace nas with 0 for everything
+  mutate(across(where(is.numeric), ~ replace_na(.x, 0))) %>%
+  select(-dist, -Proportion.of.appropriate.Tree...Shrub.Species) %>%
+  select(plot, plot_type, value, prop_of_appropriate_species, spp_n, shannon_index, everything())  %>%
+  relocate(
+    # Move alphabetically sorted species columns to the end, after metadata
+    sort(setdiff(names(.), c("plot", "plot_type", "value", "prop_of_appropriate_species", "spp_n", "shannon_index"))),
+    .after = shannon_index
+  ) %>% 
+  mutate(
+    plot = factor(plot),
+    plot_type = factor(plot_type, levels = c("main", "supp"))
+  )
+
+```
+
+The mean tree species richness value across the zone is `r round(mean(tree_species_summary_matched$value, na.rm = TRUE), 2)`.
+
+Tree species richness value is a function of the proportion of appropriate tree and shrub species found in each plot (appropriate species lists are habitat-specific).
+
+A Shannon diversity index could be an alternative measure with which to infer value, it considers the number of trees in each species and the degree to which species might dominate.
+
+> TODO !!!!!!!!!! obviously this needs fixed
+
+
+```{r tree_species_richness_table, results='asis'}
+datatable(
+  tree_species_summary_matched %>% 
+    mutate(
+      value = round(value, 2),
+      shannon_index = round(shannon_index, 2),
+      prop_of_appropriate_species = paste(round(100*prop_of_appropriate_species, 2), "%", sep = "")
+    ) %>%
+  rename(
+    Plot = plot,
+    'Plot type' = plot_type,
+    Value = value,
+    'Percent of appropriate species' = prop_of_appropriate_species,
+    'Number of species' = spp_n,
+    'Shannon diversity' = shannon_index
+  ) ,
+  rownames = FALSE,
+  caption = "Tree Species Richness Summary by Plot and Subplot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE
+  )
+)
+```
+```{r tree_species_richness_plot, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_line(
+    data = n_tree_shrub_spp_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = 1.2
+  ) +
+  geom_point(
+    data = tree_species_summary_matched,
+    aes(
+      x = spp_n,
+      y = value,
+      colour = plot,
+      shape = plot_type
+    ),
+    alpha = 0.8, 
+    size = 2,
+    position = position_jitter(width = 0.1, height = 3)
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  scale_shape_manual(values = c(16, 18)) +
+  # Axes and titles
+  labs(
+    x = "Number of tree species",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+
+## Regen
+
+```{r regen_scoring}
+this.sheet <- "Tree & shrub regen"
+x.axis_title <- "Number of regen classes present"
+regen_summary <- map_dfr(seq_along(survey_data), function(i) {
+  ind <- survey_data[[i]]$indicators$regen
+  
+  main_classes_present <- ind$regen_species_classes.main %>%
+    select(-tree_species) %>%
+    colSums()>0
+  
+  supp_classes_present <- ind$regen_species_classes.supp %>%
+    select(-tree_species) %>%
+    colSums()>0
+  
+  # Add plot and type columns to each tibble
+  main <- main_classes_present %>%
+  tibble::enframe(name = "age_class", value = "present") %>%
+  mutate(plot = i, plot_type = "main")
+  
+  supp <- supp_classes_present %>%
+    tibble::enframe(name = "age_class", value = "present") %>%
+    mutate(plot = i, plot_type = "supp")
+
+  # Combine and pivot wider (species as columns)
+  bind_rows(main, supp) %>%
+    pivot_wider(
+      names_from = age_class,      
+      values_from = present,
+      values_fill = FALSE         
+  ) %>%
+    left_join(
+      tibble(
+        plot = i,
+        plot_type = c("main", "supp"),
+        regen_classes_n = c(ind$ind.regen_classes_n.main, ind$ind.regen_classes_n.supp)
+      ),
+      by = c("plot", "plot_type")
+    )
+}) %>% 
+  # join value
+    left_join(regen_lookup, by = c("regen_classes_n" = "N.Regen.classes.present")) %>% 
+  #reorder
+  select(plot, plot_type, value, regen_classes_n, everything()) %>% 
+  mutate(plottype = factor(plot_type, levels = c("main", "supp")),
+         plot = factor(plot)) %>% 
+  select(-plottype)
+
+
+
+```
+
+The mean regen value across the zone is `r round(mean(regen_summary$value, na.rm = TRUE), 2)`.
+
+Regen value is a function of the number of regen classes of trees or shrubs present in each plot (seedlings, saplings and young trees).
+
+```{r regen_table, results='asis'}
+datatable(
+  regen_summary %>% 
+    mutate(
+      value = round(value, 2),
+      regen_classes_n = as.character(regen_classes_n)
+    ) %>%
+    rename(
+      Plot = plot,
+      'Plot type' = plot_type,
+      Value = value,
+      'Number of regen classes' = regen_classes_n
+    ),
+  rownames = FALSE,
+  caption = "Regen Summary by Plot and Subplot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE
+  )
+)
+```
+```{r regen_plot, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_line(
+    data = regen_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = 1.2
+  ) +
+  geom_point(
+    data = regen_summary,
+    aes(
+      x = regen_classes_n,
+      y = value,
+      colour = plot,
+      shape = plot_type
+    ),
+    alpha = 0.8, 
+    size = 2,
+    position = position_jitter(width = 0.1, height = 3)
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  scale_shape_manual(values = c(16, 18)) +
+  # Axes and titles
+  labs(
+    x = "Number of regen classes",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+
+## Native canopy cover
+```{r native_canopy_cover_scoring}
+this.sheet <- "Native canopy percentage"
+x.axis_title <- "Canopy nativness (% of total canopy volume)"
+native_canopy_summary <- map_dfr(seq_along(survey_data), function(i) {
+  ind <- survey_data[[i]]$indicators$canopy_nativness
+  
+  tibble(
+    plot = i,
+    native_canopy_cover = ind$ind.nativeness.measure
+  )
+}) %>% 
+  # join value
+  left_join(native_canopy_lookup, by = c("native_canopy_cover" = "Native.Canopy.Percentage")) %>% 
+  #reorder
+  select(plot, value, native_canopy_cover) %>% 
+  mutate(plot = factor(plot)) 
+```
+
+The mean native canopy cover value across the zone is `r round(mean(native_canopy_summary$value, na.rm = TRUE), 2)`.
+
+Native canopy cover value is a function of the proportion of each plots's total canopy volume made up of UK native tree and shrub species.
+
+```{r native_canopy_cover_table, results='asis'}
+datatable(
+  native_canopy_summary %>% 
+    mutate(
+      value = round(value, 2),
+      native_canopy_cover = paste(round(native_canopy_cover, 2), "%", sep = "")
+    ) %>%
+    rename(
+      Plot = plot,
+      Value = value,
+      'Native canopy cover' = native_canopy_cover
+    ),
+  rownames = FALSE,
+  caption = "Native Canopy Cover Summary by Plot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE
+  )
+)
+```
+```{r native_canopy_cover_plot, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_line(
+    data = native_canopy_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = 1.2
+  ) +
+  geom_point(
+    data = native_canopy_summary,
+    aes(
+      x = native_canopy_cover,
+      y = value,
+      colour = plot
+    ),
+    alpha = 0.8, 
+    size = 2,
+    position = position_jitter(width = 0.1, height = 3)
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = "Native canopy cover (%)",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+
+## Vertical structure
+```{r vertical_structure_scoring}
+this.sheet <- "Vertical structure"
+x.axis_title <- "Number of vertical strata present"
+vertical_structure_summary <- map_dfr(seq_along(survey_data), function(i) {
+  ind <- survey_data[[i]]$indicators$vert_structure
+
+  # Extract stratum cover as wide format
+  cover_df <- ind$vert_structure %>%
+    as_tibble() %>%
+    # mutate(stratum = str_replace_all(stratum, " \\(.*\\)", ""),  # Remove ranges
+    #        stratum = str_replace_all(stratum, "\\s+", "_")) %>%  # Replace spaces with underscores
+    select(stratum, cover) %>%
+    pivot_wider(names_from = stratum, values_from = cover)
+
+  # Add plot number and count of strata
+  cover_df %>%
+    mutate(
+      plot = i,
+      vertical_structure_n = survey_data[[i]]$indicators$vert_structure$ind.vert_structure_n
+    ) %>%
+    select(plot, vertical_structure_n, everything())
+}) %>% 
+  # join value
+  left_join(vertical_structure_lookup, by = c("vertical_structure_n" = "N.Vertical.Structure.Categories")) %>% 
+  #reorder
+  select(plot, value, vertical_structure_n, everything()) %>% 
+  mutate(plot = factor(plot))
+```
+
+The mean vertical structure value across the zone is `r round(mean(vertical_structure_summary$value, na.rm = TRUE), 2)`.
+
+Vertical structure value is a function of the number of different vertical strata present in each plot, where the cover of that strata is ecologically significant (> 10%).
+
+```{r vertical_structure_table, results='asis'}
+datatable(
+  vertical_structure_summary %>% 
+    mutate(
+      value = round(value, 2),
+      vertical_structure_n = as.character(vertical_structure_n)
+    ) %>%
+    rename(
+      Plot = plot,
+      Value = value,
+      'Number of strata' = vertical_structure_n
+    ),
+  rownames = FALSE,
+  caption = "Vertical Structure Summary by Plot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE
+  )
+)
+```
+```{r vertical_structure_plot, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_line(
+    data = vertical_structure_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = 1.2
+  ) +
+  geom_point(
+    data = vertical_structure_summary,
+    aes(
+      x = vertical_structure_n,
+      y = value,
+      colour = plot
+    ),
+    alpha = 0.8, 
+    size = 2,
+    position = position_jitter(width = 0.1, height = 3)
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = "Number of vertical strata",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+
+## Invasive plants
+```{r invasives_scoring}
+this.sheet <- "Invasive plants"
+x.axis_title <- "Total invasive cover (%)"
+invasives_summary <- map_dfr(seq_along(survey_data), function(i) {
+  ind <- survey_data[[i]]$indicators$invasives
+  
+    # Handle the invasive_spp tibble (could be empty)
+  inv_spp_wide <- ind$invasive_spp %>%
+    # If empty, create empty tibble with columns for consistent pivoting
+    { if (nrow(.) == 0) tibble(invasive_species = character(), cover = numeric()) else . } %>%
+    mutate(invasive_species = str_replace_all(invasive_species, "\\s+", "_")) %>% # clean species names
+    select(invasive_species, cover) %>%
+    pivot_wider(names_from = invasive_species, values_from = cover, values_fill = 0)
+
+  invasive_metadata <- tibble(
+    plot = i,
+    total_invasive_domin_cover = ind$ind.invasive.total_domin,
+    high_threat_spp_present = ind$ind.invasive.high_threat_present
+  )
+
+if (ncol(inv_spp_wide) > 0) {
+  result <- bind_cols(invasive_metadata, inv_spp_wide)
+} else {
+  result <- invasive_metadata
+}
+  
+  result %>% 
+    left_join(invasives_lookup, by = c("total_invasive_domin_cover" = "domin")) %>% 
+    fuzzyjoin::difference_left_join(
+      invasive_plants_predictions,
+      by = "value",
+      max_dist = Inf,
+      distance_col = "dist"
+    ) %>%
+    # Keep only the closest match per plot
+    group_by(plot) %>%  
+    slice_min(order_by = dist, n = 1, with_ties = FALSE) %>% 
+    ungroup()  %>%
+    # Keep only one value column, here we keep value.x and drop value.y
+    select(-value.y, -dist) %>%
+    rename(value = value.x,
+           dummy_measure = measure ) %>%
+    # if high threat present, overwrite value with 0
+    mutate(value = ifelse(high_threat_spp_present, 0, value)) %>%
+    select(plot, value, total_invasive_domin_cover ,high_threat_spp_present , everything()) %>% 
+    mutate(plot = factor(plot))
+})
+```
+
+The mean invasives value across the zone is `r round(mean(invasives_summary$value, na.rm = TRUE), 2)`.
+
+Invasives value is a function of the total cover of invasive species in each plot, overwritten with a zero value if any high threat invasive species are present.
+
+```{r invasives_table, results='asis'}
+datatable(
+  invasives_summary %>% 
+    mutate(
+      value = round(value, 2),
+      total_invasive_domin_cover = total_invasive_domin_cover,
+      high_threat_spp_present = ifelse(high_threat_spp_present, "Yes", "No")
+    ) %>%
+    select(-dummy_measure) %>% # remove dummy measure column
+    rename(
+      Plot = plot,
+      Value = value,
+      'Total invasive cover' = total_invasive_domin_cover,
+      'High threat species present' = high_threat_spp_present
+    ),
+  rownames = FALSE,
+  caption = "Invasive Species Summary by Plot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE
+  )
+)
+```
+```{r invasives_plot, warning=FALSE, message=FALSE}
+
+ggplot() +
+  geom_line(
+    data = invasive_plants_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = 1.2
+  ) +
+  geom_point(
+    data = invasives_summary,
+    aes(
+      x = dummy_measure,
+      y = value,
+      colour = plot
+    ),
+    alpha = 0.8, 
+    size = 2,
+    position = position_jitter(width = 0.1, height = 3)
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = "Total invasive cover (%)",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+
+## Microhabitats
+```{r microhabitats_scoring}
+this.sheet <- "Microhabitats"
+x.axis_title <- "Proportion of microhabitats present (%)"
+
+# Microhabitats present list - cleaned unique
+all_microhabitats <- survey_data %>%
+  map(~ .x$indicators$microhabitats$microhabitats_present) %>%
+  unlist() %>%
+  str_replace_all("\\r\\n", " ") %>%
+  str_squish() %>%
+  unique() %>% 
+  sort()
+
+microhabitats_summary <- map_dfr(seq_along(survey_data), function(i) {
+  ind <- survey_data[[i]]$indicators$microhabitats
+  
+  # Clean current plot's microhabitats present
+  present_clean <- str_replace_all(ind$microhabitats_present, "\\r\\n", " ") %>% str_squish()
+  
+  # Create a logical named vector of presence/absence for all microhabitats
+  presence_logical <- setNames(all_microhabitats %in% present_clean, all_microhabitats)
+  
+  # Build summary tibble
+  base_tbl <- tibble(
+    plot = i,
+    microhabitats_prop = 100 * ind$ind.microhabitats_n  / length(microhabitats_list$microhabitat_name),
+    microhabitats_n = ind$ind.microhabitats_n
+  ) %>%
+  # Join fuzzy lookup as before
+  fuzzyjoin::difference_left_join(
+    microhabitats_lookup,
+    by = c("microhabitats_prop" = "Proportion.of.microhabitats.present"),
+    max_dist = Inf,
+    distance_col = "dist"
+  ) %>%
+  group_by(plot) %>%
+  slice_min(order_by = dist, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  select(-dist, -Proportion.of.microhabitats.present) %>%
+  select(plot, value, microhabitats_prop, microhabitats_n, everything()) %>%
+  mutate(plot = factor(plot))
+  
+  # Bind presence/absence columns
+  bind_cols(base_tbl, as_tibble(t(presence_logical)))
+})
+
+
+```
+
+The mean microhabitats value across the zone is `r round(mean(microhabitats_summary$value, na.rm = TRUE), 2)`.
+
+Microhabitats value is a function of the proportion of all possible microhabitats present in each plot.
+
+```{r microhabitats_table, results='asis'}
+datatable(
+  microhabitats_summary %>% 
+    mutate(
+      value = round(value, 2),
+      microhabitats_prop = paste(round(microhabitats_prop, 2), "%", sep = ""),
+      microhabitats_n = as.character(microhabitats_n)
+    ) %>%
+    rename(
+      Plot = plot,
+      Value = value,
+      'Microhabitats present (%)' = microhabitats_prop,
+      'Number of microhabitats' = microhabitats_n
+    ),
+  rownames = FALSE,
+  caption = "Microhabitats Summary by Plot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE
+  )
+)
+```
+```{r microhabitats_plot, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_line(
+    data = microhab_vf_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = 1.2
+  ) +
+  geom_point(
+    data = microhabitats_summary,
+    aes(
+      x = microhabitats_prop,
+      y = value,
+      colour = plot
+    ),
+    alpha = 0.8, 
+    size = 2,
+    position = position_jitter(width = 0.1, height = 3)
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = "Microhabitats present (%)",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+
+## Horizontal complexity
+```{r horizontal_complexity_scoring}
+this.sheet <- "Horizontal complexity"
+horizontal_complexity_summary <- map_dfr(seq_along(survey_data), function(i) {
+  ind <- survey_data[[i]]$indicators$horizontal_complexity
+  
+  # N stops of each top hegith catgegory
+  topheights_df <- data.frame(
+    topheight = ind$top_heights_df$topheight,
+    count = ind$top_heights_df$count
+  ) %>%
+    mutate(topheight = as.character(topheight)) # ensure topheight is character for pivoting
+  
+  
+  tibble(
+    plot = i,
+    N_topheight_cats = ind$ind.horizontal_complexity_n,
+    shannon_topheight_cats = round(ind$ind.horizontal_complexity_shannon, 2)
+  ) %>% 
+      # add col for each top height and the count for each plot
+  bind_cols(
+    ind$top_heights_df %>%
+      select(-topheight) %>%
+      pivot_wider(names_from = topheight, values_from = count, values_fill = 0)
+  ) %>%
+    
+
+}) %>% 
+  # join value
+  left_join(Horizontal_complexity_lookup, by = c("N_topheight_cats" = "Horizontal.Complexity.Classes")) %>% 
+  #reorder
+  select(plot, value, N_topheight_cats, shannon_topheight_cats) %>% 
+  mutate(plot = factor(plot)) %>% 
+
+  
 
 
 ```

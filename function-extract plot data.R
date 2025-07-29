@@ -64,11 +64,11 @@ extract_plot_survey_data <- function(
       as.numeric() + c(3, 0) 
     position.invasive.first_spp <- which(plot_data[[this.plot]] == "4. Invasive non-native species", arr.ind = TRUE) %>% 
       as.numeric() + c(2, 0) 
-    position.invasive.cover <- position.invasive.first_spp + c(0, 4)
+    position.invasive.cover <- position.invasive.first_spp + c(0, 5)
     position.vertical_structure.first_strata <- which(plot_data[[this.plot]] == "5. Vertical Structure", arr.ind = TRUE) %>% 
       as.numeric() + c(3, 0) 
     position.nativeness.measure <- which(plot_data[[this.plot]] == "6. Canopy Nativeness", arr.ind = TRUE) %>% 
-      as.numeric() + c(4, 1) 
+      as.numeric() + c(3, 1) 
     position.tree_health.dieback.measure <- which(plot_data[[this.plot]] == "7. Tree Health", arr.ind = TRUE) %>% 
       as.numeric() + c(3, 1) 
     position.tree_health.dieback.affected_species <- position.tree_health.dieback.measure + c(0, 5)
@@ -92,8 +92,8 @@ extract_plot_survey_data <- function(
     position.supp.first_tree_spp <- which(plot_data[[this.plot]] == "SUPPLEMENTARY PLOT", arr.ind = TRUE) %>% 
       as.numeric() + c(5,0 )
     
-    # this.position <- position.invasive.cover
-    # plot_data[[this.plot]][this.position[1], this.position[2]] 
+    # this.position <- position.invasive.cover # this is the position of the first invasive species in the plot data
+    # plot_data[[this.plot]][this.position[1], this.position[2]]
     
     # tree species and age ----
     ## dataframe
@@ -214,11 +214,10 @@ extract_plot_survey_data <- function(
     }
     invasive_spp <- tibble(
       invasive_species = plot_data[[this.plot]][rows4invasive, position.invasive.first_spp[2]],
-      cover = plot_data[[this.plot]][rows4invasive, position.invasive.first_spp[2] + 1][[1]],
-      cover_confidence = plot_data[[this.plot]][rows4invasive, position.invasive.first_spp[2] + 2][[1]]
+      cover = plot_data[[this.plot]][rows4invasive, position.invasive.first_spp[2] + 1][[1]]
     ) %>%
       mutate(across(everything(), ~ ifelse(is.na(.), 0, .))) %>% 
-      mutate(across(c(cover, cover_confidence), as.numeric)) %>%
+      mutate(across(c(cover), as.numeric)) %>%
       filter(invasive_species != "")
     if(n.invasive_spp.listed > 0){
       ind.invasive_list = plot_data[[this.plot]][rows4invasive, position.invasive.first_spp[2]]
@@ -246,7 +245,7 @@ extract_plot_survey_data <- function(
     ind.vert_structure_n <- sum(!is.na(vert_structures_counted))
     
     # nativeness ----
-    ind.nativeness.measure <- plot_data[[this.plot]][position.nativeness.measure[1], position.nativeness.measure[2]][[1]]
+    ind.nativeness.measure <- plot_data[[this.plot]][position.nativeness.measure[1], position.nativeness.measure[2]][[1]] %>% as.numeric()*100
     
     
     # tree health ----
@@ -362,7 +361,7 @@ extract_plot_survey_data <- function(
       as.numeric() %>% 
       ifelse(is.na(.), 0, .) # if NA, set to 0
     
-    transect_area_ha <- (avt_search_radius_m *100 + (pi * avt_search_radius_m^2))/10000 # area of the transect in ha
+    transect_area_ha <- (avt_search_radius_m*2 *100 + (pi * avt_search_radius_m^2))/10000 # area of the transect in ha
     
     ind.avt_density <- ind.avt_number / transect_area_ha # density of ancient/veteran trees per 
     

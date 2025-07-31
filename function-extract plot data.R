@@ -15,18 +15,38 @@ extract_plot_survey_data <- function(
     verticle_dont_contribute = c("Absent", "< 4%", "4 - 10%"),
     n.deadwood_types = 4, # total number of deadwood categories - hard coded
     last.micohabitat.listed = "Heavy resinosis", # last microhabitat listed in the sheet, used to find the last row of microhabitats
-    list_appropriate_ground_flora = read.csv("Data\\Appropriate_groundflora_spp_list.csv")$species ,
-    list_appropriate_tree_spp = read.csv("Data\\Appropriate_tree_spp_list.csv")$species ,
+    sheet_appropriate_ground_flora = read.csv("Data\\Appropriate_groundflora_spp_list.csv") ,
+    sheet_appropriate_tree_spp = read.csv("Data\\Appropriate_tree_spp_list.csv") ,
     list_high_threat_invasives = read.csv("Data\\high_threat_invasives_list.csv")$species, # list of high threat invasive species, used to check if any are present in the plot data
-    herbivory_category_names = c("Low damage", "Moderate damage", "High damage", "Very high damage", "Extreme damage"), # names of the herbivory categories
+    herbivory_category_names = c("Negligable damage", "Low damage", "Moderate damage", "High damage", "Very high damage"), # names of the herbivory categories, matching those in Herbivore_impact_lookup
     domin.absent = "0% Absent", # value of absent domin, used to replace NAs in tree species counts
-    avt_search_radius_m = 10
+    avt_search_radius_m = 10,
+    transect_length = 100,
+    habiat_type 
 ){
   # load data ----
   excel_sheet_path <- paste0(excel_sheet_folderpath, excel_sheet_filename)
   sheets <- excel_sheets(excel_sheet_path) 
   
-  # create a data frame for each plot that has a number
+  # select appropraite species list ----
+  
+  ## ground flora
+  if(habitat_type %in% names(sheet_appropriate_ground_flora)){
+    # if the habitat type is in the sheet, use that
+    list_appropriate_ground_flora <- sheet_appropriate_ground_flora$species.name[
+      sheet_appropriate_ground_flora[,which(names(sheet_appropriate_ground_flora) == habitat_type)] == T] 
+    list_appropriate_ground_flora <- list_appropriate_ground_flora[!is.na(list_appropriate_ground_flora)]
+  }else{stop("Habitat type not found in the appropriate ground flora sheet. Please check the habitat_type argument.")}
+  
+  ## tree species
+  if(habitat_type %in% names(sheet_appropriate_tree_spp)){
+    list_appropriate_tree_spp <- sheet_appropriate_tree_spp$species.name[
+      sheet_appropriate_tree_spp[,which(names(sheet_appropriate_tree_spp) == habitat_type)] == T] %>% 
+      #remove any containing willow that arent "willow sp." 
+      .[!grepl("willow", ., ignore.case = TRUE) | . == "willow sp."] # remove any containing willow that arent "willow sp."
+  }else{stop("Habitat type not found in the appropriate tree species sheet. Please check the habitat_type argument.")}
+    
+  # create a data frame for each plot that has a number ----
   plot_sheets <- sheets[grepl("Plot", sheets)] %>% 
     # remove that doesnt have number in it
     .[!grepl("Blank", .)]
@@ -39,7 +59,7 @@ extract_plot_survey_data <- function(
   # Loop over all plots wanted ----
   these.plots <- 1:length(plot_sheets) # all plots
   survey_data <- list() # create a list to store the survey data for each plot
-  for(this.plot in these.plots){
+  for(this.plot in these.plots){ # test: this.plot <- 1
     # write plot data if wanted ---- 
     if(write_plot.csv == T){
       write.csv(plot_data[[this.plot]], paste0(excel_sheet_folderpath, "plot", this.plot, ".csv"), row.names = FALSE)
@@ -153,15 +173,36 @@ extract_plot_survey_data <- function(
       select(tree_species, spp_total_trees)
     
     ## Calculate indicator measurments
+    trees_main_df_willowed <- trees_main_df %>%
+      mutate(tree_species = ifelse(str_detect(tree_species, regex("willow", ignore_case = TRUE)), "willow sp.", tree_species)) # replace any tree species containing "willow" with "willow sp."
+    
     ### n species
     ind.tree_spp_n.main <- sum(trees_main_df$spp_total_trees>0) 
     ind.tree_spp_n.supp <- sum(trees_supp_df$spp_total_trees>0)
     ### shannon diversity index for each plot - tree species
     ind.tree_spp_shannon.main <- vegan::diversity(trees_main_df$spp_total_trees, index = "shannon")
     ind.tree_spp_shannon.supp <- vegan::diversity(trees_supp_df$spp_total_trees, index = "shannon")
+    
+    ind.tree_spp_shannon_appropriate.main <- vegan::diversity(trees_main_df$spp_total_trees[
+      tolower(trees_main_df$tree_species) %in% tolower(list_appropriate_tree_spp)], index = "shannon")
+    ind.tree_spp_shannon_appropriate.supp <- vegan::diversity(trees_supp_df$spp_total_trees[
+      tolower(trees_supp_df$tree_species) %in% tolower(list_appropriate_tree_spp)], index = "shannon")
     ### proportion of appropriate tree species
-    ind.tree_spp_prop_appropriate.main <- sum(tolower(trees_main_df$tree_species) %in% tolower(list_appropriate_tree_spp)) / length(list_appropriate_tree_spp)
-    ind.tree_spp_prop_appropriate.supp <- sum(tolower(trees_supp_df$tree_species) %in% tolower(list_appropriate_tree_spp)) / length(list_appropriate_tree_spp)
+    #### first create a list of spp replace any tree species here containing "willow" with "willow sp." for consistency
+    main_willowed_list <- ifelse(
+      str_detect(trees_main_df$tree_species, regex("willow", ignore_case = TRUE)),
+      "willow sp.",
+      trees_main_df$tree_species
+    ) %>% unique()
+    supp_willowed_list <- ifelse(
+      str_detect(trees_supp_df$tree_species, regex("willow", ignore_case = TRUE)),
+      "willow sp.",
+      trees_supp_df$tree_species
+    ) %>% unique()
+    ind.tree_spp_N_appropriate.main <- sum(tolower(main_willowed_list) %in% tolower(list_appropriate_tree_spp))
+    ind.tree_spp_N_appropriate.supp <- sum(tolower(supp_willowed_list) %in% tolower(list_appropriate_tree_spp))
+    ind.tree_spp_prop_appropriate.main <- sum(tolower(main_willowed_list) %in% tolower(list_appropriate_tree_spp)) / length(list_appropriate_tree_spp)
+    ind.tree_spp_prop_appropriate.supp <- sum(tolower(supp_willowed_list) %in% tolower(list_appropriate_tree_spp)) / length(list_appropriate_tree_spp)
     
     ### age classes
     main_ages <- trees_main_df %>% 
@@ -299,6 +340,7 @@ extract_plot_survey_data <- function(
     ) %>% 
       filter(!is.na(cover) & !is.na(groundflora_species) & groundflora_species != "" )
     ind.groundflora_n <- nrow(ground_flora_df) # number of ground flora species
+    
     ind.groundflora_prop_listed <- sum(
       tolower(ground_flora_df$groundflora_species) %in% tolower(list_appropriate_ground_flora)
     ) / length(list_appropriate_ground_flora)  
@@ -361,8 +403,8 @@ extract_plot_survey_data <- function(
       as.numeric() %>% 
       ifelse(is.na(.), 0, .) # if NA, set to 0
     
-    transect_area_ha <- (avt_search_radius_m*2 *100 + (pi * avt_search_radius_m^2))/10000 # area of the transect in ha
-    
+    transect_area_ha <- (avt_search_radius_m*2 *transect_length + (pi * avt_search_radius_m^2))/10000 # area of the transect in ha
+
     ind.avt_density <- ind.avt_number / transect_area_ha # density of ancient/veteran trees per 
     
     
@@ -374,7 +416,10 @@ extract_plot_survey_data <- function(
         zone = zone,
         plot = plot,
         surveyor = surveyor,
-        time_taken = time_taken
+        time_taken = time_taken,
+        habiat_type = habitat_type %>% 
+          # repalce _ with space
+          gsub("_", " ", .) 
       ),
       
       trees_df = list(
@@ -385,14 +430,19 @@ extract_plot_survey_data <- function(
       indicators = list(
         
         tree_spp = list(
+          ind.tree_spp_N_appropriate.main = ind.tree_spp_N_appropriate.main,
+          ind.tree_spp_N_appropriate.supp = ind.tree_spp_N_appropriate.supp,
           ind.tree_spp_n.main = ind.tree_spp_n.main,
           ind.tree_spp_n.supp = ind.tree_spp_n.supp,
           ind.tree_spp_shannon.main = ind.tree_spp_shannon.main,
           ind.tree_spp_shannon.supp = ind.tree_spp_shannon.supp,
+          ind.tree_spp_shannon_appropriate.main = ind.tree_spp_shannon_appropriate.main,
+          ind.tree_spp_shannon_appropriate.supp = ind.tree_spp_shannon_appropriate.supp,
           ind.tree_spp_prop_appropriate.main = ind.tree_spp_prop_appropriate.main,
           ind.tree_spp_prop_appropriate.supp = ind.tree_spp_prop_appropriate.supp,
           trees_main_spp_present = trees_main_spp_present,
-          trees_supp_spp_present = trees_supp_spp_present
+          trees_supp_spp_present = trees_supp_spp_present,
+          list_appropriate_tree_spp = list_appropriate_tree_spp # list of appropriate tree species
         ),
         tree_age_classes = list(
           ind.age_classes_n.main = ind.age_classes_n.main,
@@ -449,7 +499,8 @@ extract_plot_survey_data <- function(
           ground_flora_df = ground_flora_df,
           ind.groundflora_n = ind.groundflora_n, # number of ground flora species in plot
           ground_flora.not_counting = ground_flora.not_counting, # ground flora species not in the appropriate list
-          ind.groundflora_prop_listed = ind.groundflora_prop_listed # proportion of ground flora species listed in the appropriate list
+          ind.groundflora_prop_listed = ind.groundflora_prop_listed, # proportion of ground flora species listed in the appropriate list
+          appropriate_ground_flora = list_appropriate_ground_flora # list of appropriate ground flora species
         ),
         
         herbivore_impact = list(

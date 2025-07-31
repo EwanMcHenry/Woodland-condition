@@ -3,3 +3,5 @@ boot_results.rds
 old condition data
 weights_df.rds
 Field Test
+Appropriate_groundflora_spp_list.csv
+Appropriate_tree_spp_list.csv

@@ -22,7 +22,7 @@ extract_plot_survey_data <- function(
     domin.absent = "0% Absent", # value of absent domin, used to replace NAs in tree species counts
     avt_search_radius_m = 10,
     transect_length = 100,
-    habiat_type 
+    habitat_type 
 ){
   # load data ----
   excel_sheet_path <- paste0(excel_sheet_folderpath, excel_sheet_filename)
@@ -343,7 +343,9 @@ extract_plot_survey_data <- function(
     
     ind.groundflora_prop_listed <- sum(
       tolower(ground_flora_df$groundflora_species) %in% tolower(list_appropriate_ground_flora)
-    ) / length(list_appropriate_ground_flora)  
+    ) / length(list_appropriate_ground_flora) 
+    ind.approp_groundflora_names_listed <- ground_flora_df$groundflora_species[
+      tolower(ground_flora_df$groundflora_species) %in% tolower(list_appropriate_ground_flora)] # ground flora species in the appropriate list
     ground_flora.not_counting <- ground_flora_df$groundflora_species[!tolower(ground_flora_df$groundflora_species) %in% tolower(list_appropriate_ground_flora)] # ground flora species not in the appropriate list
     
     # herbivore impact ----
@@ -417,7 +419,7 @@ extract_plot_survey_data <- function(
         plot = plot,
         surveyor = surveyor,
         time_taken = time_taken,
-        habiat_type = habitat_type %>% 
+        habitat_type = habitat_type %>% 
           # repalce _ with space
           gsub("_", " ", .) 
       ),
@@ -498,6 +500,7 @@ extract_plot_survey_data <- function(
         ground_flora = list(
           ground_flora_df = ground_flora_df,
           ind.groundflora_n = ind.groundflora_n, # number of ground flora species in plot
+          ind.approp_groundflora_names_listed = ind.approp_groundflora_names_listed, # ground flora species in the appropriate list
           ground_flora.not_counting = ground_flora.not_counting, # ground flora species not in the appropriate list
           ind.groundflora_prop_listed = ind.groundflora_prop_listed, # proportion of ground flora species listed in the appropriate list
           appropriate_ground_flora = list_appropriate_ground_flora # list of appropriate ground flora species

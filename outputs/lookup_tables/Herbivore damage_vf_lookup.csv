@@ -1,6 +1,6 @@
 "Damage class: potential 12-month growth removed","value"
-"Negligable damage: <25% of palatable",0
-"Low damage: 25-75% of palatable",15.5440591367947
+"Very high damage: >75% of palatable and >75% unpalatable",0
+"High damage: >75% of palatable and 25-75%% unpalatable",15.5440591367947
 "Moderate damage: >75% of palatable and <25% unpalatable",37.5078370499764
-"High damage: >75% of palatable and 25-75%% unpalatable",68.4342048982683
-"Very high damage: >75% of palatable and >75% unpalatable",100
+"Low damage: 25-75% of palatable",68.4342048982683
+"Negligable damage: <25% of palatable",100

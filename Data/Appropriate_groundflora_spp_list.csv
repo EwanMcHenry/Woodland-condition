@@ -1,13 +1,58 @@
-species
-bracken
-bramble
-buckler fern
-grass
-hart's tongue fern
-honeysuckle
-lady fern
-male fern
-moss
-shield fern
-spurge laurel
-wood spurge
+species name,scientific_name,acidic_upland,base_rich_upland,wet_upland,acidic_lowland,base_rich_lowland,wet_lowland,Checked,Changes,Notes
+"Archangel, yellow",Lamium galeobdolon,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,,,
+Bilberry / blaeberry,Vaccinium myrtillus,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,,added '/ blaeberry',
+Bluebell (English),Hyacinthoides non-scripta,TRUE,TRUE,FALSE,TRUE,TRUE,FALSE,,added '(English)',
+Bracken,Pteridium aquilinum,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,,,"Negative indicator - Low ecological value, can be invasive and reduce diversity"
+Bramble sp.,Rubus fruticosus agg.,TRUE,TRUE,FALSE,TRUE,TRUE,FALSE,,,High ecologcial value but can be detrimental if overdominant
+"Bryony, black ",Dioscorea communis,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,,,
+"Bryony, white",Bryonia dioica,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,,,"Native to southern and central England, and only found on open rideside edges, only weakly associated with woodland"
+Bugle,Ajuga reptans,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,,,"Not included in TSH lowlands, but this is probably the woodland community that it is most stronly associated with. Particularly ancient woodland? Added into both acidic and base-rich."
+Butcher's broom,Ruscus aculeatus,FALSE,FALSE,FALSE,TRUE,TRUE,FALSE,,,"In the TSH as acidic lowland, however Stace's New Flora of the British Isles cites - typically occurring in woodland habitats with neutral to mildly alkaline soils, often on calcareous or base-rich substrates. It is described as a species favouring shady, base-rich woodland floors rather than acidic conditions. Also backed up in Rose (Wild flower key) and Rodwell - Plant communities"
+"Campion, red",Silene dioica,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,,,Follows TSH
+"Celendine, lesser",Ranunculus ficaria agg.,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,,,It is an appropriate species in all the woodland communities except perhaps acidic upland (generally too nutrient-poor and acidic) even though not included in any of the TSH. However it is quite ephemeral to early spring after which it becomes undetectable. So ommitted on this basis.
+Cleavers,Galium aparine,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,,,"Excluded as appropriate as not in TSH, and ruderal species indicative of disturbance."
+Climbing corddalis,Ceratocapnos claviculata,TRUE,FALSE,FALSE,TRUE,FALSE,TRUE,,Added 29th July,"Missed off previously. In TSH, distinctive not easily confused, but delicate, easily overlooked (seen at Glen Finglas in the open SB area), a good indicator of upland ancient woodland / wood pasture"
+Cowberry,Vaccinium vitis-idaea,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,,Added mid-July,Follows TSH
+Cow parsley,Anthriscus sylvestris,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,,Added 29th July,Only added to exclude eben thopught it is listed in TSH for base-rich habiats it is ruderal and more commong in disturbed ridesides
+Cow-wheat sp.,Melampyrum pratense,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,,,Follows TSH
+Creeping ladies tresses,Goodyera repens,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,,Added 29th July,"Not listed in TSH, but strongly associated with high quality undisturbed Caldedonian pinewoods, whilst flowers in the summer it has evergreen year-round leaves."
+"Currant, red / black / downy",Ribes sp.,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,,added '/ downy' ,"Only red currant is listed in TSH, but both black & downy are lised as Woodland Specialist by Kirby, and they are challeging to tell apart. "
+"Daffodil, wild",Narcissus pseudonarcissus,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,, ,"It is a woodland specialist, but could easily be confused with cultivated daffodils, and it is not in the TSH"
+Dog's Mercury,Mercurialis perennis,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,,,Follows TSH
+Enchanter's nightshade,Circaea lutetiana,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,,,Follows TSH
+"Fern, broad-buckler sp.",Dryopteris sp. (Broad-buckler),TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,,,"Follows TSH. All BBF grouped as high level of expertise needed to ID to species. Sometimes associated with disturbance mwhere it can overdominate but included as fronds create shaded, humid microhabitats that support moisture-loving invertebrates and provides shelter for small invertebrates and amphibians. It indicates stable, long-established woodland habitats and good ecological condition."
+"Fern, hard",Blechnum spicant,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,,,Follows TSH except inclusion in acidic lowland where it is also commonly found
+"Fern, hard shield",Polystichum aculeatum,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,,,"Not in TSH, but on the woodland specialist list (Kirby) - Possibly could combine with Soft shield fern and just absorb cross-over of habiat types and save the ID to species level."
+"Fern, hart's tongue",Asplenium scolopendrium,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,,,"Not in TSH, but on the woodland specialist list (Kirby) - Easy ID - Most appropriate on base-rich soils, and also found in wet woodland where well drained, but humid, and shady."
+"Fern, lady",Athyrium filix-femina,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,,,"Only on the TSH for base-rich upland, but it is one of the few fern species that can legitimately occur across all woodland types, provided there is enough moisture and shade"
+"Fern, male sp.",Dryopteris sp. (Male),TRUE,TRUE,FALSE,TRUE,TRUE,FALSE,,,Widespread and common. Not on the TSH wet woodland types.
+"Fern, polypody sp.",Polypodium sp.,TRUE,TRUE,FALSE,TRUE,TRUE,FALSE,,,"Not in TSH. Indicator of old woodland continuity and natural woodland edges, typical of ancient, rocky and undisturbed woodlands. Species are often hard to separate in the field and have similar ecological roles so grouped under 'sp.'"
+"Fern, royal",Osmunda regalis ,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,,,"Strongly associated with constantly damp, acidic, nutrient-poor conditions.Typically found in wet woodland (especially alder carr), wooded valley mires, stream edges, flushes, and wet heath–woodland transitions. Requires permanently moist soils, often peaty, and some shelter from strong sun and wind. 
+Often present in ancient, undisturbed wet woodlands in the west and north, and sometimes in the New Forest, Cornwall and Devon."
+"Fern, soft shield",Polystichum setiferum,FALSE,FALSE,FALSE,FALSE,TRUE,TRUE,,,"Not in TSH, but on the woodland specialist list (Kirby) - Possibly could combine with Hard shield fern and just absorb cross-over of habiat types and save the ID to species level."
+Figwort,Scrophularia nodosa,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,,,"Not in TSH, but common in woodland, particulaly ride sides, quite distinctive and easy to ID. Native plant supporting a range of pollinators. Indicative of dynamism, not necessarily antiquity."
+Foxglove,Digitalis purpurea,TRUE,TRUE,FALSE,TRUE,TRUE,FALSE,,,Follows TSH - Easy ID - Pioneer species in disturbed or regenerating woodland habitats.
+Goldenrod,Solidago virgaurea,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,,,Follows TSH - Easy ID - Prefers open woodland condition 
+Grass sp.,,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,,,"Difficult to ID to genus and species for the general practitioner. Included in species list so that a DOMIN score can be given to indicate over dominance. Some grasses are native and valuable indicators, others are disturbance-tolerant and competitive, and many are ambiguous or low diagnostic value. "
+Ground ivy,Glechoma hederacea,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,,,Follows TSH - Stongly associated with base-rich to neutral soils
+Heather,Calluna vulgaris,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,,,"Follows TSH - Keystone species of acidic heath-woodland mosaics, supporting a range of specialist invertebrates, especially moths, bees, and spiders"
+Herb Paris,Paris quadrifolia,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,,,"Follows TSH - Strongly associated with ancient, undisturbed woodland on moist, base-rich, or neutral soils, Indicator of good woodland ecological condition and continuity. Uncommon but ecologically valuable"
+Herb Robert,Geranium robertianum,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,,,"Follows TSH - Found in a wide range of habitats, but especially frequent in woodlands, hedgebanks, rocky areas, and shady disturbed ground. Occurs in both lowland and upland, and from acidic to base-rich soils, but prefers base-rich."
+Honeysuckle,Lonicera periclymenum,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,,"In TSH  only on AU, AL and WL, but occurs widely tolerating a wide range of soils and a woodland specialist - Hugely ecologically important as nectar and berry source, and increases structural diversity."
+Ivy,Hedera helix,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,,,Follows TSH - A woodland generalist (Kirby) but like honeysuckle has a very high wildlife value
+Lichen - crustose (crusty),,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,,,"Occur across all woodland types, but species-level identification is needed to evaluate ecological value"
+Lichen - foliose (leafy),,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,,,"Include foliose lichens as a functional group in all woodland habitat types, many are strongly associated with woodland ecological continuity, they are widely distributed, and ecologically valuable, supporting high invertebrate diversity, including micro-moths, springtails, and spiders."
+Lichen - fruticose (shrubby),,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,,,"Include foliose lichens as a functional group in all woodland habitat types, sensitive indicators of long woodland continuity, support diverse invertebrate communities, especially moths, beetles, mites, and spiders"
+Lily of the valley,Convallaria majalis,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,,,"Rare, and confined to really only base-rich lowland, sometimes in BRU. Not easily distinguishable from garden escapees / cultivated varieties"
+Liverwort (green),,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,,,"Could include as a functional group in WU and WL, but ruderal species are potentially not ecologically indicative and would not be appropriate"
+Liverwort (brown),,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,,,"Strongly associated with ancient, humid, or lightly managed woodland, and Atlantic upland. One of the indicators in the RRA."
+Lords-and-ladies,Arum maculatum,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,,,Follows TSH
+Marsh-marigold,Caltha palustris,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,,,Follows TSH - Can be found in base-rich woodlands but needs a wetland hydrology so restrict only to wet woodland
+Meadowsweet,Filipendula ulmaria,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,,,Follows TSH with addition og BRL as often found here and has a widespread UK distibution - Good contribution ecologically
+"Melick, wood",Melica uniflora,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,,,Follows TSH - Southern and central distribution
+"Millet, wood ",Milium effusum,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,,,Not in TSH but strongly associated with ancient woodland and base-rich soils
+Moschatel,Adoxa moschatellina,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,,,"In TSH only listed in WU and WL, but whilst it does favour damper soils, it doesn't tolerate waterlogging. It is associated with base-rich woodlands W8 in lowlands and W9 in the uplands, and is fairly widespread across the UK."
+Moss sp.,,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,,,"Difficult to ID to genus and species for the general practitioner. Included in species list so that a DOMIN score can be given to indicate over dominance. Some mosses are valuable indicators, others are disturbance-tolerant and competitive, and many are ambiguous or low diagnostic value. "
+Nettle,Urtica dioica,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,,,"It is in TSH lists for WU and WL, and although it is valaubale as a food plant it ishighly indicative of disturbance and eutophication. Excluded as a ecological indicator. Useful to capture it, and it's DOMIN though, especially as it is so recognisable and easy to see across a plot."
+Nettle-leaved bellflower,Campanula trachelium,,,,,,,,,
+Old man's beard (Clematis alba),Clematis vitalba,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,,,"Can be 'invasive' if over dominant, but a good for woodland structure. In the TSH in BRL"

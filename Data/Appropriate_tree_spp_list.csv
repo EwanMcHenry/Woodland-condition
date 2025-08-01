@@ -1,125 +1,57 @@
-species
-"acacia, false (robinia)"
-alder buckthorn
-"alder, common"
-"alder, grey"
-"alder, italian"
-"apple, crab / wild"
-ash
-aspen
-azalea
-barberry
-"beech, common"
-"beech, southern  (nothofagus sp.)"
-"birch, downy"
-"birch, silver"
-blackthorn
-box
-broom
-"bryony, black"
-"bryony, white"
-buddleja
-"buckthorn, purging"
-cedar sp.
-"cedar, western red"
-"cherry, bird"
-"cherry, wild"
-"chestnut, horse"
-"chestnut, sweet"
-clematis alba
-cotoneaster
-"cypress, lawson"
-"cypress, leyland"
-cypress sp.
-dogwood
-elder
-"elm, english"
-elm spp.
-"elm, wych"
-eucalyptus sp.
-"fir, douglas"
-"fir, grand"
-"fir, noble"
-"fir, silver"
-"fir, sp."
-foxglove tree
-gorse
-guelder rose
-"hawthorn, may"
-"hawthorn, midland"
-hazel
-"hemlock, western"
-holly
-hornbeam
-ivy
-juniper
-"larch, european"
-"larch, hybrid"
-"larch, japanese"
-"larch, sp."
-"laurel, cherry"
-"laurel, portugal"
-"lime, common"
-"lime, large-leaved"
-"lime, small-leaved"
-"maple, field"
-"maple, norway"
-"maple, silver"
-maple sp.
-"oak, holm"
-"oak, pedunculate"
-"oak, red"
-"oak, sessile"
-oak.sp.
-"oak, turkey"
-"pear, wild"
-"pine, corscian"
-"pine, lodgeole"
-"pine, maritime"
-"pine, scots"
-pine sp.
-"plane, london"
-"plum, wild"
-"poplar, black"
-"poplar, hybrid"
-"poplar, grey"
-"poplar, lombardy"
-poplar sp.
-"poplar, white"
-"privet, wild"
-"redwood, coast"
-"redwood, giant (sequoia)"
-"rhododendron, ponticum"
-"rhododendron, other"
-"rose, dog"
-"rose, field"
-rowan
-snowberry
-spindle
-"spruce, norway"
-"spruce, sitka"
-spruce sp.
-sycamore
-tree-of-heaven
-tulip tree
-"walnut, black"
-"walnut, common"
-wayfaring tree
-whitebeam
-wild service tree
-"willow, almond"
-"willow, bay"
-"willow, crack"
-"willow, dark-leaved"
-"willow, eared"
-"willow, goat"
-"willow, grey"
-"willow, osier"
-"willow, purple"
-willow sp.
-"willow, tea-leaved"
-"willow, white"
-yew
-zelkova sp.
-unidentified
-unlisted (record in note field)
+species name,acidic_upland,base_rich_upland,wet_upland,acidic_lowland,base_rich_lowland,wet_lowland,Checked
+alder buckthorn,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Yes
+"alder, common",FALSE,TRUE,TRUE,FALSE,FALSE,TRUE,Yes
+"apple, crab / wild",FALSE,FALSE,FALSE,TRUE,TRUE,FALSE,Yes
+ash,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,Yes
+aspen,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,Yes
+barberry,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Yes
+"beech, common",FALSE,FALSE,FALSE,TRUE,TRUE,FALSE,Yes
+"birch, downy",TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,Yes
+"birch, silver",FALSE,TRUE,FALSE,TRUE,TRUE,FALSE,Yes
+birch sp.,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,Yes
+blackthorn,FALSE,TRUE,FALSE,TRUE,TRUE,FALSE,Yes
+box,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Yes
+broom,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,Yes
+"buckthorn, purging",FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Yes
+"cherry, bird",FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Yes
+"cherry, wild",FALSE,FALSE,FALSE,TRUE,TRUE,FALSE,Yes
+dogwood,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,Yes
+elder,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,Yes
+"elm, english",FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Yes
+elm sp.,FALSE,TRUE,TRUE,FALSE,FALSE,FALSE,Yes
+"elm, wych",FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,Yes
+gorse,TRUE,FALSE,FALSE,TRUE,FALSE,FALSE,Yes
+guelder rose,FALSE,FALSE,FALSE,TRUE,TRUE,FALSE,Yes
+"hawthorn, may",TRUE,TRUE,FALSE,TRUE,TRUE,FALSE,Yes
+"hawthorn, midland",FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Yes
+hazel,TRUE,TRUE,FALSE,TRUE,TRUE,FALSE,Yes
+holly,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,Yes
+hornbeam,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Yes
+juniper,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Yes
+"lime, large-leaved",FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Yes
+"lime, small-leaved",FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Yes
+"maple, field",FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,Yes
+"oak, pedunculate",FALSE,FALSE,FALSE,TRUE,TRUE,TRUE,Yes
+"oak, sessile",TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,Yes
+"pear, wild",FALSE,FALSE,FALSE,TRUE,TRUE,FALSE,Yes
+"pine, scots",TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,Yes
+"poplar, black",FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Yes
+"privet, wild",FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,Yes
+rowan,TRUE,TRUE,FALSE,TRUE,TRUE,FALSE,Yes
+spindle,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,Yes
+sycamore,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Yes
+wayfaring tree,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Yes
+whitebeam,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Yes
+wild service tree,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,Yes
+"willow, bay",FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
+"willow, crack",FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,
+"willow, dark-leaved",FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
+"willow, eared",FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
+"willow, goat",TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,
+"willow, grey",TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,
+"willow, osier",FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,
+"willow, purple",FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
+willow sp.,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,
+"willow, tea-leaved",FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,
+"willow, white",FALSE,FALSE,FALSE,FALSE,FALSE,TRUE,
+yew,FALSE,FALSE,FALSE,FALSE,TRUE,FALSE,Yes

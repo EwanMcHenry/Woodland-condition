@@ -254,7 +254,7 @@ extract_plot_survey_data <- function(
       rows4invasive <- position.invasive.first_spp[1]:(position.invasive.first_spp[1]+n.invasive_spp.listed-1)
     }
     invasive_spp <- tibble(
-      invasive_species = plot_data[[this.plot]][rows4invasive, position.invasive.first_spp[2]],
+      invasive_species = plot_data[[this.plot]][rows4invasive, position.invasive.first_spp[2]][[1]],
       cover = plot_data[[this.plot]][rows4invasive, position.invasive.first_spp[2] + 1][[1]]
     ) %>%
       mutate(across(everything(), ~ ifelse(is.na(.), 0, .))) %>% 
@@ -352,7 +352,7 @@ extract_plot_survey_data <- function(
     n.herbivore_pal.listed <- which(is.na(plot_data[[this.plot]][position.herbivore_impact.first_pal[1]:(position.herbivore_impact.first_pal[1]+50), position.herbivore_impact.first_pal[2]]))[1]-1
     herbivore_pal_rows <- position.herbivore_impact.first_pal[1]:(position.herbivore_impact.first_pal[1]+n.herbivore_pal.listed-1)
     herbivore_pal_cols <- which(!is.na(unlist(plot_data[[this.plot]][herbivore_pal_rows[1]-1, ])))
-    herbivore_amounts <- plot_data[[this.plot]][herbivore_pal_rows[1]-1, (position.herbivore_impact.first_pal[2] + 1):(position.herbivore_impact.first_pal[2] + 5)] %>% 
+    herbivore_amounts <- plot_data[[this.plot]][herbivore_pal_rows[1]-1, (position.herbivore_impact.first_pal[2] + 1):(position.herbivore_impact.first_pal[2] + 6)] %>% #!!!!!!!! careful ehre, changed the 5 to 6 for missing due to not there
       unlist() %>% 
       as.character() %>% 
       na.omit() # remove NAs
@@ -371,7 +371,7 @@ extract_plot_survey_data <- function(
       as.character() %>% 
       na.omit() # remove NAs
     
-    low_impact <- c("0%", "<25%") #
+    low_impact <- c("0%", "<25%", "N/A - Vegetation absent due to non-herbivore reasons") #
     moderate_impact <- c("25-75%") 
     high_impact <- c("75-90%", ">90%") 
     

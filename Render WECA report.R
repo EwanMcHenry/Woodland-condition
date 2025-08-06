@@ -2,6 +2,8 @@
 
 library(quarto)
 
+dir.create("outputs/WECA reports", showWarnings = FALSE)
+
 # Define your sites
 sites <- list(
   list(
@@ -10,16 +12,60 @@ sites <- list(
     site_survey_folderpath = "Data\\Field Test\\Ladypark Wood, Wye valley - Non-intervention 70yrs broadleaf SSSI ASNW\\",
     site_survey_filename = "WCA - Lady park wood - Field test - 12.06.2025.xlsx",
     site_survey_habitat_type = "base_rich_lowland"
-    )
+    ),
+  list(
+    site_name = "Inverliever, Argyll",
+    zone_name = "1",
+    site_survey_folderpath = "Data\\Field Test\\Inverliever, Argyll - Conifer clearfell FLS\\",
+    site_survey_filename = "WCA - Inverliever - Field test 06.06.25.xlsx",
+    site_survey_habitat_type = "acidic_upland"
+  ),
+  list(
+    site_name = "Harrisons Wood",
+    zone_name = "Z001",
+    site_survey_folderpath = "Data\\Field Test\\Harrisons Woodland, Louth, Lincs\\Z001\\",
+    site_survey_filename = "WECA - Harrisons Woodland Z001 BNG - Field test - 2025.xlsx",
+    site_survey_habitat_type = "base_rich_lowland"
+  ),
+  list(
+    site_name = "Harrisons Wood",
+    zone_name = "Z015a",
+    site_survey_folderpath = "Data\\Field Test\\Harrisons Woodland, Louth, Lincs\\Z15a\\",
+    site_survey_filename = "WECA - Harrisons Woodland Z15a BNG - Field test - 2025.xlsx",
+    site_survey_habitat_type = "base_rich_lowland"
+  ),
+  list(
+    site_name = "Harrisons Wood",
+    zone_name = "Z020",
+    site_survey_folderpath = "Data\\Field Test\\Harrisons Woodland, Louth, Lincs\\Z020\\",
+    site_survey_filename = "WECA - Harrisons Woodland Z020 BNG - Field test - 2025.xlsx",
+    site_survey_habitat_type = "base_rich_lowland"
+  ),
+  list(
+    site_name = "Harrisons Wood",
+    zone_name = "Z021",
+    site_survey_folderpath = "Data\\Field Test\\Harrisons Woodland, Louth, Lincs\\Z021\\",
+    site_survey_filename = "WECA - Harrisons Woodland Z021 BNG - Field test - 2025.xlsx",
+    site_survey_habitat_type = "base_rich_lowland"
+  )
+  
 )
 
-# Render the report for each site
 for (site in sites) {
+  
+  filename <- paste0("WECA report - ", site$site_name, ", Zone ", site$zone_name, ".html")
+  
+  # Render to working directory
   quarto_render(
-    input = "weca report template.qmd",      # your .qmd template
-    output_file = paste0("WECA report - ", site$site_name, ", Zone ", site$zone_name, ".html"),
+    input = "weca report template.qmd",
+    output_file = filename,
     execute_params = site
   )
+  
+  # Move output to the folder
+  file.rename(
+    from = filename,
+    to = file.path("outputs", "WECA reports", filename)
+  )
 }
-
 

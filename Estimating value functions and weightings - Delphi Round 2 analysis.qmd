@@ -1239,16 +1239,42 @@ newdata <- data.frame(
     #respondant_name = rep(unique(plot_data$respondant_name), times = length(unique(plot_data$measure)))
 )
 newdata <- add_gam_predictions(n_tree_shrub_spp_gam, newdata, scale_to_100 = TRUE)
+
+```
+
+The original expert opinion elicitation was done assuming shorter lists of appropriate species. The list has since been expanded, to the point where all individual tree/shrub species could not fit in the plot.
+
+To allow for this expanded lists, while maintaining pragmatic ecological realism, I have transformed the value function, reducing its range along the measurements and assuming max score beyond that. I multiplied the original measures by 0.6 (the approximate mean of the relative change in list sizes for each habitat type) and manually set the value for all measures above 60% to 100.
+```{r n_tree_shrub_spp_transform, warning=FALSE, message=FALSE}
+# Transform the measure to fit the new list size
+to_addback <- data.frame(measure = newdata$measure[newdata$measure > 60],
+                                  value_plot = 100)
+
+newdata <- newdata %>%
+  mutate(measure = measure * 0.6) %>% 
+  select(measure, value_plot) %>%
+  rbind(to_addback)
+
+plot_data <- plot_data %>%
+  mutate(measure = measure * 0.6) 
+
+original_points <- c.df %>%
+  filter(sheet_name == this.sheet, round == this.round) %>% 
+  mutate(measure = measure * 0.6) 
+  
+# original_points <- c.df %>%
+#   filter(sheet_name == this.sheet, round == this.round)
+
+
 n_tree_shrub_spp_predictions <- newdata %>%
   select(measure, value_plot) %>%
   rename(value = value_plot)
 
-```
 
+```
 ```{r n_tree_shrub_spp_plot, warning=FALSE, message=FALSE}
+
 # 5. Plot
-original_points <- c.df %>%
-  filter(sheet_name == this.sheet, round == this.round)
 ggplot() +
   # Original data points
   # geom_point(
@@ -1278,6 +1304,8 @@ ggplot() +
   theme_pubr()+
   theme(legend.position = "none")
 ```
+
+
 
 Look-up table
 

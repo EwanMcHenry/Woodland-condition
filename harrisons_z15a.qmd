@@ -1,0 +1,1461 @@
+---
+title: "WECA Casestudy - Harrisons Wood Zone 21"
+author: "Ewan McHenry"
+
+format:
+  html:
+    self-contained: true
+    embed-resources: true
+    theme: cosmo
+    code-fold: true       # Enables folding
+    code-summary: "Show code"  # Optional: custom label on the fold button
+    toc: true              # Optional: adds a table of contents
+    toc-depth: 2
+    toc-float: true       # Optional: makes the table of contents float on the page
+---
+
+```{=html}
+<script>
+  function toggleVisibility(id) {
+    const el = document.getElementById(id);
+    if (el.style.display === "none") {
+      el.style.display = "block";
+    } else {
+      el.style.display = "none";
+    }
+  }
+</script>
+```
+
+```{r libraries and scripts, warning=F, message=F}
+
+# LIBRARIES ---------------------------------------------------------------
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(DT)
+library(htmltools)
+library(ggpubr)
+library(U.utilities)
+library(fuzzyjoin)
+library(tidyselect)
+
+source("function-extract plot data.R")
+source("Scripts\\functions_surveyreport.R")
+
+appropriate_tree_path <- "Data\\Appropriate_tree_spp_list.csv"
+appropriate_flora_path <- "Data\\Appropriate_groundflora_spp_list.csv"
+high_threat_invasives_path <- "Data\\high_threat_invasives_list.csv"
+
+microhabitats_list <- read.csv("Data\\microhabitats_list.csv")
+
+# Load the lookup tables
+age_lookup <- read.csv("outputs\\lookup_tables\\Tree age distribution_vf_lookup.csv")
+tree_spp_lookup <- read.csv("outputs\\lookup_tables\\N tree & shrub spp._vf_lookup.csv")
+antropogenic_damage_lookup <- read.csv("outputs\\lookup_tables\\Anthropogenic damage_vf_lookup_domin.csv")
+deadwood_lookup <- read.csv("outputs\\lookup_tables\\Deadwood_vf_lookup.csv")
+ground_flora_lookup <- read.csv("outputs\\lookup_tables\\Ground flora_vf_lookup.csv")
+Horizontal_complexity_lookup <- read.csv("outputs\\lookup_tables\\Horizontal complexity_vf_lookup.csv")
+invasives_lookup <- read.csv("outputs\\lookup_tables\\Invasive plants % cover_vf_lookup_domin.csv")
+microhabitats_lookup <- read.csv("outputs\\lookup_tables\\Microhabitats_vf_lookup.csv")
+native_canopy_lookup <- read.csv("outputs\\lookup_tables\\Native canopy percentage _vf_lookup.csv")
+regen_lookup <- read.csv("outputs\\lookup_tables\\Regen_vf_lookup.csv")
+tree_health_lookup <- read.csv("outputs\\lookup_tables\\Tree health_vf_lookup.csv")
+vertical_structure_lookup <- read.csv("outputs\\lookup_tables\\Vertical structure_vf_lookup.csv")
+veteran_trees_lookup <- read.csv("outputs\\lookup_tables\\Veteran trees_vf_lookup.csv")
+Herbivore_impact_lookup <- read.csv("outputs\\lookup_tables\\Herbivore damage_vf_lookup.csv")%>%
+  mutate(
+    herbivore_impact_class = case_when(
+      str_detect(Damage.class..potential.12.month.growth.removed, "^Negligable") ~ "Negligable damage",
+      str_detect(Damage.class..potential.12.month.growth.removed, "^Low damage") ~ "Low damage",
+      str_detect(Damage.class..potential.12.month.growth.removed, "^Moderate") ~ "Moderate damage",
+      str_detect(Damage.class..potential.12.month.growth.removed, "^High damage") ~ "High damage",
+      str_detect(Damage.class..potential.12.month.growth.removed, "^Very high") ~ "Very high damage",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  select(herbivore_impact_class, value) %>% 
+  mutate(herbivore_impact_class = factor(herbivore_impact_class, 
+                                         levels = c("Negligable damage", "Low damage", "Moderate damage", "High damage", "Very high damage")))
+
+weights_lookup <- read.csv("outputs\\lookup_tables\\weights_lookup.csv")
+
+#load domin range table
+domin_transformer <- read.csv("Data\\domin transformer.csv") %>% 
+  mutate(domin = as.character(antropogenic_damage_lookup$domin))
+domin_transformer$mid = domin_transformer$min + (domin_transformer$max - domin_transformer$min) / 2
+
+# load value function predictions - created by "D:/Users/Ewan McHenry/OneDrive - the Woodland Trust/WEC/Woodland-condition/Estimating value functions and weightings - Delphi Round 2 analysis.qmd"
+## run this script to generate the value function predictions
+load("outputs\\all_value_functions.RData")
+```
+
+```{r configuration, echo=FALSE}
+
+site_survey_folderpath = "Data\\Field Test\\Harrisons Woodland, Louth, Lincs\\"
+site_survey_filename = "WECA - Harrisons Woodland Z15a BNG - Field test - 2025.xlsx"
+site_survey_habitat_type = "base_rich_lowland"
+  
+vert_structure_categories <- data.frame(
+  index = 1:6,
+  strata = c("Ground layer (0 - 0.1m)",
+             "Field layer (0.1 - 1m)",
+             "Shrub (1 - 5m)",
+             "Lower (5 -12m)",
+             "Middle (12 -20m)",
+             "Upper (20m+)")
+  )
+
+
+# plot config ----
+vf_alpha = 0.6
+vf_size = 1
+point_alpha = 0.8
+point_size = 2
+```
+
+This doc walks through the calculation of WECA score for each indicator at each plot, and zone level, focusing on Ladypark Wood.
+
+> I have written a [function](D:/Users/Ewan%20McHenry/OneDrive%20-%20the%20Woodland%20Trust/WEC/Woodland-condition/function-extract%20plot%20data.R) that extracts the WECA survey info from the [field survey form](%22D:\Users\Ewan%20McHenry\OneDrive%20-%20the%20Woodland%20Trust\WEC\Woodland-condition\Data\Field%20Test\Ladypark%20Wood,%20Wye%20valley%20-%20Non-intervention%2070yrs%20broadleaf%20SSSI%20ASNW\WCA%20-%20Lady%20park%20wood%20-%20Field%20test%20-%2012.06.2025.xlsx%22) and converts it to the point prior to comparison with the value function lookup tables and weightings that were produced in [Estimating value functions and weightings - Delphi Round 2 analysis](D:/Users/Ewan%20McHenry/OneDrive%20-%20the%20Woodland%20Trust/WEC/Woodland-condition/Estimating%20value%20functions%20and%20weightings%20-%20Delphi%20Round%202%20analysis.qmd). The analysis here does that comparison.
+
+```{r extract_survey_data, message=F, warning=FALSE}
+survey_data <- extract_plot_survey_data(
+  excel_sheet_folderpath = site_survey_folderpath,
+  excel_sheet_filename = site_survey_filename,
+  sheet_appropriate_ground_flora = read.csv(appropriate_flora_path),
+  sheet_appropriate_tree_spp = read.csv(appropriate_tree_path) ,
+  list_high_threat_invasives = read.csv(high_threat_invasives_path)$species, # list of high threat invasive species, used to check if any are present in the plot data
+  habitat_type = site_survey_habitat_type
+
+  )
+
+all_summaries <- create_all_summaries()
+
+
+```
+# Zone Summary
+```{r zone_summary_calc, echo=FALSE, message=FALSE, warning=FALSE}
+# Zone summary
+## values of each indicator across all plots
+zone_summary <- data.frame(
+  indicator_name = c(
+    "Tree age structure", "Tree species composition", "Regeneration", "Native canopy cover",
+    "Vertical structure", "Invasive plants", "Microhabitats", "Horizontal complexity",
+    "Veteran trees", "Dead and decaying wood", "Herbivore impact", "Tree health",
+    "Anthropogenic damage", "Ground flora"
+  ),
+  value = c(
+    mean(all_summaries$age_summary$value, na.rm = TRUE),
+    mean(all_summaries$tree_spp_summary$value, na.rm = TRUE),
+    mean(all_summaries$regen_summary$value, na.rm = TRUE),
+    mean(all_summaries$native_canopy_summary$value, na.rm = TRUE),
+    mean(all_summaries$vertical_structure_summary$value, na.rm = TRUE),
+    mean(all_summaries$invasives_summary$value, na.rm = TRUE),
+    mean(all_summaries$microhabitats_summary$value, na.rm = TRUE),
+    mean(all_summaries$horizontal_complexity_summary$value, na.rm = TRUE),
+    mean(all_summaries$veteran_trees_summary$value, na.rm = TRUE),
+    mean(all_summaries$dead_decaying_wood_summary$value, na.rm = TRUE),
+    mean(all_summaries$herbivore_impact_summary$value, na.rm = TRUE),
+    mean(all_summaries$tree_health_summary$value, na.rm = TRUE),
+    mean(all_summaries$anthropogenic_damage_summary$value, na.rm = TRUE),
+    mean(all_summaries$ground_flora_summary$value, na.rm = TRUE)
+  )
+)
+
+### hack to get avt value, watch that this is consistent with whats in that section
+avt_dens_mean <- mean(all_summaries$veteran_trees_summary$dens_avt, na.rm = TRUE)
+avt_value <- veteran_trees_lookup$value[
+  which.min(abs(veteran_trees_lookup$N.Veteran.Trees.per.ha - avt_dens_mean))
+] 
+zone_summary[zone_summary$indicator_name == "Veteran trees", "value"] <- avt_value
+
+
+# Manual name matching: create a lookup to rename zone_summary
+indicator_rename_weighting_lookup <- c(
+  "Tree age structure" = "Tree age distribution",
+  "Tree species composition" = "N tree & shrub spp.",
+  "Regeneration" = "Regen",
+  "Native canopy cover" = "Native canopy percentage ",
+  "Vertical structure" = "Vertical structure",
+  "Invasive plants" = "Invasive plants % cover",
+  "Microhabitats" = "Microhabitats",
+  "Horizontal complexity" = "Horizontal complexity",
+  "Veteran trees" = "Veteran trees",
+  "Dead and decaying wood" = "Deadwood",
+  "Herbivore impact" = "Herbivore damage",
+  "Tree health" = "Tree health",
+  "Anthropogenic damage" = "Anthropogenic damage",
+  "Ground flora" = "Ground flora"
+)
+
+# Apply renaming and join
+zone_summary <- zone_summary %>%
+  mutate(indicator_clean = recode(indicator_name, !!!indicator_rename_weighting_lookup)) %>%
+  left_join(weights_lookup, by = c("indicator_clean" = "Indicator")) %>% 
+  rename(
+    Weighting = Weight..scaled.to.max.100.
+  ) %>%
+  select(indicator_name, value, Weighting) %>%
+  mutate(
+    weighted_value = value * Weighting / 100,
+  )
+
+summary_score <- round(
+  sum(zone_summary$weighted_value, na.rm = TRUE) /
+    sum(zone_summary$Weighting, na.rm = TRUE) * 100, 1
+)
+```
+
+`r circle_badge(round(summary_score, 0))`
+
+The WECA summary score for `r survey_data[[1]]$survey_info$wood_name` zone  `r survey_data[[1]]$survey_info$zone` is `r round(summary_score, 0)`, out of a maximum of 100.
+
+```{r zone_summary_plot, echo=FALSE, message=FALSE, warning=FALSE}
+# An "equilizer" style plot
+## Horizontal bars for each indicator, to to weighting "filled in" up to their weighted value
+
+summary_row <- tibble(
+  indicator_name = "WECA summary score",
+  Weighting = 100,
+  weighted_value = summary_score,
+  value = summary_score  # You can define a value here for consistent fill mapping
+)
+
+
+# Calculate summary score
+summary_score <- round(
+  sum(zone_summary$weighted_value, na.rm = TRUE) /
+    sum(zone_summary$Weighting, na.rm = TRUE) * 100, 1
+)
+
+# Create summary row
+summary_row <- tibble(
+  indicator_name = "WECA summary score",
+  Weighting = 100,
+  weighted_value = summary_score,
+  value = NA_real_  # NA so viridis doesn't try to colour it
+)
+
+# Combine with original data
+zone_summary_ext <- bind_rows(summary_row, zone_summary)
+
+ggplot(zone_summary_ext, aes(x = fct_rev(indicator_name))) +
+  # Background bars (Weighting)
+  geom_col(aes(y = Weighting), fill = "grey40", width = 0.6) +
+
+  # Foreground bar: summary (RED)
+  geom_col(
+    data = filter(zone_summary_ext, indicator_name == "WECA summary score"),
+    aes(y = weighted_value),
+    fill = "red", width = 0.4
+  ) +
+
+  # Foreground bars: indicators (viridis fill)
+  geom_col(
+    data = filter(zone_summary_ext, indicator_name != "WECA summary score"),
+    aes(y = weighted_value, fill = value),
+    width = 0.4
+  ) +
+
+  # Points (for indicator values only)
+  geom_point(
+    data = filter(zone_summary_ext, indicator_name != "WECA summary score"),
+    aes(y = weighted_value, fill = value),
+    size = 4, shape = 21, colour = "black"
+  ) +
+
+  coord_flip() +
+  scale_fill_viridis_c(
+    limits = c(0, 100),
+    name = "Indicator score"
+  ) +
+  scale_y_continuous(
+    limits = c(0, 100),
+    breaks = seq(0, 100, by = 20)
+  ) +
+  labs(
+    x = NULL,
+    y = "Relative Contribution to WECA Summary score",
+    title = paste(
+      survey_data[[1]]$survey_info$wood_name,
+      "Zone", survey_data[[1]]$survey_info$zone
+    ),
+    subtitle = paste("WECA summary score =", summary_score)
+  ) +
+  theme_pubr() +
+  theme(
+    legend.position = "right",
+    axis.text.y = element_text(
+      colour = c("steelblue", rep("black", nrow(zone_summary)))
+    )
+  )
+```
+```{r zone_summary_table, results='asis'}
+datatable(
+  zone_summary %>%
+    mutate(value = round(value, 1),
+           weighted_value = round(weighted_value, 1),
+           Weighting = round(Weighting,1)) %>%
+    rename(
+      Indicator = indicator_name,
+      Value = value,
+      Weighting = Weighting,
+      'Weighted value' = weighted_value
+    ),
+  rownames = FALSE,
+  caption = "Zone Summary",
+  options = list(
+    pageLength = 15,
+    dom = 't',
+    ordering = FALSE
+  )
+)
+```
+
+# Survey details
+
+## Tree info
+
+Detailed tree and shrub data was collected at each main and supplementary, and can be explored by expanding the plot info below.
+
+```{r tree_info, results='asis'}
+
+outputs <- list()
+
+for (i in seq_along(survey_data)) {
+  section_outputs <- list()
+
+  for (df_name in c("trees_main_df", "trees_supp_df")) {
+    df <- survey_data[[i]]$trees_df[[df_name]] %>%
+      mutate(across(c(seedlings, saplings), as.character))
+
+    totals <- df %>%
+      summarise(across(c(young, semi_mature, early_mature, mature, spp_total_trees), ~ sum(.x, na.rm = TRUE))) %>%
+      mutate(tree_species = "Total", seedlings = "", saplings = "") %>%
+      select(names(df))
+
+    df_total <- bind_rows(df, totals)
+
+    section_outputs[[df_name]] <- datatable(
+      df_total %>% 
+        rename(
+          Species = tree_species,
+          'Young (N)' = young,
+          'Semi-mature (N)' = semi_mature,
+          'Early mature (N)' = early_mature,
+          'Mature (N)' = mature,
+          'Total trees (N)' = spp_total_trees,
+          Seedlings = seedlings,
+          Saplings = saplings
+        ) %>% 
+        #capitalise first letter in species names
+        mutate(Species = str_to_sentence(Species)) %>%
+        #order cols
+        select(
+          Species, `Total trees (N)`, `Young (N)`, `Semi-mature (N)`, `Early mature (N)`, `Mature (N)`, Seedlings, Saplings
+        ),
+      caption = paste0("Tree Data - Plot ", i, ", ", ifelse(df_name == "trees_main_df", "Main", "Supplementary")),
+      rownames = FALSE,
+      options = list(
+        pageLength = nrow(df_total),
+        dom = 't',
+        ordering = FALSE
+        )
+    )
+  }
+
+  # Wrap in a <details> HTML element with <summary> title
+plot_section <- tags$details(
+  tags$summary(paste("Plot", i)),
+
+  tags$details(
+    tags$summary(style = "margin-left: 1em;", "Main Plot"),
+    section_outputs$trees_main_df
+  ),
+
+  tags$details(
+    tags$summary(style = "margin-left: 1em;", "Supplementary Plot"),
+    section_outputs$trees_supp_df
+  )
+)
+
+  outputs[[i]] <- plot_section
+}
+
+# Render all collapsible plot sections
+tagList(outputs)
+```
+
+## Tree age structure
+
+```{r age_structure_scoring}
+
+this.sheet <- "Tree Age distribution"
+x.axis_title <- "Number of tree age classes"
+age_summary <- create_age_summary()
+
+```
+
+`r circle_badge(round(mean(age_summary$value, na.rm = TRUE), 2))`
+
+The mean age structure value across the zone is `r round(mean(age_summary$value, na.rm = TRUE), 2)`.
+
+Age structure value is a function of the number of different age classes present in each plot and is presented in the table below.
+
+A Shannon diversity index could be an alternative measure with which to infer value, it considers the the number of trees in each age class and the degree to which age classes might dominate.
+
+```{r age_structure_plot, warnin=FALSE, message=FALSE}
+ggplot() +
+  geom_line(
+    data = age_structure_predictions,
+    aes(x = measure, y = value),
+    color = "black", linewidth = vf_size, alpha = vf_alpha
+  ) +
+  geom_point(
+    data = age_summary,
+    aes(
+      x = age_classes_n,
+      y = value,
+      fill = plot,
+      shape = plot_type
+    ),
+    alpha = point_alpha, 
+    size = point_size,
+    position = position_jitter(width = 0.1, height = 3),
+    colour = "black"
+  ) +
+  scale_shape_manual(values = c(21, 24)) +
+  scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = x.axis_title,
+    y = "Value",
+    title = paste(this.sheet),
+    subtitle = "Plot values over estimated value function",
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+```{r age_structure_table, results='asis'}
+
+datatable(
+  age_summary %>% 
+    mutate(
+      value = round(value, 2),
+      shannon = round(shannon, 2),
+      plot = as.factor(plot),
+      plot_type = as.factor(plot_type)
+    ) %>% 
+    rename(     Plot = plot,
+      'Plot type' = plot_type,
+      Value = value,
+      'Age classes (N)' = age_classes_n,
+      'Shannon diversity index' = shannon,
+      'Young (N)' = young,
+      'Semi-mature (N)' = semi_mature,
+      'Early mature (N)' = early_mature,
+      'Mature (N)' = mature
+      ),
+  rownames = FALSE,
+  caption = "Tree Age Class Summary",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE,
+    scrollX = TRUE  # ← Enables horizontal scrolling
+  )
+)
+```
+
+## Tree species richness
+
+```{r tree_species_richness_scoring}
+this.sheet <- "Native tree and shrub species: proportion of appropraite present"
+x.axis_title <- "Proportion of appropriate tree/shrub species present"
+
+tree_species_summary <- create_tree_species_summary() 
+```
+
+`r circle_badge(round(mean(tree_species_summary$value, na.rm = TRUE), 2))`
+
+The mean tree species richness value across the zone is `r round(mean(tree_species_summary$value, na.rm = TRUE), 2)`.
+
+Tree species richness value is a function of the proportion of appropriate tree and shrub species found in each plot (appropriate species lists are habitat-specific).
+
+A Shannon diversity index could be an alternative measure with which to infer value, it considers the number of trees in each species and the degree to which species might dominate.
+
+The appropriate tree and shrub species list for this habitat type (`r survey_data[[i]]$survey_info$habiat_type`) has `r length(survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp)` species in it, they are: `r paste(survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp, collapse = ", ")`.
+
+```{r tree_species_richness_plot, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_line(
+    data = n_tree_shrub_spp_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = vf_size, alpha = vf_alpha
+  ) +
+  geom_point(
+    data = tree_species_summary,
+    aes(
+      x = per_of_appropriate_species,
+      y = value,
+      fill = plot,
+      shape = plot_type
+    ),
+    alpha = point_alpha, 
+    size = point_size,
+    colour = "black",
+    position = position_jitter(width = 0.1, height = 3)
+  ) +
+  scale_shape_manual(values = c(21, 24)) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = "Percentage of appropriate species list present",
+    y = "Value",
+    title = paste(this.sheet),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+```{r tree_species_richness_table, results='asis'}
+datatable(
+  tree_species_summary %>% 
+    mutate(
+      value = round(value, 1),
+      shannon_index_appropriate = round(shannon_index_appropriate, 2),
+      per_of_appropriate_species = paste(round(per_of_appropriate_species, 0), "%", sep = "")
+    ) %>%
+     rename(
+           Plot = plot,
+           'Plot type' = plot_type,
+           Value = value,
+           'Percent of appropriate species list present' = per_of_appropriate_species,
+           'Species richness (N)' = spp_n,
+           'Appropriate species richness (N)' = N_appropriate_species,
+           'Shannon diversity of appropriate species' = shannon_index_appropriate
+           )  %>% 
+    # make all col names capitalised first letter
+    rename_with(
+      ~ str_to_sentence(.)
+      ),
+  rownames = FALSE,
+  caption = "Tree Species Richness Summary by Plot and Subplot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE,
+    scrollX = TRUE  # ← Enables horizontal scrolling
+  )
+)
+```
+
+
+## Regen
+
+```{r regen_scoring}
+this.sheet <- "Tree & shrub regen"
+x.axis_title <- "Number of regen classes present"
+regen_summary <- create_regen_summary()
+```
+
+`r circle_badge(round(mean(regen_summary$value, na.rm = TRUE), 2))`
+
+The mean regen value across the zone is `r round(mean(regen_summary$value, na.rm = TRUE), 2)`.
+
+Regen value is a function of the number of regen classes of trees or shrubs present in each plot (seedlings, saplings and young trees).
+
+```{r regen_plot, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_line(
+    data = regen_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = vf_size, alpha = vf_alpha
+  ) +
+  geom_point(
+    data = regen_summary,
+    aes(
+      x = regen_classes_n,
+      y = value,
+      fill = plot,
+      shape = plot_type
+    ),
+    alpha = point_alpha, 
+    size = point_size,
+    colour = "black",
+    position = position_jitter(width = 0.1, height = 3)
+  ) +
+  scale_shape_manual(values = c(21, 24)) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = "Number of regen classes",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+```{r regen_table, results='asis'}
+datatable(
+  regen_summary %>% 
+    mutate(
+      value = round(value, 2),
+      regen_classes_n = as.character(regen_classes_n)
+    ) %>%
+    rename(
+      Plot = plot,
+      'Plot type' = plot_type,
+      Value = value,
+      'Number of regen classes' = regen_classes_n
+    ),
+  rownames = FALSE,
+  caption = "Regen Summary by Plot and Subplot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE,
+    scrollX = TRUE  # ← Enables horizontal scrolling
+  )
+)
+```
+
+
+## Native canopy cover
+
+```{r native_canopy_cover_scoring}
+this.sheet <- "Native canopy percentage"
+x.axis_title <- "Canopy nativness (% of total canopy volume)"
+native_canopy_summary <- create_native_canopy_summary()
+```
+
+`r circle_badge(round(mean(native_canopy_summary$value, na.rm = TRUE), 2))`
+
+The mean native canopy cover value across the zone is `r round(mean(native_canopy_summary$value, na.rm = TRUE), 2)`.
+
+Native canopy cover value is a function of the proportion of each plots's total canopy volume made up of UK native tree and shrub species.
+
+```{r native_canopy_cover_plot, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_line(
+    data = native_canopy_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = vf_size, alpha = vf_alpha
+  ) +
+  geom_point(
+    data = native_canopy_summary,
+    aes(
+      x = native_canopy_cover,
+      y = value,
+      fill = plot
+    ),
+    alpha = point_alpha, 
+    size = point_size,
+    shape = 21, colour = "black",
+    position = position_jitter(width = 0.1, height = 3)
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = "Native canopy cover (%)",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+```{r native_canopy_cover_table, results='asis'}
+datatable(
+  native_canopy_summary %>% 
+    mutate(
+      value = round(value, 2),
+      native_canopy_cover = paste(round(native_canopy_cover, 2), "%", sep = "")
+    ) %>%
+    rename(
+      Plot = plot,
+      Value = value,
+      'Native canopy cover' = native_canopy_cover
+    ),
+  rownames = FALSE,
+  caption = "Native Canopy Cover Summary by Plot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE
+  )
+)
+```
+
+
+## Vertical structure
+
+```{r vertical_structure_scoring}
+this.sheet <- "Vertical structure"
+x.axis_title <- "Number of vertical strata present"
+vertical_structure_summary <- create_vertical_structure_summary()
+```
+
+`r circle_badge(round(mean(vertical_structure_summary$value, na.rm = TRUE), 2))`
+
+The mean vertical structure value across the zone is `r round(mean(vertical_structure_summary$value, na.rm = TRUE), 2)`.
+
+Vertical structure value is a function of the number of different vertical strata present in each plot, where the cover of that strata is ecologically significant (\> 10%).
+
+```{r vertical_structure_plot, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_line(
+    data = vertical_structure_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = vf_size, alpha = vf_alpha
+  ) +
+  geom_point(
+    data = vertical_structure_summary,
+    aes(
+      x = vertical_structure_n,
+      y = value,
+      fill = plot
+    ),
+    alpha = point_alpha, 
+    size = point_size,
+    shape = 21, colour = "black",
+    position = position_jitter(width = 0.1, height = 3)
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = "Number of vertical strata",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+```{r vertical_structure_table, results='asis'}
+datatable(
+  vertical_structure_summary %>% 
+    mutate(
+      value = round(value, 2),
+      vertical_structure_n = as.character(vertical_structure_n)
+    ) %>%
+    rename(
+      Plot = plot,
+      Value = value,
+      'Number of strata' = vertical_structure_n
+    ),
+  rownames = FALSE,
+  caption = "Vertical Structure Summary by Plot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE,
+    scrollX = TRUE  # ← Enables horizontal scrolling
+  )
+)
+```
+
+
+## Invasive plants
+
+```{r invasives_scoring}
+this.sheet <- "Invasive plants"
+x.axis_title <- "Total invasive cover (%)"
+invasives_summary <- create_invasives_summary()
+```
+
+`r circle_badge(round(mean(invasives_summary$value, na.rm = TRUE), 2))`
+
+The mean invasives value across the zone is `r round(mean(invasives_summary$value, na.rm = TRUE), 2)`.
+
+Invasives value is a function of the total cover of invasive species in each plot, overwritten with a zero value if any high threat invasive species are present.
+
+```{r invasives_plot, warning=FALSE, message=FALSE}
+
+ggplot() +
+  geom_line(
+    data = invasive_plants_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = vf_size, alpha = vf_alpha
+  ) +
+  geom_point(
+    data = invasives_summary,
+    aes(
+      x = dummy_measure,
+      y = value,
+      fill = plot
+    ),
+    alpha = point_alpha, 
+    size = point_size,
+    shape = 21, colour = "black",
+    position = position_jitter(width = 0.1, height = 3)
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = "Total invasive cover (%)",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+```{r invasives_table, results='asis'}
+datatable(
+  invasives_summary %>% 
+    mutate(
+      value = round(value, 2),
+      total_invasive_domin_cover = total_invasive_domin_cover,
+      high_threat_spp_present = ifelse(high_threat_spp_present, "Yes", "No")
+    ) %>%
+    select(-dummy_measure) %>% # remove dummy measure column
+    rename(
+      Plot = plot,
+      Value = value,
+      'Total invasive cover' = total_invasive_domin_cover,
+      'High threat species present' = high_threat_spp_present
+    ),
+  rownames = FALSE,
+  caption = "Invasive Species Summary by Plot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE
+  )
+)
+```
+
+## Microhabitats
+
+```{r microhabitats_scoring}
+this.sheet <- "Microhabitats"
+x.axis_title <- "Proportion of microhabitats present (%)"
+microhabitats_summary <- create_microhabitats_summary()
+
+```
+
+`r circle_badge(round(mean(microhabitats_summary$value, na.rm = TRUE), 2))`
+
+The mean microhabitats value across the zone is `r round(mean(microhabitats_summary$value, na.rm = TRUE), 2)`.
+
+Microhabitats value is a function of the proportion of all possible microhabitats present in each plot.
+
+```{r microhabitats_plot, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_line(
+    data = microhab_vf_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = vf_size, alpha = vf_alpha
+  ) +
+  geom_point(
+    data = microhabitats_summary,
+    aes(
+      x = microhabitats_prop,
+      y = value,
+      fill = plot
+    ),
+    alpha = point_alpha, 
+    size = point_size,
+    shape = 21, colour = "black",
+    position = position_jitter(width = 0.1, height = 3)
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = "Microhabitats present (%)",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+```{r microhabitats_table, results='asis'}
+datatable(
+  microhabitats_summary %>% 
+    mutate(
+      value = round(value, 2),
+      microhabitats_prop = paste(round(microhabitats_prop, 2), "%", sep = ""),
+      microhabitats_n = as.character(microhabitats_n)
+    ) %>%
+    rename(
+      Plot = plot,
+      Value = value,
+      'Microhabitats present (%)' = microhabitats_prop,
+      'Number of microhabitats' = microhabitats_n
+    ),
+  rownames = FALSE,
+  caption = "Microhabitats Summary by Plot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE,
+    scrollX = TRUE  # ← Enables horizontal scrolling
+  )
+)
+```
+
+
+## Horizontal complexity
+
+```{r horizontal_complexity_scoring}
+this.sheet <- "Horizontal complexity"
+horizontal_complexity_summary <- create_horizontal_complexity_summary()
+```
+
+`r circle_badge(round(mean(horizontal_complexity_summary$value, na.rm = TRUE), 2))`
+
+The mean horizontal complexity value across the zone is `r round(mean(horizontal_complexity_summary$value, na.rm = TRUE), 2)`. Horizontal complexity value is a function of the number of different top height categories present in each plot, and the Shannon diversity index of those categories.
+
+```{r horizontal_complexity_plot, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_line(
+    data = horizontal_complexity_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = vf_size, alpha = vf_alpha
+  ) +
+  geom_point(
+    data = horizontal_complexity_summary,
+    aes(
+      x = N_topheight_cats,
+      y = value,
+      fill = plot
+    ),
+    alpha = point_alpha, 
+    size = point_size,
+    shape = 21, colour = "black",
+    position = position_jitter(width = 0.1, height = 3)
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = "Number of top height categories",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+```{r horizontal_complexity_table, results='asis'}
+datatable(
+  horizontal_complexity_summary %>% 
+    mutate(
+      value = round(value, 2),
+      N_topheight_cats = as.character(N_topheight_cats),
+      shannon_topheight_cats = round(shannon_topheight_cats, 2)
+    ) %>%
+    rename(
+      Plot = plot,
+      Value = value,
+      'Number of top height categories' = N_topheight_cats,
+      'Shannon index' = shannon_topheight_cats
+    ),
+  rownames = FALSE,
+  caption = "Horizontal Complexity Summary by Plot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE,
+    scrollX = TRUE  # ← Enables horizontal scrolling
+  )
+)
+```
+
+
+## Veteran trees
+
+```{r veteran_trees_scoring}
+this.sheet <- "Veteran trees"
+x.axis_title <- "Veteran trees per ha"
+veteran_trees_summary <- create_veteran_trees_summary()
+
+# estimate mean avt density AND 95% CI across plots
+avt_dens_mean <- mean(veteran_trees_summary$dens_avt, na.rm = TRUE)
+# Standard error of the mean
+avt_dens_se <- sd(veteran_trees_summary$dens_avt) / sqrt(length(veteran_trees_summary$dens_avt))
+
+# 95% confidence interval
+avt_dens_ci_lower <- avt_dens_mean - qt(0.975, df = length(veteran_trees_summary$dens_avt) - 1) * avt_dens_se
+avt_dens_ci_upper <- avt_dens_mean + qt(0.975, df = length(veteran_trees_summary$dens_avt) - 1) * avt_dens_se
+
+# corresponding value (nearest)
+avt_value <- veteran_trees_lookup$value[
+  which.min(abs(veteran_trees_lookup$N.Veteran.Trees.per.ha - avt_dens_mean))
+] 
+avt_value_95ci <- veteran_trees_lookup$value[
+  c(which.min(abs(veteran_trees_lookup$N.Veteran.Trees.per.ha - avt_dens_ci_lower)) ,
+  which.min(abs(veteran_trees_lookup$N.Veteran.Trees.per.ha - avt_dens_ci_upper)))
+] 
+```
+
+`r circle_badge(round(avt_value, 2))`
+
+The veteran trees value across the zone is `r round(avt_value, 2)` (`r round(avt_value_95ci[1], 2)` - `r round(avt_value_95ci[2], 2)` 95% CI), based on an estimated mean AVT density of `r round(avt_dens_mean, 2)` (`r round(avt_dens_ci_lower, 2)` - `r round(avt_dens_ci_upper, 2)` 95% CI) per ha.
+
+Note: value for the AVT indicator is calculated based on the mean AVT density across all plots, rather than the mean value across plots, as AVT condition opperates at too large a scale to be captured by individual plots.
+
+```{r veteran_trees_plot, warning=FALSE, message=FALSE, fig.cap= "Estimated value for AVTs with 95% confidence interval, based on estiamte of mean avt density across the survey area. The line represents the value function for AVT density. x axis rug marks show the avt density recorded at each plot (truncated to the x axis maximum)."}
+
+#trncate plot density to max on figure and add a jitter
+plotting.denses = data.frame(plot = veteran_trees_summary$plot,
+                             dens.ests = veteran_trees_summary$dens_avt %>% 
+                               jitter(0.1))
+plotting.denses$dens.ests[plotting.denses$dens.ests > max(veteran_trees_predictions$measure)] <- max(veteran_trees_predictions$measure)
+
+
+ggplot() +
+  geom_line(
+    data = veteran_trees_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = vf_size, alpha = vf_alpha
+  ) +
+  geom_point(
+    aes(
+      x = avt_dens_mean,
+      y = avt_value
+    ),
+    # alpha = point_alpha, 
+    size = point_size*2, 
+    fill = "steelblue", shape = 21, colour = "black"
+  ) +
+  # Add 95% CI as error bars
+  geom_errorbar(
+    aes(
+      x = avt_dens_mean,
+      ymin = avt_value_95ci[1],
+      ymax = avt_value_95ci[2]
+    ),
+    width = 0.1, colour = "steelblue", size = 0.5
+  ) +
+  # x axis rug marks for density in each plot, truncated to max from veteran_trees_predictions
+  geom_rug(
+    data = plotting.denses,
+    aes(x = dens.ests, colour = as.factor(plot)),
+    sides = "b",
+    alpha = 0.9, size = 0.5
+  ) +
+    scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+# Axes and titles
+  labs(
+    x = "AVTs per ha",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function")
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+```{r veteran_trees_table, results='asis'}
+datatable(
+  veteran_trees_summary %>% 
+    mutate(
+      N_avt_n = as.character(N_avt_n),
+      dens_avt = round(dens_avt, 2)
+    ) %>%
+    rename(
+      Plot = plot,
+      'Number of AVTs' = N_avt_n,
+      'AVT density (per ha)' = dens_avt
+    ),
+  rownames = FALSE,
+  caption = "Veteran Trees Summary by Plot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE
+  )
+)
+```
+
+
+## Dead and decaying wood
+
+```{r dead_decaying_wood_scoring}
+this.sheet <- "Dead and decaying wood"
+x.axis_title <- "Mean deadwood-types (of four types) per plot quarter"
+dead_decaying_wood_summary <- create_dead_decaying_wood_summary() 
+```
+
+`r circle_badge(round(mean(dead_decaying_wood_summary$value, na.rm = TRUE), 2))`
+
+The mean dead and decaying wood value across the zone is `r round(mean(dead_decaying_wood_summary$value, na.rm = TRUE), 2)`.
+
+Dead and decaying wood value is a function of the mean number of deadwood types (standing, fallen, stumps and in-canopy) per plot quarter (max 4).
+
+```{r dead_decaying_wood_plot, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_line(
+    data = deadwood_predictions,
+    aes(x = measure/4, y = value),
+    color = "black", size = vf_size, alpha = vf_alpha
+  ) +
+  geom_point(
+    data = dead_decaying_wood_summary,
+    aes(
+      x = average_N_type_quaters,
+      y = value,
+      fill = plot
+    ),
+    alpha = point_alpha, 
+    size = point_size,
+    position = position_jitter(width = 0.05, height = 0),
+    shape = 21, colour = "black"
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = "Average deadwood types per quarter",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+```{r dead_decaying_wood_table, results='asis'}
+datatable(
+  dead_decaying_wood_summary %>% 
+    mutate(
+      value = round(value, 2),
+      average_N_type_quaters = round(average_N_type_quaters, 2),
+      N_type_quaters = as.character(N_type_quaters)
+    ) %>%
+    rename(
+      Plot = plot,
+      Value = value,
+      'Average deadwood types per quarter' = average_N_type_quaters,
+      'N type-quarters' = N_type_quaters
+    ),
+  rownames = FALSE,
+  caption = "Dead and Decaying Wood Summary by Plot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE,
+    scrollX = TRUE  # ← Enables horizontal scrolling
+  )
+)
+```
+
+## Herbivore impact
+
+```{r herbivore_impact_scoring}
+this.sheet <- "Herbivore impact"
+x.axis_title <- "Herbivore impact score"
+
+herbivore_impact_summary <- create_herbivore_impact_summary() 
+
+```
+
+`r circle_badge(round(mean(herbivore_impact_summary$value, na.rm = TRUE), 2))`
+
+The mean herbivore impact value across the zone is `r round(mean(herbivore_impact_summary$value, na.rm = TRUE), 2)`. Herbivore impact value is a function of the herbivore impact class assigned to each plot, which is based on the proportion of potential growth (over previous 12-months) removed by herbivores for palatable and unpalatable tree, shrub and indicator species.
+
+```{r herbivore_impact_plot, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_errorbar(
+    data = Herbivore_impact_lookup,
+    aes(
+      x = herbivore_impact_class,
+      ymin = value,
+      ymax = value
+    ),
+    width = 0.6,          # controls horizontal length of line
+    color = "black",
+    size = vf_size,
+    alpha = vf_alpha
+  ) +
+  geom_point(
+    data = herbivore_impact_summary,
+    aes(
+      x = herbivore_impact_class,
+      y = value,
+      fill = plot
+    ),
+    alpha = point_alpha,
+    size = point_size,
+    position = position_jitter(width = 0.2, height = 1),
+    shape = 21, colour = "black"
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = "Herbivore impact class",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1)
+)
+```
+```{r herbivore_impact_table, results='asis'}
+datatable(
+  herbivore_impact_summary %>% 
+    mutate(
+      value = round(value, 2),
+      palatable_removed = palatable_removed,
+      unpalatable_removed = unpalatable_removed) %>%
+    rename(
+      Plot = plot,
+      Value = value,
+      'Herbivore impact class' = herbivore_impact_class,
+      'Palatable removed (%)' = palatable_removed,
+      'Un-palatable removed (%)' = unpalatable_removed
+    ),
+  rownames = FALSE,
+  caption = "Herbivore Impact Summary by Plot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE
+  )
+)
+```
+
+
+## Tree health
+
+```{r tree_health_scoring}
+this.sheet <- "Tree health"
+x.axis_title <- "Tree health score"
+tree_health_summary <- create_tree_health_summary()
+```
+
+`r circle_badge(round(mean(tree_health_summary$value, na.rm = TRUE), 2))`
+
+The mean tree health value across the zone is `r round(mean(tree_health_summary$value, na.rm = TRUE), 2)`.
+
+Tree health value is a function of the worst of: a) canopy dieback percentage or b) tree sudden mortality percentage basal area, in each plot.
+
+```{r tree_health_plot, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_line(
+    data = tree_health_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = vf_size, alpha = vf_alpha
+  ) +
+  geom_point(
+    data = tree_health_summary,
+    aes(
+      x = worst_indicator,
+      y = value,
+      fill = plot
+    ),
+    alpha = point_alpha, 
+    size = point_size,
+    position = position_jitter(width = 0.2, height = 1),
+    shape = 21, colour = "black"
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = "Tree health score",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+```{r tree_health_table, results='asis'}
+datatable(
+  tree_health_summary %>% 
+    select(-worst_indicator) %>%  # remove worst indicator - supurfluous
+    mutate(
+      value = round(value, 2),
+      dieback_per = round(dieback_per, 2),
+      suddenmortality_per = round(suddenmortality_per, 2),
+    ) %>%
+    rename(
+      Plot = plot,
+      Value = value,
+      'Canopy dieback (%)' = dieback_per,
+      'Sudden mortality (%)' = suddenmortality_per,
+    ),
+  rownames = FALSE,
+  caption = "Tree Health Summary by Plot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE
+  )
+)
+```
+
+
+## Anthropogenic damage
+
+```{r anthropogenic_damage_scoring}
+this.sheet <- "Anthropogenic damage"
+x.axis_title <- "Anthropogenic damage score"
+anthropogenic_damage_summary <- create_anthropogenic_damage_summary()
+```
+
+`r circle_badge(round(mean(anthropogenic_damage_summary$value, na.rm = TRUE), 2))`
+
+The mean anthropogenic damage value across the zone is `r round(mean(anthropogenic_damage_summary$value, na.rm = TRUE), 2)`.
+
+Anthropogenic damage value is a function of the cover of anthropogenic damage in each plot.
+
+```{r anthropogenic_damage_plot, warning=FALSE, message=FALSE}
+anthro_plots_forplot <- anthropogenic_damage_summary %>%
+      left_join(domin_transformer, by = c("damage_cover" = "domin"))%>%
+  mutate(value_jit = value + runif(n(), -3, 3))  # manually jitter 'value' 
+
+# for testing
+# anthro_plots_forplot$max = 20
+
+antro_damage_domin_ranges <- anthro_plots_forplot[anthro_plots_forplot$max > anthro_plots_forplot$min, ] 
+
+ggplot() +
+  # value function
+  geom_line(
+    data = anthropogenic_damage_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = 1, alpha = vf_alpha
+  ) +
+  # segment for domin class cover range
+  geom_segment( data = antro_damage_domin_ranges,
+  aes(x = min, xend = max + 0.1, y = value_jit, yend = value_jit, colour = factor(plot)),
+    size = 0.5, alpha = 0.7
+  ) +
+  # points for each plot at domin class mid point
+  geom_point(
+    data = anthro_plots_forplot ,
+    aes(
+      x = mid,
+      y = value_jit,
+      fill = plot
+    ),
+    alpha = point_alpha, 
+    size = point_size,
+    shape = 21, colour = "black",
+    position = position_jitter(width = 2, height = 0)
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = "Anthropogenic damage cover (%)",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+
+```
+```{r anthropogenic_damage_table, results='asis'}
+datatable(
+  anthropogenic_damage_summary %>% 
+    mutate(
+      value = round(value, 2),
+      damage_cover = paste(damage_cover, "%", sep = "")
+    ) %>%
+    rename(
+      Plot = plot,
+      Value = value,
+      'Damage cover (%)' = damage_cover
+    ),
+  rownames = FALSE,
+  caption = "Anthropogenic Damage Summary by Plot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE
+  )
+)
+```
+
+
+## Ground flora
+
+```{r ground_flora_scoring}
+this.sheet <- "Ground flora"
+x.axis_title <- "Ground flora cover (%)"
+ground_flora_summary <- create_ground_flora_summary()
+```
+
+`r circle_badge(round(mean(ground_flora_summary$value, na.rm = TRUE), 2))`
+
+The mean ground flora value across the zone is `r round(mean(ground_flora_summary$value, na.rm = TRUE), 2)`.
+
+Ground flora value is a function of the proportion of appropriate ground flora species present in each plot. The number appropriate ground flora species lists vary by habitat.
+
+The appropriate ground flora species list for this habitat type (`r survey_data[[i]]$survey_info$habiat_type`) has `r length(survey_data[[1]]$indicators$ground_flora$appropriate_ground_flora)` species in it, they are: `r paste(survey_data[[1]]$indicators$ground_flora$appropriate_ground_flora, collapse = ", ")`.
+
+```{r ground_flora_plot, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_line(
+    data = ground_flora_predictions,
+    aes(x = measure, y = value),
+    color = "black", size = vf_size, alpha = vf_alpha
+  ) +
+  geom_point(
+    data = ground_flora_summary,
+    aes(
+      x = perc_of_appropriate_ground_flora,
+      y = value,
+      fill = plot
+    ),
+    alpha = point_alpha, 
+    size = point_size,
+    position = position_jitter(width = 2, height = 1),
+    shape = 21, colour = "black"
+  ) +
+  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  # Axes and titles
+  labs(
+    x = "Appropriate ground flora (%)",
+    y = "Value",
+    title = paste(this.sheet, "estimated value function"),
+    fill = "Plot type"
+  ) +
+  # Theme and tweaks
+  theme_pubr() +
+  theme(legend.position = "none")
+```
+```{r ground_flora_table, results='asis'}
+datatable(
+  ground_flora_summary %>% 
+    mutate(
+      value = round(value, 1),
+      perc_of_appropriate_ground_flora = paste(round(perc_of_appropriate_ground_flora, 1), "%", sep = ""),
+      N_plant_spp = as.character(N_plant_spp),
+      N_appropriate_ground_flora = as.character(N_appropriate_ground_flora)
+    ) %>%
+    rename(
+      Plot = plot,
+      Value = value,
+      'Appropriate ground flora (%)' = perc_of_appropriate_ground_flora,
+      'N appropriate species' = N_appropriate_ground_flora,
+      'N species' = N_plant_spp
+    ),
+  rownames = FALSE,
+  caption = "Ground Flora Summary by Plot",
+  options = list(
+    pageLength = 10,
+    dom = 't',
+    ordering = FALSE,
+    scrollX = TRUE  # ← Enables horizontal scrolling
+  )
+)
+```
+

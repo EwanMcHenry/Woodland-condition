@@ -1,6 +1,6 @@
 # set up survey extract function
-excel_sheet_folderpath = "Data\\Field Test\\Ladypark Wood, Wye valley - Non-intervention 70yrs broadleaf SSSI ASNW\\"
-excel_sheet_filename = "WCA - Lady park wood - Field test - 12.06.2025.xlsx"
+excel_sheet_folderpath = "Data\\Field Test\\Harrisons Woodland, Louth, Lincs\\"
+excel_sheet_filename = "WECA - Harrisons Woodland Z15a BNG - Field test - 2025.xlsx"
 write_plot.csv = F
 verticle_dont_contribute = c("Absent", "< 4%", "4 - 10%")
 n.deadwood_types = 4 # total number of deadwood categories - hard coded
@@ -14,6 +14,9 @@ avt_search_radius_m = 10
 habitat_type = "base_rich_lowland"
 transect_length = 100
 
+site_survey_folderpath = "Data\\Field Test\\Harrisons Woodland, Louth, Lincs\\"
+site_survey_filename = "WECA - Harrisons Woodland Z021 BNG - Field test - 2025.xlsx"
+site_survey_habitat_type = "base_rich_lowland"
 
 
 # pull to examine

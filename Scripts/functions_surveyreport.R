@@ -1,3 +1,170 @@
+# summary plot  plot_weca_contributions -----
+# An "equilizer" style plot
+## Horizontal bars for each indicator, to to weighting "filled in" up to their weighted value
+
+plot_weca_contributions <- function(survey_data, summary_score, zone_summary, use_weighted = TRUE) {
+  # Decide which values to use
+  value_col <- if (use_weighted) "weighted_value" else "value"
+  # Convert column name to symbol for tidy evaluation
+  value_sym <- sym(value_col)
+  
+  # Create summary row ----
+  summary_row <- tibble(
+    indicator_name = "WECA summary score",
+    Weighting = 100,
+    weighted_value = summary_score$weighted,
+    value = summary_score$unweighted
+  )
+  
+  if (use_weighted) {
+    summary_row <- summary_row %>%
+      mutate(value = NA_real_)  # Prevent fill colour on summary bar
+  }
+  # Combine with original data
+  zone_summary_ext <- bind_rows(summary_row, zone_summary) %>% 
+    mutate(background_height = if (use_weighted) Weighting else 100)
+  
+  # plot values for each indicator ----
+  indicator_plot_lookup <- c(
+    "Tree age structure" = "age_summary",
+    "Tree species composition" = "tree_spp_summary",
+    "Regeneration" = "regen_summary",
+    "Native canopy cover" = "native_canopy_summary",
+    "Vertical structure" = "vertical_structure_summary",
+    "Invasive plants" = "invasives_summary",
+    "Microhabitats" = "microhabitats_summary",
+    "Horizontal complexity" = "horizontal_complexity_summary",
+    "Veteran trees" = "veteran_trees_summary",
+    "Dead and decaying wood" = "dead_decaying_wood_summary",
+    "Herbivore impact" = "herbivore_impact_summary",
+    "Tree health" = "tree_health_summary",
+    "Anthropogenic damage" = "anthropogenic_damage_summary",
+    "Ground flora" = "ground_flora_summary"
+  )  
+  individual_values <- purrr::map_dfr(
+    zone_summary$indicator_name,
+    function(ind_name) {
+      summary_name <- indicator_plot_lookup[[ind_name]]
+      values <- all_summaries[[summary_name]]$value
+      plot <- all_summaries[[summary_name]]$plot
+      tibble(indicator_name = ind_name, value = values, 
+             plot = plot, 
+             plot_type = all_summaries[[summary_name]]$plot_type)
+    }
+  ) %>% 
+    left_join(
+      zone_summary %>% select(indicator_name, Weighting),
+      by = "indicator_name"
+    )
+  individual_values$plot <- as.factor(individual_values$plot)
+  
+  individual_values$plot_type[is.na(individual_values$plot_type)] <- "main"
+  individual_values$plot_value <- individual_values$value
+  
+  # Get individual values for each indicator
+  if(use_weighted) {
+    individual_values$plot_value <- individual_values$value * individual_values$Weighting / 100
+  }
+  
+  # order indicators ----
+  # Separate indicators and summary row
+  indicators_only <- zone_summary_ext %>%
+    filter(indicator_name != "WECA summary score") %>%
+    arrange(value, weighted_value )
+  
+  ordered_levels <- indicators_only$indicator_name
+  
+  # Rebind with summary row and set levels
+  zone_summary_ext <- bind_rows(
+    indicators_only,
+    filter(zone_summary_ext, indicator_name == "WECA summary score")
+  ) %>%
+    mutate(indicator_name = factor(indicator_name, levels = c(ordered_levels, "WECA summary score")))
+
+    # plot text ----
+  subtitle <- if (use_weighted) {
+    paste("WECA summary score (weighted) =", round(summary_score$weighted,0))
+  } else {
+    paste("WECA summary score (unweighted) =", round(summary_score$unweighted,0))
+  }
+  title <- paste(
+    survey_data[[1]]$survey_info$wood_name,
+    "Zone", survey_data[[1]]$survey_info$zone
+  )
+  
+
+  
+  # plot ----
+  
+  
+  
+  ggplot(zone_summary_ext, aes(x = indicator_name)) +
+    # Background bars (weighting or fixed 100)
+    geom_col(aes(y = background_height), fill = "grey40", width = 0.6) +
+    
+    # Summary bar (red) ----
+  geom_col(
+    data = filter(zone_summary_ext, indicator_name == "WECA summary score"),
+    aes(y = weighted_value),
+    fill = "red", width = 0.4
+  ) +
+    
+    # Indicator bars ----
+  geom_col(
+    data = filter(zone_summary_ext, indicator_name != "WECA summary score"),
+    aes(y = !!value_sym, fill = value),
+    width = 0.4
+  ) +
+    
+    # Indicator score points ----
+  geom_point(
+    data = filter(zone_summary_ext, indicator_name != "WECA summary score"),
+    aes(y = !!value_sym, fill = value),
+    size = 4, shape = 21, colour = "black"
+  ) +
+    # Continuous fill scale for bar and point value scores
+    scale_fill_viridis_c(
+      limits = c(0, 100),
+      name = "Indicator\nscore"
+    ) +
+    
+    # NEW FILL SCALE before reusing fill for discrete `plot` values
+    new_scale_fill() +
+    
+    # points - individual plot values ----
+  geom_point(
+    data = individual_values,
+    aes(y = plot_value, fill = plot, shape = plot_type),
+    size = 2, shape = 21, colour = "black", alpha = 0.8,
+    position = position_jitter(width = 0.2, height = 0)  # jitter on x only
+  ) +
+    scale_fill_manual(values= wt_palette[-c(1,2,4)], name = "Plot") +
+    scale_shape_manual(values = c(21, 24), name = "Plot type") + # 21 for main plots, 24 for supplementary plots
+    
+    # Axes, scales and titles ----
+  coord_flip() +
+    scale_y_continuous(
+      limits = c(0, 100),
+      breaks = seq(0, 100, by = 20)
+    ) +
+    labs(
+      x = NULL,
+      y = "WECA score",
+      title = paste(
+        survey_data[[1]]$survey_info$wood_name,
+        "Zone", survey_data[[1]]$survey_info$zone
+      ),
+      subtitle = subtitle
+    ) +
+    theme_pubr() +
+    theme(
+      legend.position = "right",
+      axis.text.y = element_text(
+        colour = c(rep("black", nrow(zone_summary)), "steelblue")
+      )
+    )
+}
+
 # circle_badge----
 # a badge with a circle shape to embed in the report
 circle_badge <- function(x, color = "#4CAF50", size = "2em") {
@@ -49,24 +216,29 @@ create_tree_species_summary <- function(){
     supp <- ind$trees_supp_spp_present %>%
       mutate(plot = i, plot_type = "supp")
     
-    # Combine and pivot wider (species as columns)
-    bind_rows(main, supp) %>%
+    # Combine, pivot wider
+    spp <- bind_rows(main, supp) %>%
       pivot_wider(
         names_from = tree_species,
         values_from = spp_total_trees,
         values_fill = 0
-      ) %>%
-      left_join(
-        tibble(
-          plot = i,
-          plot_type = c("main", "supp"),
-          per_of_appropriate_species = c(ind$ind.tree_spp_prop_appropriate.main, ind$ind.tree_spp_prop_appropriate.supp)*100,
-          N_appropriate_species = c(ind$ind.tree_spp_N_appropriate.main, ind$ind.tree_spp_N_appropriate.supp),
-          spp_n = c(ind$ind.tree_spp_n.main, ind$ind.tree_spp_n.supp),
-          shannon_index_appropriate = round(c(ind$ind.tree_spp_shannon_appropriate.main, ind$ind.tree_spp_shannon_appropriate.supp), 2)
-        ),
-        by = c("plot", "plot_type")
       )
+    
+    # Force rows to exist for both plot types
+    meta <- tibble(
+      plot = i,
+      plot_type = c("main", "supp"),
+      per_of_appropriate_species = c(ind$ind.tree_spp_prop_appropriate.main, ind$ind.tree_spp_prop_appropriate.supp) * 100,
+      N_appropriate_species = c(ind$ind.tree_spp_N_appropriate.main, ind$ind.tree_spp_N_appropriate.supp),
+      spp_n = c(ind$ind.tree_spp_n.main, ind$ind.tree_spp_n.supp),
+      shannon_index_appropriate = round(
+        c(ind$ind.tree_spp_shannon_appropriate.main, ind$ind.tree_spp_shannon_appropriate.supp), 
+        2
+      )
+    )
+    
+    # Right join ensures meta is kept even if spp is empty
+    right_join(spp, meta, by = c("plot", "plot_type"))
   }) %>% 
     # Closest match join using fuzzyjoin
     fuzzyjoin::difference_inner_join(tree_spp_lookup,

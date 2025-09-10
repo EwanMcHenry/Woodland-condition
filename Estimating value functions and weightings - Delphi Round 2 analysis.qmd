@@ -12,6 +12,7 @@ format:
     toc-depth: 2
     toc-float: true       # Optional: makes the table of contents float on the page
 ---
+
 ```{=html}
 <script>
   function toggleVisibility(id) {
@@ -129,12 +130,14 @@ red.df <- c.df %>%
 
 This section is pretty technical (if you want, skip to [Estimating value functions and generating lookup tables]). It documents the checks and changes done to the raw Delphi survey form data. Best skipped for the more general reader, but useful for those interested in the details of the data curation process.
 
-::: {.toggle-section}
-<button onclick="toggleVisibility('my-section')">Show/hide curation info</button>
+:::: toggle-section
+<button onclick="toggleVisibility(&#39;my-section&#39;)">
 
-<div id="my-section" style="display: none; margin-top: 1em;">
+Show/hide curation info
 
+</button>
 
+::: {#my-section style="display: none; margin-top: 1em;"}
 ## Unchanged responses between rounds
 
 I individually checked where value functions did not change between a respondent's rounds 1 and 2, to be sure it was not accidentally missed, and was satisfied that - where there was no change - this was intentional.
@@ -661,10 +664,8 @@ call_ind_mess(ind_check)
 ### Microhabitats
 
 Microhabitats was not included within the Delphi metric, being added after the surveys. So the value function is based on the consensus of the expert opinion of EM, SH and MH.
-
-</div>
 :::
-
+::::
 
 # Estimating value functions and generating lookup tables
 
@@ -1245,6 +1246,7 @@ newdata <- add_gam_predictions(n_tree_shrub_spp_gam, newdata, scale_to_100 = TRU
 The original expert opinion elicitation was done assuming shorter lists of appropriate species. The list has since been expanded, to the point where all individual tree/shrub species could not fit in the plot.
 
 To allow for this expanded lists, while maintaining pragmatic ecological realism, I have transformed the value function, reducing its range along the measurements and assuming max score beyond that. I multiplied the original measures by 0.6 (the approximate mean of the relative change in list sizes for each habitat type) and manually set the value for all measures above 60% to 100.
+
 ```{r n_tree_shrub_spp_transform, warning=FALSE, message=FALSE}
 # Transform the measure to fit the new list size
 to_addback <- data.frame(measure = newdata$measure[newdata$measure > 60],
@@ -1272,6 +1274,7 @@ n_tree_shrub_spp_predictions <- newdata %>%
 
 
 ```
+
 ```{r n_tree_shrub_spp_plot, warning=FALSE, message=FALSE}
 
 # 5. Plot
@@ -1304,8 +1307,6 @@ ggplot() +
   theme_pubr()+
   theme(legend.position = "none")
 ```
-
-
 
 Look-up table
 
@@ -1426,7 +1427,6 @@ ggplot() +
 ```
 
 Lookup table
-
 
 ```{r invasive_plants_lookup_table, warning=FALSE}
 invasive_plants_vf_lookup <- newdata %>%
@@ -2557,7 +2557,6 @@ The median weight for each indicator was estimated, and then scaled to be out of
 
 Note that the microhabitats indicator was not included in the delphi process. Its weight was set to 100, based on expert concensus of EMcH, MH and SH, as it is considered to be of equal importance to the most important indicator.
 
-
 ```{r weights_estimation, warning=FALSE, message=FALSE}
 # distill down to just one row from each indicator-respondent combination from this.round
 
@@ -2587,6 +2586,7 @@ weights.df_ind <- weights.df %>%
     )
   )
 ```
+
 ```{r weights_plot, warning=FALSE, message=FALSE, caption="Estimated importance weights for each indicator of woodland  condition (Black). Background coloured points show the individual respondants estiamtes, and the grey circles indicate their median. These medain scores were scaled to max 100 for the final estiamtes (black circles)"}
 
 # plot weights
@@ -2621,6 +2621,7 @@ ggplot()+
 ```
 
 Lookup table
+
 ```{r weights_lookup_table, warning=FALSE}
 weights_lookup <- weights.df_ind %>%
   select(indicator_name, median_weight_scaled) %>%
@@ -2641,6 +2642,7 @@ datatable(
   )
 )
 ```
+
 ```{r save_all_value_functions, warning=FALSE}
 # save all value functions at once
 save(

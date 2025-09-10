@@ -1,6 +1,39 @@
 # set up survey extract function
-excel_sheet_folderpath = "Data\\Field Test\\Harrisons Woodland, Louth, Lincs\\"
-excel_sheet_filename = "WECA - Harrisons Woodland Z15a BNG - Field test - 2025.xlsx"
+
+site_name = "Harrisons Wood",
+zone_name = "Z001",
+site_survey_folderpath = "Data\\Field Test\\Harrisons Woodland, Louth, Lincs\\Z001\\",
+site_survey_filename = "WECA - Harrisons Woodland Z001 BNG - Field test - 2025.xlsx",
+site_survey_habitat_type = "base_rich_lowland"
+
+
+excel_sheet_folderpath =   "Data\\Field Test\\Harrisons Woodland, Louth, Lincs\\Z001\\"
+excel_sheet_filename = "WECA - Harrisons Woodland Z001 BNG - Field test - 2025.xlsx"
+
+# beechy
+excel_sheet_folderpath =   "Data\\Field Test\\Beechy Wood, Sussex - Corsican Pine PAWS\\Z01\\"
+excel_sheet_filename = "WCA - Beechy Wood - Field test 22.05.25.xlsx"
+
+# ladypark
+excel_sheet_folderpath =   "Data\\Field Test\\Ladypark Wood, Wye valley - Non-intervention 70yrs broadleaf SSSI ASNW\\Z01\\"
+excel_sheet_filename = "WCA - Lady park wood - Field test - 12.06.2025.xlsx"
+habitat_type = "base_rich_lowland"
+
+# Inverlever
+site_name = "Inverliever, Argyll"
+zone_name = "1"
+site_survey_folderpath = "Data\\Field Test\\Inverliever, Argyll - Conifer clearfell FLS\\Z01\\"
+site_survey_filename = "WCA - Inverliever - Field test 06.06.25.xlsx"
+site_survey_habitat_type = "acidic_upland"
+
+params$site_name = "Inverliever, Argyll"
+params$zone_name = "1"
+params$site_survey_folderpath = "Data\\Field Test\\Inverliever, Argyll - Conifer clearfell FLS\\Z01\\"
+params$site_survey_filename = "WCA - Inverliever - Field test 06.06.25.xlsx"
+params$site_survey_habitat_type = "acidic_upland"
+
+
+
 write_plot.csv = F
 verticle_dont_contribute = c("Absent", "< 4%", "4 - 10%")
 n.deadwood_types = 4 # total number of deadwood categories - hard coded
@@ -11,12 +44,14 @@ list_high_threat_invasives = read.csv("Data\\high_threat_invasives_list.csv")$sp
 herbivory_category_names = c("Low damage", "Moderate damage", "High damage", "Very high damage", "Extreme damage") # names of the herbivory categories
 domin.absent = "0% Absent" # value of absent domin, used to replace NAs in tree species counts
 avt_search_radius_m = 10
-habitat_type = "base_rich_lowland"
 transect_length = 100
 
-site_survey_folderpath = "Data\\Field Test\\Harrisons Woodland, Louth, Lincs\\"
-site_survey_filename = "WECA - Harrisons Woodland Z021 BNG - Field test - 2025.xlsx"
-site_survey_habitat_type = "base_rich_lowland"
+
+
+
+
+
+
 
 
 # pull to examine

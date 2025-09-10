@@ -1,0 +1,606 @@
+---
+title: "Exploring survey effort"
+author: "Ewan McHenry"
+
+format:
+  html:
+    self-contained: true
+    embed-resources: true
+    theme: sandstone
+    code-fold: true       # Enables folding
+    code-summary: "Show code"  # Optional: custom label on the fold button
+    toc: true              # Optional: adds a table of contents
+    toc-depth: 2
+    toc-float: true       # Optional: makes the table of contents float on the page
+    css: report_styles.css
+lightbox: true
+params:
+
+---
+
+```{r libraries and scripts, warning=F, message=F}
+
+# LIBRARIES ---------------------------------------------------------------
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+source("Scripts\\load_weca_tables.R")
+library(ggnewscale)
+library(cowplot)
+library(mgcv)
+library(scales)
+
+
+```
+```{r config, warning=F, message=F}
+# CONFIGURATION
+max_plots <- 12
+iterations <- 150  # change as needed
+
+set.seed(2442)
+
+```
+```{r load data, warning=F, message=F}
+# LOAD DATA
+
+# load all the zone summary data in \outputs\survey data summaries
+# list all summary files
+summary_files <- list.files("outputs/survey data summaries", full.names = TRUE)
+# load all summary files into a list
+
+summary_df <- data.frame(
+  site_name = character(),
+  zone = character(),
+  habitat_type = character(),
+  plot_type = character(),
+  plot_number = integer(),
+  indicator_name = character(),
+  var_type = character(),
+  var = numeric()
+)
+
+
+# loop through each summary file and load the data ----
+for (i in 1:length(summary_files)) {
+  load(summary_files[i])
+  # extract the name of the file without the path
+
+  
+  ## extract info for each indicator ----
+  ### Tree age distribution ----
+  ageclass <- data.frame(
+    plot_type = rep(all_summaries$age_summary$plot_type, 2),
+    plot_number = rep(all_summaries$age_summary$plot, 2),
+    indicator_name = "Tree age distribution",
+    var_type = c(rep("N", nrow(all_summaries$age_summary)),
+                 rep("Value", nrow(all_summaries$age_summary))),
+    var = c(all_summaries$age_summary$age_classes_n,
+            all_summaries$age_summary$value)
+    )
+  ### N tree & shrub spp. ----
+  treespp <- data.frame(
+    plot_type = rep(all_summaries$tree_spp_summary$plot_type, 4),
+    plot_number = rep(all_summaries$tree_spp_summary$plot, 4),
+    indicator_name = "N tree & shrub spp.",
+    var_type = c(rep("N", nrow(all_summaries$tree_spp_summary)),
+                 rep("N appropriate species", nrow(all_summaries$tree_spp_summary)),
+                 rep("Per of appropriate species", nrow(all_summaries$tree_spp_summary)),
+                 rep("Value", nrow(all_summaries$tree_spp_summary))),
+    var = c(all_summaries$tree_spp_summary$spp_n,
+            all_summaries$tree_spp_summary$N_appropriate_species,
+            all_summaries$tree_spp_summary$per_of_appropriate_species,
+            all_summaries$tree_spp_summary$value)
+  )
+  ### regeneration classes ----
+  regen <- data.frame(
+    plot_type = rep(all_summaries$regen_summary$plot_type, 2),
+    plot_number = rep(all_summaries$regen_summary$plot, 2),
+    indicator_name = "Regen",
+    var_type = c(rep("N", nrow(all_summaries$regen_summary)),
+                 rep("Value", nrow(all_summaries$regen_summary))),
+    var = c(all_summaries$regen_summary$regen_classes_n,
+            all_summaries$regen_summary$value)
+  )
+  ### Native canopy percentage  ----
+  nativeness <- data.frame(
+    plot_type = "main", 
+    plot_number = all_summaries$native_canopy_summary$plot,
+    indicator_name = "Native canopy percentage ",
+    var_type = rep(c("Per", "Value"), each = nrow(all_summaries$native_canopy_summary)),
+    var = c(all_summaries$native_canopy_summary$native_canopy_cover,
+            all_summaries$native_canopy_summary$value)
+  )
+  ### vertical structure ----
+  vertical_structure <- data.frame(
+    plot_type = "main", 
+    plot_number = rep(all_summaries$vertical_structure_summary$plot, 2),
+    indicator_name = "Vertical structure",
+    var_type = rep(c("N", "Value"), each = nrow(all_summaries$vertical_structure_summary)),
+    var = c(all_summaries$vertical_structure_summary$vertical_structure_n,
+            all_summaries$vertical_structure_summary$value)
+  )
+  ### Invasive plants % cover ----
+  invasive <- data.frame(
+    plot_type = "main",
+    plot_number = rep(all_summaries$invasives_summary$plot, 3),
+    indicator_name = "Invasive plants % cover",
+    var_type = rep(c("Cover", "High threat", "Value"), each = nrow(all_summaries$invasives_summary)),
+    var = c(all_summaries$invasives_summary$total_invasive_domin_cover ,
+            all_summaries$invasives_summary$high_threat_spp_present ,
+            all_summaries$invasives_summary$value) )
+  ### microhabitats ----
+  microhabitats <- data.frame(
+    plot_type = "main",
+    plot_number = rep(all_summaries$microhabitats_summary$plot, 3),
+    indicator_name = "Microhabitats",
+    var_type = rep(c("N", "Per", "Value"), each = nrow(all_summaries$microhabitats_summary)),
+    var = c(all_summaries$microhabitats_summary$microhabitats_n,
+            all_summaries$microhabitats_summary$microhabitats_prop ,
+            all_summaries$microhabitats_summary$value)
+  )
+  ### horizontal complexity ----
+  horizontal_topheight <- data.frame(
+    plot_type = "main",
+    plot_number = rep(all_summaries$horizontal_complexity_summary$plot, 2),
+    indicator_name = "Horizontal complexity",
+    var_type = rep(c("N", "Value"), each = nrow(all_summaries$horizontal_complexity_summary)),
+    var = c(all_summaries$horizontal_complexity_summary$N_topheight_cats,
+            all_summaries$horizontal_complexity_summary$value))
+  ### veteran trees ----
+  veteran_trees <- data.frame(
+    plot_type = "main",
+    plot_number = rep(all_summaries$veteran_trees_summary$plot, 2),
+    indicator_name = "Veteran trees",
+    var_type = rep(c("N", "Density"), each = nrow(all_summaries$veteran_trees_summary)),
+    var = c(all_summaries$veteran_trees_summary$N_avt_n,
+            all_summaries$veteran_trees_summary$dens_avt 
+            ))
+  ### deadwood ----
+  deadwood <- data.frame(
+    plot_type = "main",
+    plot_number = rep(all_summaries$dead_decaying_wood_summary$plot, 3),
+    indicator_name = "Deadwood",
+    var_type = rep(c("N", "Average N per plot quarter", "Value"), each = nrow(all_summaries$dead_decaying_wood_summary)),
+    var = c(all_summaries$dead_decaying_wood_summary$N_type_quaters ,
+            all_summaries$dead_decaying_wood_summary$average_N_type_quaters ,
+            all_summaries$dead_decaying_wood_summary$value))
+  ### Herbivore damage ----
+  herbivore_impact <- data.frame(
+    plot_type = "main",
+    plot_number = rep(all_summaries$herbivore_impact_summary$plot, 2),
+    indicator_name = "Herbivore damage",
+    var_type = rep(c("Impact", "Value"), each = nrow(all_summaries$herbivore_impact_summary)),
+    var = c(all_summaries$herbivore_impact_summary$herbivore_impact_class ,
+            all_summaries$herbivore_impact_summary$value))
+  ### tree health ----
+  tree_health <- data.frame(
+    plot_type = "main",
+    plot_number = rep(all_summaries$tree_health_summary$plot, 2),
+    indicator_name = "Tree health",
+    var_type = rep(c("Per", "Value"), each = nrow(all_summaries$tree_health_summary)),
+    var = c(all_summaries$tree_health_summary$worst_indicator,
+            all_summaries$tree_health_summary$value))
+  ### anthropogenic damage ----
+  anthropogenic_damage <- data.frame(
+    plot_type = "main",
+    plot_number = rep(all_summaries$anthropogenic_damage_summary$plot, 2),
+    indicator_name = "Anthropogenic damage",
+    var_type = rep(c("Cover", "Value"), each = nrow(all_summaries$anthropogenic_damage_summary)),
+    var = c(all_summaries$anthropogenic_damage_summary$damage_cover,
+            all_summaries$anthropogenic_damage_summary$value))
+  ### ground flora ----
+  ground_flora <- data.frame(
+    plot_type = "main",
+    plot_number = rep(all_summaries$ground_flora_summary$plot, 4),
+    indicator_name = "Ground flora",
+    var_type = rep(c("N", "N appropriate species", "Per", "Value"), each = nrow(all_summaries$ground_flora_summary)),
+    var = c(all_summaries$ground_flora_summary$N_plant_spp,
+            all_summaries$ground_flora_summary$N_appropriate_ground_flora,
+            all_summaries$ground_flora_summary$perc_of_appropriate_ground_flora,
+            all_summaries$ground_flora_summary$value))
+  
+  ## combine all together ----
+  summary_dataframes_site <- rbind(
+    ageclass,
+    treespp,
+    regen,
+    nativeness,
+    vertical_structure,
+    invasive,
+    microhabitats,
+    horizontal_topheight,
+    veteran_trees,
+    deadwood,
+    herbivore_impact,
+    tree_health,
+    anthropogenic_damage,
+    ground_flora
+  ) %>%
+    mutate(site_name = all_summaries$site_info$wood_name,
+           zone = all_summaries$site_info$zone,
+           habitat_type = all_summaries$site_info$habitat_type) %>%
+    select(site_name, zone, habitat_type, plot_type, plot_number,
+           indicator_name, var_type, var)
+  
+  # add site info to the summary dataframes
+  summary_df <- summary_dataframes_site %>% 
+    rbind(summary_df, .)
+
+}
+
+## remove any site-zone combo with less than 3 plots ----
+summary_df <- summary_df %>%
+  group_by(site_name, zone) %>%
+  filter(n_distinct(plot_number) > 3) %>%
+  ungroup() %>% 
+  mutate()
+
+```
+```{r sumulate surveying, warning=F, message=F}
+# SIMULATED SURVEYING ----
+
+# simulating zone-level variation in valuation based on plot effort
+
+summary_df$site_zone <- paste(summary_df$site_name, summary_df$zone)
+indicator_mean_values <- list()
+overall_score <- list()
+indicator_mean_values_df <- data.frame()
+weights.sum <- sum(weights_lookup$Weight..scaled.to.max.100.)
+
+weights.sum <- sum(weights_lookup$Weight..scaled.to.max.100.)
+site_zones <- unique(summary_df$site_zone)
+
+indicator_mean_values_all <- list()
+overall_scores_all <- list()
+
+for (this_site_zone in site_zones) {
+  site_zone_data <- summary_df %>% filter(site_zone == this_site_zone)
+  
+  zone_results <- map(1:max_plots, function(n_plots) {
+    map(1:iterations, function(iter) {
+      
+      # Sample plots with replacement
+      resample_plots <- sample(site_zone_data$plot_number, size = n_plots, replace = TRUE)
+      sampled <- site_zone_data %>%
+        filter(plot_number %in% resample_plots) %>%
+        right_join(
+          tibble(plot_number = resample_plots, draw_id = seq_along(resample_plots)),
+          by = "plot_number"
+        ) %>%
+        arrange(draw_id)
+      
+      # Veteran trees value
+      mean_vet_dens <- sampled %>%
+        filter(indicator_name == "Veteran trees", var_type == "Density") %>%
+        summarise(mean_density = mean(as.numeric(var), na.rm = TRUE)) %>%
+        pull(mean_density)
+      
+      avt_value <- veteran_trees_lookup$value[
+        which.min(abs(veteran_trees_lookup$N.Veteran.Trees.per.ha - mean_vet_dens))
+      ]
+      
+      # Indicator-level values
+      indicator_df <- sampled %>%
+        filter(var_type == "Value", indicator_name != "Veteran trees") %>%
+        group_by(indicator_name) %>%
+        summarise(mean_value = mean(as.numeric(var), na.rm = TRUE), .groups = "drop") %>%
+        bind_rows(tibble(indicator_name = "Veteran trees", mean_value = avt_value)) %>%
+        left_join(weights_lookup, by = c("indicator_name" = "Indicator")) %>%
+        rename(weight = Weight..scaled.to.max.100.,
+               value = mean_value) %>%
+        mutate(weighted_value = value * weight / 100,
+               site_zone = this_site_zone,
+               n_plots = n_plots,
+               iteration = iter) %>%
+        select(site_zone, n_plots, iteration, indicator_name, value, weighted_value)
+      
+      # Return both indicator-level and overall score as a list
+      list(
+        indicators = indicator_df,
+        overall = tibble(
+          site_zone = this_site_zone,
+          n_plots = n_plots,
+          iteration = iter,
+          overall_score = 100 * sum(indicator_df$weighted_value, na.rm = TRUE) / weights.sum
+        )
+      )
+    })
+  })
+ 
+  # Combine results per site_zone
+  indicator_mean_values_all[[this_site_zone]] <- bind_rows(map(zone_results, ~map(.x, "indicators") %>% bind_rows()))
+  overall_scores_all[[this_site_zone]] <- bind_rows(map(zone_results, ~map(.x, "overall") %>% bind_rows()))
+}
+
+# Final combined data frames
+indicator_mean_values_df <- bind_rows(indicator_mean_values_all)
+overall_scores_df <- bind_rows(overall_scores_all)
+  
+  
+# summarise overall scores ----
+all_overall_scores_summary <- overall_scores_df %>%
+  group_by(n_plots, site_zone) %>%
+  summarise(
+    mean_overall_score = mean(overall_score, na.rm = TRUE),
+    lower_95 = quantile(overall_score, 0.025, na.rm = TRUE),
+    upper_95 = quantile(overall_score, 0.975, na.rm = TRUE),
+    lower_80 = quantile(overall_score, 0.10, na.rm = TRUE),
+    upper_80 = quantile(overall_score, 0.90, na.rm = TRUE),
+    lower_50 = quantile(overall_score, 0.25, na.rm = TRUE),
+    upper_50 = quantile(overall_score, 0.75, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>% 
+  mutate(ci_range_95 = upper_95 - lower_95,
+         ci_range_80 = upper_80 - lower_80,
+         ci_range_50 = upper_50 - lower_50)
+
+# summarise indicator values ----
+all_indicator_values_summary <- indicator_mean_values_df %>%
+  group_by(n_plots, site_zone, indicator_name) %>%
+  summarise(
+    mean_value = mean(value, na.rm = TRUE),
+    lower_95_unweighted = quantile(value, 0.025, na.rm = TRUE),
+    upper_95_unweighted = quantile(value, 0.975, na.rm = TRUE),
+    lower_80_unweighted = quantile(value, 0.10, na.rm = TRUE),
+    upper_80_unweighted = quantile(value, 0.90, na.rm = TRUE),
+    lower_50_unweighted = quantile(value, 0.25, na.rm = TRUE),
+    upper_50_unweighted = quantile(value, 0.75, na.rm = TRUE),
+    lower_95_weighted = quantile(weighted_value, 0.025, na.rm = TRUE),
+    upper_95_weighted = quantile(weighted_value, 0.975, na.rm = TRUE),
+    lower_80_weighted = quantile(weighted_value, 0.10, na.rm = TRUE),
+    upper_80_weighted = quantile(weighted_value, 0.90, na.rm = TRUE),
+    lower_50_weighted = quantile(weighted_value, 0.25, na.rm = TRUE),
+    upper_50_weighted = quantile(weighted_value, 0.75, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>% 
+  mutate(ci_range_95_unweighted = upper_95_unweighted - lower_95_unweighted,
+         ci_range_80_unweighted = upper_80_unweighted - lower_80_unweighted,
+         ci_range_50_unweighted = upper_50_unweighted - lower_50_unweighted,
+         ci_range_95_weighted = upper_95_weighted - lower_95_weighted,
+         ci_range_80_weighted = upper_80_weighted - lower_80_weighted,
+         ci_range_50_weighted = upper_50_weighted - lower_50_weighted)
+```
+# Introduction
+
+A provisional method for the Woodland Trust's Woodland Ecological Condition Assessment (WECA) has been developed - with significant input from dozens of practitioners and experts across the Trust - and trialed at multiple sites. An analytical pipeline has also been developed to take preliminary excel field forms and produce WECA reports for surveyed zones, presenting the overall summary score for those zones and further detail on the contribution of differetn indicators etc.
+
+One key question that remains regards the appropriate allocation of sampling effort: how many plots should be carried out at different zones in order to best balance the competing demands of practical survey constraints and optimal analytical rigor. This report presents evidence to support that decision.
+
+# Method
+
+Where possible, the trial sites were intentionally "over sampled". More plots have been surveyed that was thought would typically be practically possible. 
+
+```{r table of field test sample sizes }
+knitr::kable(
+  summary_df %>%
+    group_by(site_name, zone) %>%
+    summarise(n_plots = n_distinct(plot_number), .groups = "drop") %>%
+    arrange(site_name, zone),
+  caption = "Table 1. Number of plots surveyed at each trial site-zone."
+)
+```
+
+Here, I randomly re-sampled (with replacement) within those plots, differing the numbers of plots to simulate different sampling intensities. I did this `r iterations` times for each combination of surveyed zones and number of plots explored, and for each iteration and combination I generated a WECA summary score and individual indicator scores. 
+
+The variation in these re-sampled scores contains information on how variable the results from the WECA method are likely to be under different sampling efforts.
+
+I first plotted the mean of the scores for each zone-sampling effort combination across all simulated iteractions, with qunatile ranges representing the variability.  
+
+I then plotted the sizes of different quantile ranges, to focus more explicitly on the amount of uncertainty associated with different sample sizes.
+
+Finally, I plot the marginal reduction in the quantile ranges: representing the amount of estimate variability that is reduced by adding each additional plot. 
+
+
+# Results
+
+## Summary score estimates
+
+```{r plot overall scores, warning=F, message=F, caption = "WECA summary score calculated from simulated re-samples with different plot numbers. Lines represent the mean of simulated scores, and the ribbons represent their 50% quantile ranges."}
+
+ggplot(all_overall_scores_summary) +
+  geom_ribbon(aes(x = n_plots, ymin = lower_50, ymax = upper_50, fill = site_zone), 
+              alpha = 0.4, color = NA) + 
+    geom_ribbon(aes(x = n_plots, ymin = lower_80, ymax = upper_80, fill = site_zone), 
+              alpha = 0.1, color = NA) + 
+
+  # geom_ribbon(aes(x = n_plots, ymin = lower_95, ymax = upper_95, fill = site_zone), 
+  #             alpha = 0.1, color = NA) + 
+  geom_line(aes(x = n_plots, y = mean_overall_score, colour = site_zone  ) ) +
+
+  labs(
+    title = "Simulated summary score against number of plots",
+    x = "Number of plots",
+    y = "Overall score",
+    color = "Site-Zone",
+    fill = "Site-Zone"
+  ) +
+  scale_color_brewer(palette = "Set1") +
+  scale_fill_brewer(palette = "Set1") +
+  theme_pubr() +
+  theme(legend.position = "right")
+```
+
+## Summary score variation
+
+```{r variation in overall scores, warning=F, message=F, caption = "Variation in WECA summary score estimates (quantile ranges) against number of plots. a) 50% quantile range. b) 80% quantile range."}
+
+# Fit GAMs for the mean trend
+gam_50 <- gam(ci_range_50 ~ s(n_plots, k = 5), data = all_overall_scores_summary)
+gam_80 <- gam(ci_range_80 ~ s(n_plots, k = 5), data = all_overall_scores_summary)
+
+# Predict GAM trend
+newdat <- data.frame(n_plots = seq(min(all_overall_scores_summary$n_plots),
+                                   max(all_overall_scores_summary$n_plots), length.out = 100))
+newdat$pred_50 <- predict(gam_50, newdata = newdat)
+newdat$pred_80 <- predict(gam_80, newdata = newdat)
+
+# Base plots with GAM trend
+p50 <- ggplot(all_overall_scores_summary, aes(x = n_plots, y = ci_range_50, color = site_zone)) +
+  geom_line(alpha = 0.6) +
+  geom_line(data = newdat, aes(y = pred_50), color = "black", size = 1.2) +
+  labs(title = "a) 50% quantile range", y = NULL, x = NULL, color = "Site-Zone") +
+  scale_color_brewer(palette = "Set1") +
+  scale_x_continuous(breaks = pretty_breaks()) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.margin = unit(c(0, 0, 2, 1), "lines"))
+
+p80 <- ggplot(all_overall_scores_summary, aes(x = n_plots, y = ci_range_80, color = site_zone)) +
+  geom_line(alpha = 0.6) +
+  geom_line(data = newdat, aes(y = pred_80), color = "black", size = 1.2) +
+  labs(title = "b) 80% quantile range", y = NULL, x = NULL, color = "Site-Zone") +
+  scale_color_brewer(palette = "Set1") +
+  scale_x_continuous(breaks = pretty_breaks()) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.margin = unit(c(0, 0, 2, 0), "lines"))
+
+# Extract shared legend
+legend <- get_legend(
+  ggplot(all_overall_scores_summary, aes(x = n_plots, y = ci_range_50, color = site_zone)) +
+    geom_line() +
+    theme_minimal() +
+    theme(legend.position = "bottom")
+)
+
+# Combine plots side by side
+plots <- plot_grid(p50, p80, nrow = 1, align = "v", axis = "lr")
+
+# Add shared axis labels
+final_plot <- ggdraw(plots) +
+  draw_label("Bootstrapped value range", x = 0.015, y = 0.5, angle = 90, size = 11, hjust = 0.5, vjust = 0.5) +
+  draw_label("Number of plots", x = 0.5, y = 0.02, size = 11, hjust = 0.5, vjust = 0.5)
+
+# Add legend below
+final_plot_with_legend <- plot_grid(final_plot, legend, ncol = 1, rel_heights = c(1, 0.1))
+
+final_plot_with_legend
+
+```
+
+## Marginal reduction in uncertainty
+
+The estimated reduction in quantile ranges that comes from adding an additional plot. This is calculated as the difference in quantile range between n and n-1 plots. It is a measure of the "value" of that number of plots, rather than one less.
+
+```{r marginal reduction in uncertainty, warning=F, message=F, caption = "Marginal reduction in quantile ranges with the addition of each plot. Coloured lines represent individual sites, the black line representes the mean trend. a) 50% quantile range. b) 80% quantile range."}
+# calculate marginal reduction in uncertainty ----
+marginal_reduction <- all_overall_scores_summary %>%
+  arrange(site_zone, n_plots) %>%
+  group_by(site_zone) %>%
+  mutate(marginal_reduction_50 = lag(ci_range_50) - ci_range_50,
+         marginal_reduction_80 = lag(ci_range_80) - ci_range_80,
+         marginal_reduction_95 = lag(ci_range_95) - ci_range_95) %>%
+  ungroup()
+
+# Fit GAMs (single smooth across all sites)
+gam_50 <- gam(marginal_reduction_50 ~ s(n_plots, k = 5),
+              data = marginal_reduction)
+gam_80 <- gam(marginal_reduction_80 ~ s(n_plots, k = 5),
+              data = marginal_reduction)
+
+# Predict values across the n_plots range
+newdat <- expand.grid(n_plots = seq(min(marginal_reduction$n_plots+1),
+                                    max(marginal_reduction$n_plots),
+                                    length.out = 100))
+
+newdat$pred_50 <- predict(gam_50, newdata = newdat)
+newdat$pred_80 <- predict(gam_80, newdata = newdat)
+
+# Plot GAM-smoothed trends
+p1 <- ggplot(marginal_reduction, aes(x = n_plots, y = marginal_reduction_50, color = site_zone)) +
+  geom_line(alpha = 0.65) +
+  geom_line(data = newdat, aes(y = pred_50), color = "black", size = 1.2) +
+  labs(x = NULL,
+       y = NULL,
+       title = "a) 50% quantile range",
+       color = "Site-Zone") +
+  scale_color_brewer(palette = "Set1") +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  theme_minimal() +
+  theme(legend.position = "none") + 
+  theme(plot.margin = unit(c(0, 0, 2, 1), "lines")) # top, right, bottom, left
+  
+
+p2 <- ggplot(marginal_reduction, aes(x = n_plots, y = marginal_reduction_80, color = site_zone)) +
+  geom_line(alpha = 0.65) +
+  geom_line(data = newdat, aes(y = pred_80), color = "black", size = 1.2) +
+  labs(x = NULL,
+       y = NULL,
+       title = "b) 80% quantile range",
+       color = "Site-Zone") +
+  scale_color_brewer(palette = "Set1") +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  theme_minimal() +
+  theme(legend.position = "none") + 
+  theme(plot.margin = unit(c(0, 0, 2, 0), "lines")) # top, right, bottom, left
+  
+
+# Shared legend and axis label
+# Shared legend and axis label
+legend <- get_legend(p1 + theme(legend.position = "right"))
+
+# Combine plots with aligned panels
+plots <- plot_grid(p1, p2, nrow = 1, align = "v", axis = "lr")
+
+# Add legend
+plots_with_legend <- plot_grid(plots, legend, rel_widths = c(1, 0.25))
+
+# Add shared axis labels
+final_plot <- ggdraw(plots_with_legend) +
+  # y-axis title on the left
+  draw_label("Marginal change in quantile range", 
+             x = 0.012, y = 0.5, angle = 90, size = 11, hjust = 0.5, vjust = 0.5) +
+  # shared x-axis title at bottom
+  draw_label("Number of plots",
+             x = 0.45, y = 0.02, size = 11, hjust = 0.5, vjust = 0.5)
+
+final_plot
+
+```
+
+
+## Individual indicators
+
+## Variation by indicator
+
+Point-plot of 50% quantile range in each indicator's weighted value, averaged across all site-zones. 
+
+Indicators with a higher quantile ranges are  
+
+```{r variation in indicator values - mean, warning=F, message=F}
+indicator_variation_mean <- all_indicator_values_summary %>%
+  group_by(indicator_name) %>%
+  summarise(mean_ci_range_50_weighted = mean(ci_range_50_weighted, na.rm = TRUE), .groups = 'drop')
+
+ggplot(indicator_variation_mean, 
+       aes(x = reorder(indicator_name, mean_ci_range_50_weighted), 
+           y = mean_ci_range_50_weighted)) +
+  geom_point(size = 3, color = "blue") +
+  coord_flip() +
+  labs(title = "Influence of indicator variability \non summary score variability",
+       x = NULL,
+       y = "50% quantile range of weighted score across zones (using 5 plots)") +
+  theme_pubr()
+
+```
+
+
+Heatmap of the 50% quantile range in indicator weighted values for each site-zone when five plots are sampled. This gives an indication of how well these indicators's contribution to overall condition are captured by this "typical" survey situation.
+
+```{r variation in indicator values - site zone, warning=F, message=F}
+
+ggplot(all_indicator_values_summary %>% filter(n_plots == 5)
+       , aes(x = site_zone, y = indicator_name, fill = ci_range_50_weighted )) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "blue",
+                      lim = c(0,20) , oob = scales::squish ) +
+  labs(title = "Plot-level variation in indicator value",
+       x = NULL,
+       y = NULL,
+       fill = "Standard\ndeviation\nin value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+

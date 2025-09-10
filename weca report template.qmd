@@ -1,23 +1,27 @@
 ---
-title: "WECA Report: `r params$site_name`"
+title: "WECA Report: `r params$site_name` - Zone `r params$zone_name`"
 author: "Ewan McHenry"
 
 format:
   html:
     self-contained: true
     embed-resources: true
-    theme: cosmo
+    theme: sandstone
     code-fold: true       # Enables folding
     code-summary: "Show code"  # Optional: custom label on the fold button
     toc: true              # Optional: adds a table of contents
     toc-depth: 2
     toc-float: true       # Optional: makes the table of contents float on the page
+    css: report_styles.css
+lightbox: true
 params:
-  site_name: "Ladypark Wood"
-  zone_name: "1"
-  site_survey_folderpath: "Data\\Field Test\\Ladypark Wood, Wye valley - Non-intervention 70yrs broadleaf SSSI ASNW\\"
-  site_survey_filename: "WCA - Lady park wood - Field test - 12.06.2025.xlsx"
+  site_name: "Harrisons Wood"
+  zone_name: "Z021"
+  site_survey_folderpath: "Data\\Field Test\\Harrisons Woodland, Louth, Lincs\\Z021\\"
+  site_survey_filename: "WECA - Harrisons Woodland Z021 BNG - Field test - 2025.xlsx"
   site_survey_habitat_type: "base_rich_lowland"
+  embed_photos: FALSE # Set to TRUE to embed photos as base64, or FALSE to link to local files
+  include_photos: TRUE # Set to FALSE to exclude photos from the report
 ---
 
 ```{=html}
@@ -45,51 +49,23 @@ library(ggpubr)
 library(U.utilities)
 library(fuzzyjoin)
 library(tidyselect)
+library(ggnewscale)
+library(base64enc)
+library(fs)
+library(magick)
+library(base64enc)
 
-source("function-extract plot data.R")
+source("Scripts\\function-extract plot data.R")
 source("Scripts\\functions_surveyreport.R")
+source("Scripts\\load_weca_tables.R")
 
+# DATA --------------------------------------------------------------------
 appropriate_tree_path <- "Data\\Appropriate_tree_spp_list.csv"
 appropriate_flora_path <- "Data\\Appropriate_groundflora_spp_list.csv"
 high_threat_invasives_path <- "Data\\high_threat_invasives_list.csv"
 
 microhabitats_list <- read.csv("Data\\microhabitats_list.csv")
 
-# Load the lookup tables
-age_lookup <- read.csv("outputs\\lookup_tables\\Tree age distribution_vf_lookup.csv")
-tree_spp_lookup <- read.csv("outputs\\lookup_tables\\N tree & shrub spp._vf_lookup.csv")
-antropogenic_damage_lookup <- read.csv("outputs\\lookup_tables\\Anthropogenic damage_vf_lookup_domin.csv")
-deadwood_lookup <- read.csv("outputs\\lookup_tables\\Deadwood_vf_lookup.csv")
-ground_flora_lookup <- read.csv("outputs\\lookup_tables\\Ground flora_vf_lookup.csv")
-Horizontal_complexity_lookup <- read.csv("outputs\\lookup_tables\\Horizontal complexity_vf_lookup.csv")
-invasives_lookup <- read.csv("outputs\\lookup_tables\\Invasive plants % cover_vf_lookup_domin.csv")
-microhabitats_lookup <- read.csv("outputs\\lookup_tables\\Microhabitats_vf_lookup.csv")
-native_canopy_lookup <- read.csv("outputs\\lookup_tables\\Native canopy percentage _vf_lookup.csv")
-regen_lookup <- read.csv("outputs\\lookup_tables\\Regen_vf_lookup.csv")
-tree_health_lookup <- read.csv("outputs\\lookup_tables\\Tree health_vf_lookup.csv")
-vertical_structure_lookup <- read.csv("outputs\\lookup_tables\\Vertical structure_vf_lookup.csv")
-veteran_trees_lookup <- read.csv("outputs\\lookup_tables\\Veteran trees_vf_lookup.csv")
-Herbivore_impact_lookup <- read.csv("outputs\\lookup_tables\\Herbivore damage_vf_lookup.csv")%>%
-  mutate(
-    herbivore_impact_class = case_when(
-      str_detect(Damage.class..potential.12.month.growth.removed, "^Negligable") ~ "Negligable damage",
-      str_detect(Damage.class..potential.12.month.growth.removed, "^Low damage") ~ "Low damage",
-      str_detect(Damage.class..potential.12.month.growth.removed, "^Moderate") ~ "Moderate damage",
-      str_detect(Damage.class..potential.12.month.growth.removed, "^High damage") ~ "High damage",
-      str_detect(Damage.class..potential.12.month.growth.removed, "^Very high") ~ "Very high damage",
-      TRUE ~ NA_character_
-    )
-  ) %>%
-  select(herbivore_impact_class, value) %>% 
-  mutate(herbivore_impact_class = factor(herbivore_impact_class, 
-                                         levels = c("Negligable damage", "Low damage", "Moderate damage", "High damage", "Very high damage")))
-
-weights_lookup <- read.csv("outputs\\lookup_tables\\weights_lookup.csv")
-
-#load domin range table
-domin_transformer <- read.csv("Data\\domin transformer.csv") %>% 
-  mutate(domin = as.character(antropogenic_damage_lookup$domin))
-domin_transformer$mid = domin_transformer$min + (domin_transformer$max - domin_transformer$min) / 2
 
 # load value function predictions - created by "D:/Users/Ewan McHenry/OneDrive - the Woodland Trust/WEC/Woodland-condition/Estimating value functions and weightings - Delphi Round 2 analysis.qmd"
 ## run this script to generate the value function predictions
@@ -120,9 +96,9 @@ point_alpha = 0.8
 point_size = 2
 ```
 
-This doc walks through the calculation of WECA score for each indicator at each plot, and zone level, focusing on Ladypark Wood.
+This doc walks through the calculation of WECA score for each indicator at each plot, and zone level, focusing on `r params$site_name`, zone `r params$zone_name`.
 
-> I have written a [function](D:/Users/Ewan%20McHenry/OneDrive%20-%20the%20Woodland%20Trust/WEC/Woodland-condition/function-extract%20plot%20data.R) that extracts the WECA survey info from the [field survey form](%22D:\Users\Ewan%20McHenry\OneDrive%20-%20the%20Woodland%20Trust\WEC\Woodland-condition\Data\Field%20Test\Ladypark%20Wood,%20Wye%20valley%20-%20Non-intervention%2070yrs%20broadleaf%20SSSI%20ASNW\WCA%20-%20Lady%20park%20wood%20-%20Field%20test%20-%2012.06.2025.xlsx%22) and converts it to the point prior to comparison with the value function lookup tables and weightings that were produced in [Estimating value functions and weightings - Delphi Round 2 analysis](D:/Users/Ewan%20McHenry/OneDrive%20-%20the%20Woodland%20Trust/WEC/Woodland-condition/Estimating%20value%20functions%20and%20weightings%20-%20Delphi%20Round%202%20analysis.qmd). The analysis here does that comparison.
+> I have written a [function](D:/Users/Ewan%20McHenry/OneDrive%20-%20the%20Woodland%20Trust/WEC/Woodland-condition/function-extract%20plot%20data.R) that extracts the WECA survey info from the [field survey form](%22D:\Users\Ewan%20McHenry\OneDrive%20-%20the%20Woodland%20Trust\WEC\Woodland-condition\Data\Field%20Test\Ladypark%20Wood,%20Wye%20valley%20-%20Non-intervention%2070yrs%20broadleaf%20SSSI%20ASNW\WCA%20-%20Lady%20park%20wood%20-%20Field%20test%20-%2012.06.2025.xlsx%22). Here I take that information and analyse it, using the value function lookup tables and weightings that were produced in [Estimating value functions and weightings - Delphi Round 2 analysis](D:/Users/Ewan%20McHenry/OneDrive%20-%20the%20Woodland%20Trust/WEC/Woodland-condition/Estimating%20value%20functions%20and%20weightings%20-%20Delphi%20Round%202%20analysis.qmd), producing WECA summary scores, and WECA scores for each indicator individually.
 
 ```{r extract_survey_data, message=F, warning=FALSE}
 survey_data <- extract_plot_survey_data(
@@ -136,7 +112,14 @@ survey_data <- extract_plot_survey_data(
   )
 
 all_summaries <- create_all_summaries()
+all_summaries$site_info <- list(
+  wood_name = params$site_name,
+  zone = params$zone_name,
+  habitat_type = site_survey_habitat_type
+)
 
+dir.create("outputs/survey data summaries", showWarnings = FALSE)
+save(all_summaries, file = paste0("outputs\\survey data summaries\\", survey_data[[1]]$survey_info$wood_name, "_zone_",survey_data[[1]]$survey_info$zone, ".RData"))
 
 ```
 
@@ -208,96 +191,37 @@ zone_summary <- zone_summary %>%
     weighted_value = value * Weighting / 100,
   )
 
-summary_score <- round(
-  sum(zone_summary$weighted_value, na.rm = TRUE) /
-    sum(zone_summary$Weighting, na.rm = TRUE) * 100, 1
+summary_score <- list(weighted = sum(zone_summary$weighted_value, na.rm = TRUE) /
+                        sum(zone_summary$Weighting, na.rm = TRUE) * 100,
+                      unweighted = mean(zone_summary$value)
 )
+
+  
+
 ```
 
-`r circle_badge(round(summary_score, 0))`
+::: panel-tabset
+## Weighted scoring
 
-The WECA summary score for `r survey_data[[1]]$survey_info$wood_name` zone `r survey_data[[1]]$survey_info$zone` is `r round(summary_score, 0)`, out of a maximum of 100.
+`r circle_badge(round(summary_score$weighted, 0))`
 
-```{r zone_summary_plot, echo=FALSE, message=FALSE, warning=FALSE}
-# An "equilizer" style plot
-## Horizontal bars for each indicator, to to weighting "filled in" up to their weighted value
+The WECA summary score (weighted) for `r survey_data[[1]]$survey_info$wood_name` zone `r survey_data[[1]]$survey_info$zone` is `r round(summary_score$weighted, 0)`/100.
 
-summary_row <- tibble(
-  indicator_name = "WECA summary score",
-  Weighting = 100,
-  weighted_value = summary_score,
-  value = summary_score  # You can define a value here for consistent fill mapping
-)
-
-
-# Calculate summary score
-summary_score <- round(
-  sum(zone_summary$weighted_value, na.rm = TRUE) /
-    sum(zone_summary$Weighting, na.rm = TRUE) * 100, 1
-)
-
-# Create summary row
-summary_row <- tibble(
-  indicator_name = "WECA summary score",
-  Weighting = 100,
-  weighted_value = summary_score,
-  value = NA_real_  # NA so viridis doesn't try to colour it
-)
-
-# Combine with original data
-zone_summary_ext <- bind_rows(summary_row, zone_summary)
-
-ggplot(zone_summary_ext, aes(x = fct_rev(indicator_name))) +
-  # Background bars (Weighting)
-  geom_col(aes(y = Weighting), fill = "grey40", width = 0.6) +
-
-  # Foreground bar: summary (RED)
-  geom_col(
-    data = filter(zone_summary_ext, indicator_name == "WECA summary score"),
-    aes(y = weighted_value),
-    fill = "red", width = 0.4
-  ) +
-
-  # Foreground bars: indicators (viridis fill)
-  geom_col(
-    data = filter(zone_summary_ext, indicator_name != "WECA summary score"),
-    aes(y = weighted_value, fill = value),
-    width = 0.4
-  ) +
-
-  # Points (for indicator values only)
-  geom_point(
-    data = filter(zone_summary_ext, indicator_name != "WECA summary score"),
-    aes(y = weighted_value, fill = value),
-    size = 4, shape = 21, colour = "black"
-  ) +
-
-  coord_flip() +
-  scale_fill_viridis_c(
-    limits = c(0, 100),
-    name = "Indicator score"
-  ) +
-  scale_y_continuous(
-    limits = c(0, 100),
-    breaks = seq(0, 100, by = 20)
-  ) +
-  labs(
-    x = NULL,
-    y = "Relative Contribution to WECA Summary score",
-    title = paste(
-      survey_data[[1]]$survey_info$wood_name,
-      "Zone", survey_data[[1]]$survey_info$zone
-    ),
-    subtitle = paste("WECA summary score =", summary_score)
-  ) +
-  theme_pubr() +
-  theme(
-    legend.position = "right",
-    axis.text.y = element_text(
-      colour = c("steelblue", rep("black", nrow(zone_summary)))
-    )
-  )
+```{r zone_summary_plot_weighted, echo=FALSE, message=FALSE, warning=FALSE}
+plot_weca_contributions(survey_data, summary_score, zone_summary, use_weighted = TRUE)
 ```
+
+## Unweighted scoring
+
+`r circle_badge(round(summary_score$unweighted, 0))`
+
+The WECA summary score (weighted) for `r survey_data[[1]]$survey_info$wood_name` zone `r survey_data[[1]]$survey_info$zone` is `r round(summary_score$unweighted, 0)`/100.
+
+```{r zone_summary_plot_unweighted, echo=FALSE, message=FALSE, warning=FALSE}
+plot_weca_contributions(survey_data, summary_score, zone_summary, use_weighted = F)
+```
+
+## Summary Table
 
 ```{r zone_summary_table, results='asis'}
 datatable(
@@ -320,9 +244,127 @@ datatable(
   )
 )
 ```
+:::
 
-# Survey details
+# Zone Map
 
+Placeholder for interactive map of zone and plots
+
+# Plot photos
+
+::: panel-tabset
+```{r group_plot_photos, echo=FALSE, message=FALSE, warning=FALSE}
+
+#only run if include_photos is TRUE
+if (params$include_photos) {
+  # Locate the photo folder (matching "photo" or "Photo")
+photo_folder <- list.dirs(site_survey_folderpath, recursive = FALSE, full.names = TRUE) %>%
+  keep(~ grepl("photo", ., ignore.case = TRUE)) %>%
+  first()
+
+# Get list of photo files
+photo_files <- list.files(photo_folder, pattern = "\\.(jpg|jpeg|png)$", full.names = TRUE, ignore.case = TRUE)
+
+# Extract plot IDs (e.g. _p01 becomes P01)
+photo_info <- tibble(
+  file = photo_files,
+  plot_id = str_extract(tolower(basename(file)), "_p\\d{2}") %>% str_to_upper()
+) %>%
+  filter(!is.na(plot_id)) %>%
+  mutate(plot_id = str_remove(plot_id, "_"))  # remove underscore, leaving e.g. P01
+
+# Group images by plot
+plot_photos <- photo_info %>%
+  group_by(plot_id) %>%
+  summarise(files = list(file), .groups = "drop")
+}
+
+```
+
+```{r plot_photo_gallery, results='asis', echo=FALSE, warning=FALSE, message=FALSE}
+embed_photos <- params$embed_photos
+image_width <- 800    # Width for resizing
+image_quality <- 20   # JPEG quality if embedded
+
+
+if (!params$include_photos) {
+  cat("Photos are not included in this report.\n")
+  return()
+}
+
+#only run if include_photos is TRUE
+if(params$include_photos) {
+  # ---- ENCODING FUNCTION ----
+encode_img_base64 <- function(path, max_width = 800, quality.img = 20) {
+  img <- magick::image_read(path)
+  img_resized <- magick::image_scale(img, paste0(max_width, "x"))
+  tmpfile <- tempfile(fileext = ".jpg")
+  magick::image_write(img_resized, tmpfile, format = "jpeg", quality = quality.img)
+  base64enc::dataURI(file = tmpfile, mime = "image/jpeg")
+}
+
+# ---- RENDER FUNCTION ----
+render_image <- function(img_path, plot_id, type, j, embed = embed_photos) {
+  caption <- sprintf("Plot %s - %s %d", plot_id, type, j)
+
+  if (embed) {
+    encoded <- encode_img_base64(img_path, max_width = image_width, quality.img = image_quality)
+    sprintf(
+      "<span class='photo-thumb'>[![](%s){width=50%%}](%s){.lightbox data-gallery='plot%s-%s' title='%s'}</span>\n",
+      encoded, encoded, plot_id, tolower(type), caption
+    )
+  } else {
+    relative_path <- file.path("..", "..", img_path)
+    sprintf(
+      "<span class='photo-thumb'>[![](%s){width=25%%}](%s){.lightbox data-gallery='plot%s-%s' title='%s'}</span>\n",
+      relative_path, relative_path, plot_id, tolower(type), caption
+    )
+  }
+}
+
+# ---- MAIN LOOP ----
+for (i in seq_len(nrow(plot_photos))) {
+  plot_id <- plot_photos$plot_id[i]
+  files <- plot_photos$files[[i]]
+
+  # Separate main and supplementary photos
+  is_supp <- grepl("supp|Sup", files, ignore.case = TRUE)
+  main_files <- files[!is_supp]
+  supp_files <- files[is_supp]
+
+  cat("### Plot", plot_id, "\n\n")
+
+  # Main photos
+  if (length(main_files) > 0) {
+    cat("**Main plot**\n\n")
+    cat("<div class='photo-row'>\n")
+    for (j in seq_along(main_files)) {
+      cat(render_image(main_files[j], plot_id, "Main", j, embed = embed_photos))
+    }
+    cat("</div>\n\n")
+  }
+
+  # Supplementary photos
+  if (length(supp_files) > 0) {
+    cat("**Supplementary plot**\n\n")
+    cat("<div class='photo-row'>\n")
+    for (j in seq_along(supp_files)) {
+      cat(render_image(supp_files[j], plot_id, "Supplementary", j, embed = embed_photos))
+    }
+    cat("</div>\n\n")
+  }
+}
+}
+
+
+```
+:::
+
+> If you're viewing a portable shared version of this report the photos above might not load right when you click on them. Sorry! Trust me it works fine when the viewer has the photos saved on their PC!
+
+# Survey details 
+
+::: panel-tabset
 ## Tree info
 
 Detailed tree and shrub data was collected at each main and supplementary, and can be explored by expanding the plot info below.
@@ -496,7 +538,7 @@ Tree species richness value is a function of the proportion of appropriate tree 
 
 A Shannon diversity index could be an alternative measure with which to infer value, it considers the number of trees in each species and the degree to which species might dominate.
 
-The appropriate tree and shrub species list for this habitat type (`r survey_data[[i]]$survey_info$habiat_type`) has `r length(survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp)` species in it, they are: `r paste(survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp, collapse = ", ")`.
+The appropriate tree and shrub species list for this habitat type (`r survey_data[[1]]$survey_info$habitat_type`) has `r length(survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp)` species in it, they are: `r paste(survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp %>% sort(), collapse = "; ")`.
 
 ```{r tree_species_richness_plot, warning=FALSE, message=FALSE}
 ggplot() +
@@ -519,7 +561,7 @@ ggplot() +
     position = position_jitter(width = 0.1, height = 3)
   ) +
   scale_shape_manual(values = c(21, 24)) +
-  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
   # Axes and titles
   labs(
     x = "Percentage of appropriate species list present",
@@ -533,35 +575,61 @@ ggplot() +
 ```
 
 ```{r tree_species_richness_table, results='asis'}
+appropriate_species <- survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp
+
+# Identify species columns in your data
+species_cols <- setdiff(names(tree_species_summary),
+                        c("plot", "plot_type", "value", 
+                          "per_of_appropriate_species", "N_appropriate_species",
+                          "spp_n", "shannon_index_appropriate"))
+
+# Reorder: appropriate species first, then the rest
+species_cols_ordered <- c(
+  intersect(appropriate_species, species_cols),
+  setdiff(species_cols, appropriate_species)
+)
+
+# Rebuild data with species columns in new order
+tree_species_summary_reordered <- tree_species_summary %>%
+  select(plot, plot_type, value, per_of_appropriate_species,
+         N_appropriate_species, spp_n, shannon_index_appropriate,
+         all_of(species_cols_ordered))
+
+# Make the datatable
 datatable(
-  tree_species_summary %>% 
+  tree_species_summary_reordered %>% 
     mutate(
       value = round(value, 1),
       shannon_index_appropriate = round(shannon_index_appropriate, 2),
-      per_of_appropriate_species = paste(round(per_of_appropriate_species, 0), "%", sep = "")
+      per_of_appropriate_species = paste0(round(per_of_appropriate_species, 0), "%")
     ) %>%
-     rename(
-           Plot = plot,
-           'Plot type' = plot_type,
-           Value = value,
-           'Percent of appropriate species list present' = per_of_appropriate_species,
-           'Species richness (N)' = spp_n,
-           'Appropriate species richness (N)' = N_appropriate_species,
-           'Shannon diversity of appropriate species' = shannon_index_appropriate
-           )  %>% 
-    # make all col names capitalised first letter
-    rename_with(
-      ~ str_to_sentence(.)
-      ),
+    rename(
+      Plot = plot,
+      `Plot type` = plot_type,
+      Value = value,
+      `Percent of appropriate species list present` = per_of_appropriate_species,
+      `Species richness (N)` = spp_n,
+      `Appropriate species richness (N)` = N_appropriate_species,
+      `Shannon diversity of appropriate species` = shannon_index_appropriate
+    ) %>%
+    rename_with(~ str_to_sentence(.)),
   rownames = FALSE,
   caption = "Tree Species Richness Summary by Plot and Subplot",
   options = list(
     pageLength = 10,
     dom = 't',
     ordering = FALSE,
-    scrollX = TRUE  # ← Enables horizontal scrolling
+    scrollX = TRUE
   )
-)
+) %>%
+  # Highlight appropriate species cols
+  formatStyle(
+    columns = str_to_sentence(intersect(appropriate_species, species_cols)),
+    backgroundColor = "gold"
+  )
+
+
+
 ```
 
 ## Regen
@@ -599,7 +667,7 @@ ggplot() +
     position = position_jitter(width = 0.1, height = 3)
   ) +
   scale_shape_manual(values = c(21, 24)) +
-  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
   # Axes and titles
   labs(
     x = "Number of regen classes",
@@ -669,7 +737,7 @@ ggplot() +
     shape = 21, colour = "black",
     position = position_jitter(width = 0.1, height = 3)
   ) +
-  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
   # Axes and titles
   labs(
     x = "Native canopy cover (%)",
@@ -737,7 +805,7 @@ ggplot() +
     shape = 21, colour = "black",
     position = position_jitter(width = 0.1, height = 3)
   ) +
-  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
   # Axes and titles
   labs(
     x = "Number of vertical strata",
@@ -807,7 +875,7 @@ ggplot() +
     shape = 21, colour = "black",
     position = position_jitter(width = 0.1, height = 3)
   ) +
-  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
   # Axes and titles
   labs(
     x = "Total invasive cover (%)",
@@ -879,7 +947,7 @@ ggplot() +
     shape = 21, colour = "black",
     position = position_jitter(width = 0.1, height = 3)
   ) +
-  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
   # Axes and titles
   labs(
     x = "Microhabitats present (%)",
@@ -947,7 +1015,7 @@ ggplot() +
     shape = 21, colour = "black",
     position = position_jitter(width = 0.1, height = 3)
   ) +
-  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
   # Axes and titles
   labs(
     x = "Number of top height categories",
@@ -1057,7 +1125,7 @@ ggplot() +
     sides = "b",
     alpha = 0.9, size = 0.5
   ) +
-    scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+    scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
 # Axes and titles
   labs(
     x = "AVTs per ha",
@@ -1124,7 +1192,7 @@ ggplot() +
     position = position_jitter(width = 0.05, height = 0),
     shape = 21, colour = "black"
   ) +
-  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
   # Axes and titles
   labs(
     x = "Average deadwood types per quarter",
@@ -1202,7 +1270,7 @@ ggplot() +
     position = position_jitter(width = 0.2, height = 1),
     shape = 21, colour = "black"
   ) +
-  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
   # Axes and titles
   labs(
     x = "Herbivore impact class",
@@ -1274,7 +1342,7 @@ ggplot() +
     position = position_jitter(width = 0.2, height = 1),
     shape = 21, colour = "black"
   ) +
-  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
   # Axes and titles
   labs(
     x = "Tree health score",
@@ -1361,7 +1429,7 @@ ggplot() +
     shape = 21, colour = "black",
     position = position_jitter(width = 2, height = 0)
   ) +
-  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
   # Axes and titles
   labs(
     x = "Anthropogenic damage cover (%)",
@@ -1411,8 +1479,6 @@ The mean ground flora value across the zone is `r round(mean(ground_flora_summar
 
 Ground flora value is a function of the proportion of appropriate ground flora species present in each plot. The number appropriate ground flora species lists vary by habitat.
 
-The appropriate ground flora species list for this habitat type (`r survey_data[[i]]$survey_info$habiat_type`) has `r length(survey_data[[1]]$indicators$ground_flora$appropriate_ground_flora)` species in it, they are: `r paste(survey_data[[1]]$indicators$ground_flora$appropriate_ground_flora, collapse = ", ")`.
-
 ```{r ground_flora_plot, warning=FALSE, message=FALSE}
 ggplot() +
   geom_line(
@@ -1432,7 +1498,7 @@ ggplot() +
     position = position_jitter(width = 2, height = 1),
     shape = 21, colour = "black"
   ) +
-  scale_color_manual(values= wt_palette[-c(1,2,4)]) +
+  scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
   # Axes and titles
   labs(
     x = "Appropriate ground flora (%)",
@@ -1471,3 +1537,113 @@ datatable(
   )
 )
 ```
+
+The appropriate ground flora species list for this habitat type (`r survey_data[[1]]$survey_info$habiat_type`) has `r length(survey_data[[1]]$indicators$ground_flora$appropriate_ground_flora)` species in it, they are: `r paste(sort(survey_data[[1]]$indicators$ground_flora$appropriate_ground_flora), collapse = ", ")`.
+
+
+:::
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Just some intentionally blank space. Why? Reasons.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

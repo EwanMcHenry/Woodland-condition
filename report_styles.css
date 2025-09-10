@@ -1,0 +1,27 @@
+.gallery a {
+  margin-bottom: 10px;
+  display: inline-block;
+}
+
+.img-thumbnail {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin: 4px;
+  max-height: 150px;
+  object-fit: cover;
+}
+
+.photo-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-bottom: 1em;
+}
+
+.photo-thumb img {
+  display: inline-block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}

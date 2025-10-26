@@ -1477,7 +1477,10 @@ ground_flora_summary <- create_ground_flora_summary()
 
 The mean ground flora value across the zone is `r round(mean(ground_flora_summary$value, na.rm = TRUE), 2)`.
 
-Ground flora value is a function of the proportion of appropriate ground flora species present in each plot. The number appropriate ground flora species lists vary by habitat.
+Ground flora value is a function of the proportion of the appropriate ground flora species list present in each plot. The number appropriate ground flora species in the list varies by habitat.
+
+For (`r survey_data[[1]]$survey_info$habiat_type`) there are `r length(survey_data[[1]]$indicators$ground_flora$appropriate_ground_flora)` appropriate species in the list:, they are: `r paste(sort(survey_data[[1]]$indicators$ground_flora$appropriate_ground_flora), collapse = ", ")`.
+
 
 ```{r ground_flora_plot, warning=FALSE, message=FALSE}
 ggplot() +
@@ -1512,33 +1515,59 @@ ggplot() +
 ```
 
 ```{r ground_flora_table, results='asis'}
+# Extract list of appropriate ground flora species
+appropriate_gf <- survey_data[[1]]$indicators$ground_flora$appropriate_ground_flora
+
+# Identify species columns in the dataset (everything except the fixed metadata columns)
+gf_species_cols <- setdiff(names(ground_flora_summary),
+                           c("plot", "value", "perc_of_appropriate_ground_flora",
+                             "N_appropriate_ground_flora", "N_plant_spp"))
+
+# Reorder so appropriate species come first
+gf_species_cols_ordered <- c(
+  gf_species_cols[tolower(gf_species_cols) %in% tolower(appropriate_gf) ],
+  gf_species_cols[!tolower(gf_species_cols) %in% tolower(appropriate_gf) ]
+)
+
+# Rebuild the dataframe with new column order
+ground_flora_summary_reordered <- ground_flora_summary %>%
+  select(plot, value, perc_of_appropriate_ground_flora,
+         N_appropriate_ground_flora, N_plant_spp,
+         all_of(gf_species_cols_ordered))
+
+# Build the datatable
 datatable(
-  ground_flora_summary %>% 
+  ground_flora_summary_reordered %>% 
     mutate(
       value = round(value, 1),
-      perc_of_appropriate_ground_flora = paste(round(perc_of_appropriate_ground_flora, 1), "%", sep = ""),
+      perc_of_appropriate_ground_flora = paste0(round(perc_of_appropriate_ground_flora, 1), "%"),
       N_plant_spp = as.character(N_plant_spp),
       N_appropriate_ground_flora = as.character(N_appropriate_ground_flora)
     ) %>%
     rename(
       Plot = plot,
       Value = value,
-      'Appropriate ground flora (%)' = perc_of_appropriate_ground_flora,
-      'N appropriate species' = N_appropriate_ground_flora,
-      'N species' = N_plant_spp
-    ),
+      `Appropriate ground flora (%)` = perc_of_appropriate_ground_flora,
+      `N appropriate species` = N_appropriate_ground_flora,
+      `N species` = N_plant_spp
+    ) %>%
+    rename_with(~ str_to_sentence(.)),
   rownames = FALSE,
   caption = "Ground Flora Summary by Plot",
   options = list(
     pageLength = 10,
     dom = 't',
     ordering = FALSE,
-    scrollX = TRUE  # ← Enables horizontal scrolling
+    scrollX = TRUE
   )
-)
+) %>%
+  # Highlight appropriate ground flora columns
+  formatStyle(
+    columns = gf_species_cols[tolower(gf_species_cols) %in% tolower(appropriate_gf)] %>% str_to_sentence(.),
+    backgroundColor = "gold"
+  )
 ```
 
-The appropriate ground flora species list for this habitat type (`r survey_data[[1]]$survey_info$habiat_type`) has `r length(survey_data[[1]]$indicators$ground_flora$appropriate_ground_flora)` species in it, they are: `r paste(sort(survey_data[[1]]$indicators$ground_flora$appropriate_ground_flora), collapse = ", ")`.
 
 
 :::

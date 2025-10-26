@@ -15,7 +15,6 @@ format:
     css: report_styles.css
 lightbox: true
 params:
-
 ---
 
 ```{r libraries and scripts, warning=F, message=F}
@@ -32,14 +31,18 @@ library(scales)
 
 
 ```
+
 ```{r config, warning=F, message=F}
 # CONFIGURATION
 max_plots <- 12
-iterations <- 150  # change as needed
+min_plots <- 3
+iterations <- 500  # change as needed
+run.sim = T
 
 set.seed(2442)
 
 ```
+
 ```{r load data, warning=F, message=F}
 # LOAD DATA
 
@@ -235,28 +238,30 @@ summary_df <- summary_df %>%
   ungroup() %>% 
   mutate()
 
+save(summary_df, file = "outputs/survey data summaries/all_trial_zone_survey_data.RData")
+
 ```
+
 ```{r sumulate surveying, warning=F, message=F}
 # SIMULATED SURVEYING ----
 
 # simulating zone-level variation in valuation based on plot effort
 
 summary_df$site_zone <- paste(summary_df$site_name, summary_df$zone)
-indicator_mean_values <- list()
-overall_score <- list()
-indicator_mean_values_df <- data.frame()
-weights.sum <- sum(weights_lookup$Weight..scaled.to.max.100.)
-
 weights.sum <- sum(weights_lookup$Weight..scaled.to.max.100.)
 site_zones <- unique(summary_df$site_zone)
 
+if(run.sim){
+  indicator_mean_values <- list()
+overall_score <- list()
+indicator_mean_values_df <- data.frame()
 indicator_mean_values_all <- list()
 overall_scores_all <- list()
 
 for (this_site_zone in site_zones) {
   site_zone_data <- summary_df %>% filter(site_zone == this_site_zone)
   
-  zone_results <- map(1:max_plots, function(n_plots) {
+  zone_results <- map((min_plots-1):max_plots, function(n_plots) {
     map(1:iterations, function(iter) {
       
       # Sample plots with replacement
@@ -316,7 +321,14 @@ for (this_site_zone in site_zones) {
 indicator_mean_values_df <- bind_rows(indicator_mean_values_all)
 overall_scores_df <- bind_rows(overall_scores_all)
   
-  
+save(overall_scores_df, indicator_mean_values_df, file = "outputs/sampling effort simulation objects.RData")
+
+}
+
+```
+```{r summarise sim results, warning=F, message=F}
+
+load("outputs/sampling effort simulation objects.RData")
 # summarise overall scores ----
 all_overall_scores_summary <- overall_scores_df %>%
   group_by(n_plots, site_zone) %>%
@@ -332,7 +344,38 @@ all_overall_scores_summary <- overall_scores_df %>%
   ) %>% 
   mutate(ci_range_95 = upper_95 - lower_95,
          ci_range_80 = upper_80 - lower_80,
-         ci_range_50 = upper_50 - lower_50)
+         ci_range_50 = upper_50 - lower_50,
+         lower_95_offset = mean_overall_score - lower_95,
+         upper_95_offset = upper_95 - mean_overall_score,
+         lower_80_offset = mean_overall_score - lower_80,
+         upper_80_offset = upper_80 - mean_overall_score,
+         lower_50_offset = mean_overall_score - lower_50,
+         upper_50_offset = upper_50 - mean_overall_score)
+
+# offsets across sites for sample size plots ----
+offest_df <- all_overall_scores_summary %>%
+  group_by(n_plots) %>%
+  summarise(
+    lower_50_offset_mean = mean(lower_50_offset, na.rm = TRUE),
+    upper_50_offset_mean = mean(upper_50_offset, na.rm = TRUE),
+    lower_80_offset_mean = mean(lower_80_offset, na.rm = TRUE),
+    upper_80_offset_mean = mean(upper_80_offset, na.rm = TRUE),
+    lower_95_offset_mean = mean(lower_95_offset, na.rm = TRUE),
+    upper_95_offset_mean = mean(upper_95_offset, na.rm = TRUE),
+    lower_50_offset_max = max(lower_50_offset, na.rm = TRUE),
+    upper_50_offset_max = max(upper_50_offset, na.rm = TRUE),
+    lower_80_offset_max = max(lower_80_offset, na.rm = TRUE),
+    upper_80_offset_max = max(upper_80_offset, na.rm = TRUE),
+    lower_95_offset_max = max(lower_95_offset, na.rm = TRUE),
+    upper_95_offset_max = max(upper_95_offset, na.rm = TRUE),
+    lower_50_offset_min = min(lower_50_offset, na.rm = TRUE),
+    upper_50_offset_min = min(upper_50_offset, na.rm = TRUE),
+    lower_80_offset_min = min(lower_80_offset, na.rm = TRUE),
+    upper_80_offset_min = min(upper_80_offset, na.rm = TRUE),
+    lower_95_offset_min = min(lower_95_offset, na.rm = TRUE),
+    upper_95_offset_min = min(upper_95_offset, na.rm = TRUE),
+    .groups = 'drop') 
+
 
 # summarise indicator values ----
 all_indicator_values_summary <- indicator_mean_values_df %>%
@@ -360,15 +403,30 @@ all_indicator_values_summary <- indicator_mean_values_df %>%
          ci_range_80_weighted = upper_80_weighted - lower_80_weighted,
          ci_range_50_weighted = upper_50_weighted - lower_50_weighted)
 ```
+
 # Introduction
 
-A provisional method for the Woodland Trust's Woodland Ecological Condition Assessment (WECA) has been developed - with significant input from dozens of practitioners and experts across the Trust - and trialed at multiple sites. An analytical pipeline has also been developed to take preliminary excel field forms and produce WECA reports for surveyed zones, presenting the overall summary score for those zones and further detail on the contribution of differetn indicators etc.
+-   A provisional method for the Woodland Trust's Woodland Ecological Condition Assessment (WECA) has been developed, with significant input from dozens of practitioners and experts across the Trust.
 
-One key question that remains regards the appropriate allocation of sampling effort: how many plots should be carried out at different zones in order to best balance the competing demands of practical survey constraints and optimal analytical rigor. This report presents evidence to support that decision.
+-   Field trials have been completed at multiple sites.
+
+-   An analytical pipeline has been developed to take preliminary excel field forms and produce WECA reports for surveyed zones, including info on:
+
+    -   The overall WECA summary score for the zone.
+
+    -   Detail on the contribution of different indicators, and their variation between plots etc.
+
+This report presents evidence to a answer **key questions that remain:**
+
+-   What allocation of sampling effort is appropriate for the method?
+
+-   How many plots should be surveyed within zones to best balance the competing demands of practical survey constraints and analytical rigor?
+
+-   Does this requirement vary between different zones?
 
 # Method
 
-Where possible, the trial sites were intentionally "over sampled". More plots have been surveyed that was thought would typically be practically possible. 
+Where possible, field trial sites were intentionally "over sampled", surveying more plots that was thought would typically be practically possible.
 
 ```{r table of field test sample sizes }
 knitr::kable(
@@ -380,16 +438,19 @@ knitr::kable(
 )
 ```
 
-Here, I randomly re-sampled (with replacement) within those plots, differing the numbers of plots to simulate different sampling intensities. I did this `r iterations` times for each combination of surveyed zones and number of plots explored, and for each iteration and combination I generated a WECA summary score and individual indicator scores. 
+Here, I explored the impact of plot number on survey result uncertainty by randomly re-sampling the surveyed plots (with replacement), differing the numbers of plots to simulate different sampling intensities (from 1 to `r max_plots` plots). I did this `r iterations` times for each zone and number of plots, and and calculated a WECA summary score and individual indicator scores each time.
 
-The variation in these re-sampled scores contains information on how variable the results from the WECA method are likely to be under different sampling efforts.
+Uncertainty in WECA scores under different sampling efforts is represented by the variation in these re-sampled scores.
 
-I first plotted the mean of the scores for each zone-sampling effort combination across all simulated iteractions, with qunatile ranges representing the variability.  
+I present:
 
-I then plotted the sizes of different quantile ranges, to focus more explicitly on the amount of uncertainty associated with different sample sizes.
+-   A plot of the **mean scores** for each zone-sampling effort combination across all simulated iterations, with quantile ranges representing uncertainty, to demonstrate the estimation of the WECA summary scores in different zones and how the uncertainty generally decreases with sampling effort.
 
-Finally, I plot the marginal reduction in the quantile ranges: representing the amount of estimate variability that is reduced by adding each additional plot. 
+-   A plot of the **sizes of the quantile ranges**[^exploring-sampling-effort-1], focusing more explicitly on how the amount of uncertainty varies with different sample sizes at different zones and on average (predicted using a GAM).
 
+-   A plot of the marginal reduction in the quantile ranges, representing **the value added by each plot**: the amount that quantile ranges are reduced by adding each plot.
+
+[^exploring-sampling-effort-1]: **e.g. a 50% quantile range is the range of the most-central 50% of simulated results.**
 
 # Results
 
@@ -416,11 +477,70 @@ ggplot(all_overall_scores_summary) +
   ) +
   scale_color_brewer(palette = "Set1") +
   scale_fill_brewer(palette = "Set1") +
+  #integer axis breaks
+  scale_x_continuous(breaks = pretty_breaks()) +
   theme_pubr() +
   theme(legend.position = "right")
 ```
 
-## Summary score variation
+## Variation in summary score estimates
+
+### Intervals around mean score
+
+```{r intervals around mean score, warning=F, message=F, caption = "Variation in WECA summary score estimates (quantile ranges) against number of plots. a) 50% quantile offsets. b) 80% quantile offsets."}
+# plot of offsets around mean score ----
+## ploting 50 and 80% quantile offsets, with sites coloured
+## overlay with mean offsets in black
+
+
+ci_50_p <- ggplot(all_overall_scores_summary) +
+  geom_line(aes(x = n_plots, y = -lower_50_offset, color = site_zone), alpha = 0.6) +
+  geom_line(aes(x = n_plots, y = upper_50_offset, color = site_zone), alpha = 0.6) +
+  labs(title = "Confidence intervales: 50% quantile", y = NULL, x = NULL, color = "Site-Zone") +
+  scale_color_brewer(palette = "Set1") +
+  scale_x_continuous(breaks = pretty_breaks()) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.margin = unit(c(0, 0, 2, 1), "lines"))
+
+ci_80_p <- ggplot(all_overall_scores_summary) +
+  geom_line(aes(x = n_plots, y = -lower_80_offset,
+                color = site_zone), alpha = 0.6) +
+  geom_line(aes(x = n_plots, y = upper_80_offset,
+                color = site_zone), alpha = 0.6) +
+  labs(title = "Confidence intervales: 80% quantile", y = NULL,
+       x = NULL, color = "Site-Zone") +
+  scale_color_brewer(palette = "Set1") +
+  scale_x_continuous(breaks = pretty_breaks()) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.margin = unit(c(0, 0, 2, 0), "lines"))
+# Extract shared legend
+legend <- get_legend(ggplot(all_overall_scores_summary, 
+                            aes(x = n_plots, y = upper_50_offset, color = site_zone)) +
+    geom_line() +
+    theme_minimal() +
+    theme(legend.position = "bottom")
+)
+# Combine plots side by side
+plots <- plot_grid(ci_50_p, ci_80_p, nrow = 1
+                  , align = "v", axis = "lr")
+# Add shared axis labels
+final_plot <- ggdraw(plots) +
+  draw_label("Offset from mean score", x = 0.015, y =
+             0.5, angle = 90, size = 11, hjust = 0.5, vjust = 0.5) +
+  draw_label("Number of plots", x = 0.5, y = 0
+             , size = 11, hjust = 0.5, vjust = 0.5)
+# Add legend below
+final_plot_with_legend <- plot_grid(final_plot, legend, ncol = 1,
+                                    rel_heights = c(1, 0.1))
+final_plot_with_legend
+
+
+
+```
+
+### Size of quantile ranges
 
 ```{r variation in overall scores, warning=F, message=F, caption = "Variation in WECA summary score estimates (quantile ranges) against number of plots. a) 50% quantile range. b) 80% quantile range."}
 
@@ -438,7 +558,7 @@ newdat$pred_80 <- predict(gam_80, newdata = newdat)
 p50 <- ggplot(all_overall_scores_summary, aes(x = n_plots, y = ci_range_50, color = site_zone)) +
   geom_line(alpha = 0.6) +
   geom_line(data = newdat, aes(y = pred_50), color = "black", size = 1.2) +
-  labs(title = "a) 50% quantile range", y = NULL, x = NULL, color = "Site-Zone") +
+  labs(title = "a) 50% quantile size", y = NULL, x = NULL, color = "Site-Zone") +
   scale_color_brewer(palette = "Set1") +
   scale_x_continuous(breaks = pretty_breaks()) +
   theme_minimal() +
@@ -448,7 +568,7 @@ p50 <- ggplot(all_overall_scores_summary, aes(x = n_plots, y = ci_range_50, colo
 p80 <- ggplot(all_overall_scores_summary, aes(x = n_plots, y = ci_range_80, color = site_zone)) +
   geom_line(alpha = 0.6) +
   geom_line(data = newdat, aes(y = pred_80), color = "black", size = 1.2) +
-  labs(title = "b) 80% quantile range", y = NULL, x = NULL, color = "Site-Zone") +
+  labs(title = "b) 80% quantile size", y = NULL, x = NULL, color = "Site-Zone") +
   scale_color_brewer(palette = "Set1") +
   scale_x_continuous(breaks = pretty_breaks()) +
   theme_minimal() +
@@ -558,14 +678,13 @@ final_plot
 
 ```
 
-
 ## Individual indicators
 
 ## Variation by indicator
 
-Point-plot of 50% quantile range in each indicator's weighted value, averaged across all site-zones. 
+Point-plot of 50% quantile range in each indicator's weighted value, averaged across all site-zones.
 
-Indicators with a higher quantile ranges are  
+Indicators with a higher quantile ranges are
 
 ```{r variation in indicator values - mean, warning=F, message=F}
 indicator_variation_mean <- all_indicator_values_summary %>%
@@ -584,7 +703,6 @@ ggplot(indicator_variation_mean,
 
 ```
 
-
 Heatmap of the 50% quantile range in indicator weighted values for each site-zone when five plots are sampled. This gives an indication of how well these indicators's contribution to overall condition are captured by this "typical" survey situation.
 
 ```{r variation in indicator values - site zone, warning=F, message=F}
@@ -602,5 +720,3 @@ ggplot(all_indicator_values_summary %>% filter(n_plots == 5)
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
-
-

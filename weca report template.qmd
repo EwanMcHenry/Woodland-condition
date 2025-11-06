@@ -15,11 +15,11 @@ format:
     css: report_styles.css
 lightbox: true
 params:
-  site_name: "Harrisons Wood"
-  zone_name: "Z021"
-  site_survey_folderpath: "Data\\Field Test\\Harrisons Woodland, Louth, Lincs\\Z021\\"
-  site_survey_filename: "WECA - Harrisons Woodland Z021 BNG - Field test - 2025.xlsx"
-  site_survey_habitat_type: "base_rich_lowland"
+  site_name: "Inverliever, Argyll"
+  zone_name: "1"
+  site_survey_folderpath: "Data\\Field Test\\Inverliever, Argyll - Conifer clearfell FLS\\Z01\\"
+  site_survey_filename: "WCA - Inverliever - Field test 06.06.25.xlsx"
+  site_survey_habitat_type: "acidic_upland"
   embed_photos: FALSE # Set to TRUE to embed photos as base64, or FALSE to link to local files
   include_photos: TRUE # Set to FALSE to exclude photos from the report
 ---
@@ -530,15 +530,21 @@ x.axis_title <- "Proportion of appropriate tree/shrub species present"
 tree_species_summary <- create_tree_species_summary() 
 ```
 
-`r circle_badge(round(mean(tree_species_summary$value, na.rm = TRUE), 2))`
+`r circle_badge(round(mean(tree_species_summary$combined_table$value, na.rm = TRUE), 2))`
 
-The mean tree species richness value across the zone is `r round(mean(tree_species_summary$value, na.rm = TRUE), 2)`.
+The mean tree species richness value across the zone is `r round(mean(tree_species_summary$combined_table$value, na.rm = TRUE), 2)`.
 
 Tree species richness value is a function of the proportion of appropriate tree and shrub species found in each plot (appropriate species lists are habitat-specific).
 
 A Shannon diversity index could be an alternative measure with which to infer value, it considers the number of trees in each species and the degree to which species might dominate.
 
-The appropriate tree and shrub species list for this habitat type (`r survey_data[[1]]$survey_info$habitat_type`) has `r length(survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp)` species in it, they are: `r paste(survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp %>% sort(), collapse = "; ")`.
+The appropriate tree and shrub species list for this habitat type (`r survey_data[[1]]$survey_info$habitat_type`) has `r length(survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp)` species in it:
+
+<div style="columns: 3; -webkit-columns: 3; -moz-columns: 3;">
+<ul>
+`r paste0("<li>", sort(survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp), "</li>", collapse = "\n")`
+</ul>
+</div>
 
 ```{r tree_species_richness_plot, warning=FALSE, message=FALSE}
 ggplot() +
@@ -548,19 +554,19 @@ ggplot() +
     color = "black", size = vf_size, alpha = vf_alpha
   ) +
   geom_point(
-    data = tree_species_summary,
+    data = tree_species_summary$combined_table,
     aes(
       x = per_of_appropriate_species,
       y = value,
-      fill = plot,
-      shape = plot_type
-    ),
+      fill = plot    ),
+    shape = 21,
+    size = 2,
     alpha = point_alpha, 
     size = point_size,
     colour = "black",
     position = position_jitter(width = 0.1, height = 3)
   ) +
-  scale_shape_manual(values = c(21, 24)) +
+  # scale_shape_manual(values = c(21, 24)) +
   scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
   # Axes and titles
   labs(
@@ -573,16 +579,13 @@ ggplot() +
   theme_pubr() +
   theme(legend.position = "none")
 ```
-
-```{r tree_species_richness_table, results='asis'}
+```{r both_tree_species_richness_table, results='asis'}
 appropriate_species <- survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp
 
-# Identify species columns in your data
-species_cols <- setdiff(names(tree_species_summary),
+species_cols <- setdiff(names(tree_species_summary$combined_table),
                         c("plot", "plot_type", "value", 
                           "per_of_appropriate_species", "N_appropriate_species",
                           "spp_n", "shannon_index_appropriate"))
-
 # Reorder: appropriate species first, then the rest
 species_cols_ordered <- c(
   intersect(appropriate_species, species_cols),
@@ -590,8 +593,8 @@ species_cols_ordered <- c(
 )
 
 # Rebuild data with species columns in new order
-tree_species_summary_reordered <- tree_species_summary %>%
-  select(plot, plot_type, value, per_of_appropriate_species,
+tree_species_summary_reordered <- tree_species_summary$combined_table %>%
+  select(plot, value, per_of_appropriate_species,
          N_appropriate_species, spp_n, shannon_index_appropriate,
          all_of(species_cols_ordered))
 
@@ -605,7 +608,6 @@ datatable(
     ) %>%
     rename(
       Plot = plot,
-      `Plot type` = plot_type,
       Value = value,
       `Percent of appropriate species list present` = per_of_appropriate_species,
       `Species richness (N)` = spp_n,
@@ -614,10 +616,10 @@ datatable(
     ) %>%
     rename_with(~ str_to_sentence(.)),
   rownames = FALSE,
-  caption = "Tree Species Richness Summary by Plot and Subplot",
+  caption = "Tree Species Richness Summary by Plot",
   options = list(
-    pageLength = 10,
-    dom = 't',
+    pageLength = 20,
+    dom = 'ftip',
     ordering = FALSE,
     scrollX = TRUE
   )
@@ -625,7 +627,50 @@ datatable(
   # Highlight appropriate species cols
   formatStyle(
     columns = str_to_sentence(intersect(appropriate_species, species_cols)),
-    backgroundColor = "gold"
+    backgroundColor = styleInterval(0, c(NA, "gold"))
+  )
+```
+```{r seperate_tree_species_richness_table, results='asis'}
+
+species_cols <- setdiff(names(tree_species_summary$separate_table),
+                        c("plot", "plot_type", "value", 
+                          "per_of_appropriate_species", "N_appropriate_species",
+                          "spp_n", "shannon_index_appropriate"))
+
+# Reorder: appropriate species first, then the rest
+species_cols_ordered <- c(
+  intersect(appropriate_species, species_cols),
+  setdiff(species_cols, appropriate_species)
+)
+
+# Rebuild data with species columns in new order
+tree_species_summary_reordered <- tree_species_summary$separate_table %>%
+  select(plot, plot_type, N_appropriate_species, spp_n, 
+         all_of(species_cols_ordered))
+
+# Make the datatable
+datatable(
+  tree_species_summary_reordered %>% 
+    rename(
+      Plot = plot,
+      `Plot type` = plot_type,
+      `Species richness (N)` = spp_n,
+      `Appropriate species richness (N)` = N_appropriate_species
+    ) %>%
+    rename_with(~ str_to_sentence(.)),
+  rownames = FALSE,
+  caption = "Tree Species Richness Summary by Plot and Subplot",
+  options = list(
+    pageLength = 20,
+    dom = 'ftip',
+    ordering = FALSE,
+    scrollX = TRUE
+  )
+) %>%
+  # Highlight appropriate species cols
+  formatStyle(
+    columns = str_to_sentence(intersect(appropriate_species, species_cols)),
+    backgroundColor = styleInterval(0, c(NA, "gold"))
   )
 
 

@@ -23,14 +23,6 @@ sites <- list(
     site_survey_filename = "WCA - Lady park wood - Field test - 12.06.2025.xlsx",
     site_survey_habitat_type = "base_rich_lowland"
   ),
-  ## Inverliever, Argyll ----
-  list(
-    site_name = "Inverliever, Argyll",
-    zone_name = "1",
-    site_survey_folderpath = "Data\\Field Test\\Inverliever, Argyll - Conifer clearfell FLS\\Z01\\",
-    site_survey_filename = "WCA - Inverliever - Field test 06.06.25.xlsx",
-    site_survey_habitat_type = "acidic_upland"
-  ),
   ## Harrisons Wood, Louth, Lincs ----
   list(
     site_name = "Harrisons Wood",
@@ -59,7 +51,16 @@ sites <- list(
     site_survey_folderpath = "Data\\Field Test\\Harrisons Woodland, Louth, Lincs\\Z021\\",
     site_survey_filename = "WECA - Harrisons Woodland Z021 BNG - Field test - 2025.xlsx",
     site_survey_habitat_type = "base_rich_lowland"
+  ),
+  ## Inverliever, Argyll ----
+  list(
+    site_name = "Inverliever, Argyll",
+    zone_name = "1",
+    site_survey_folderpath = "Data\\Field Test\\Inverliever, Argyll - Conifer clearfell FLS\\Z01\\",
+    site_survey_filename = "WCA - Inverliever - Field test 06.06.25.xlsx",
+    site_survey_habitat_type = "acidic_upland"
   )
+  
   
 )
 

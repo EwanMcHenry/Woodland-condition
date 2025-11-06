@@ -13,6 +13,7 @@ excel_sheet_filename = "WECA - Harrisons Woodland Z001 BNG - Field test - 2025.x
 # beechy
 excel_sheet_folderpath =   "Data\\Field Test\\Beechy Wood, Sussex - Corsican Pine PAWS\\Z01\\"
 excel_sheet_filename = "WCA - Beechy Wood - Field test 22.05.25.xlsx"
+site_survey_habitat_type = "base_rich_lowland"
 
 # ladypark
 excel_sheet_folderpath =   "Data\\Field Test\\Ladypark Wood, Wye valley - Non-intervention 70yrs broadleaf SSSI ASNW\\Z01\\"
@@ -31,6 +32,13 @@ params$zone_name = "1"
 params$site_survey_folderpath = "Data\\Field Test\\Inverliever, Argyll - Conifer clearfell FLS\\Z01\\"
 params$site_survey_filename = "WCA - Inverliever - Field test 06.06.25.xlsx"
 params$site_survey_habitat_type = "acidic_upland"
+
+site_name: "Inverliever, Argyll"
+zone_name: "1"
+site_survey_folderpath: "Data\\Field Test\\Inverliever, Argyll - Conifer clearfell FLS\\Z01\\"
+site_survey_filename: "WCA - Inverliever - Field test 06.06.25.xlsx"
+site_survey_habitat_type: "acidic_upland"
+
 
 
 

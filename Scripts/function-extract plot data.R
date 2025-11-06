@@ -164,6 +164,8 @@ extract_plot_survey_data <- function(
       filter(!(young == 0 & semi_mature == 0 & early_mature == 0 & mature == 0 & seedlings == domin.absent & saplings == domin.absent)) %>% 
       mutate(spp_total_trees = young + semi_mature + early_mature + mature)
     
+    ## Tree species ----
+    
     ## tree species present by name and count
     trees_main_spp_present <- trees_main_df %>%
       filter(spp_total_trees > 0) %>%
@@ -171,22 +173,28 @@ extract_plot_survey_data <- function(
     trees_supp_spp_present <- trees_supp_df %>%
       filter(spp_total_trees > 0) %>%
       select(tree_species, spp_total_trees)
+    trees_both_spp_present <- bind_rows(trees_main_spp_present, trees_supp_spp_present) %>%
+      group_by(tree_species) %>%
+      summarise(spp_total_trees = sum(spp_total_trees)) %>%
+      ungroup()
     
     ## Calculate indicator measurments
-    trees_main_df_willowed <- trees_main_df %>%
-      mutate(tree_species = ifelse(str_detect(tree_species, regex("willow", ignore_case = TRUE)), "willow sp.", tree_species)) # replace any tree species containing "willow" with "willow sp."
-    
     ### n species
     ind.tree_spp_n.main <- sum(trees_main_df$spp_total_trees>0) 
     ind.tree_spp_n.supp <- sum(trees_supp_df$spp_total_trees>0)
+    ind.tree_spp_n.both <- sum(c(trees_both_spp_present$spp_total_trees)>0)
     ### shannon diversity index for each plot - tree species
     ind.tree_spp_shannon.main <- vegan::diversity(trees_main_df$spp_total_trees, index = "shannon")
     ind.tree_spp_shannon.supp <- vegan::diversity(trees_supp_df$spp_total_trees, index = "shannon")
+    ind.tree_spp_shannon.both <- vegan::diversity(trees_both_spp_present$spp_total_trees, index = "shannon")
     
     ind.tree_spp_shannon_appropriate.main <- vegan::diversity(trees_main_df$spp_total_trees[
       tolower(trees_main_df$tree_species) %in% tolower(list_appropriate_tree_spp)], index = "shannon")
     ind.tree_spp_shannon_appropriate.supp <- vegan::diversity(trees_supp_df$spp_total_trees[
       tolower(trees_supp_df$tree_species) %in% tolower(list_appropriate_tree_spp)], index = "shannon")
+    ind.tree_spp_shannon_appropriate.both <- vegan::diversity(trees_both_spp_present$spp_total_trees[
+      tolower(trees_both_spp_present$tree_species) %in% tolower(list_appropriate_tree_spp)], index = "shannon")
+
     ### proportion of appropriate tree species
     #### first create a list of spp replace any tree species here containing "willow" with "willow sp." for consistency
     main_willowed_list <- ifelse(
@@ -199,13 +207,16 @@ extract_plot_survey_data <- function(
       "willow sp.",
       trees_supp_df$tree_species[trees_supp_df$spp_total_trees>0]
     ) %>% unique()
+    both_willowed_list <- unique(c(main_willowed_list, supp_willowed_list))
     #### then calculate number and proportion of appropriate spp
     ind.tree_spp_N_appropriate.main <- sum(tolower(main_willowed_list) %in% tolower(list_appropriate_tree_spp))
     ind.tree_spp_N_appropriate.supp <- sum(tolower(supp_willowed_list) %in% tolower(list_appropriate_tree_spp))
+    ind.tree_spp_N_appropriate.both <- sum(tolower(both_willowed_list) %in% tolower(list_appropriate_tree_spp))
     ind.tree_spp_prop_appropriate.main <- sum(tolower(main_willowed_list) %in% tolower(list_appropriate_tree_spp)) / length(list_appropriate_tree_spp)
     ind.tree_spp_prop_appropriate.supp <- sum(tolower(supp_willowed_list) %in% tolower(list_appropriate_tree_spp)) / length(list_appropriate_tree_spp)
+    ind.tree_spp_prop_appropriate.both <- sum(tolower(both_willowed_list) %in% tolower(list_appropriate_tree_spp)) / length(list_appropriate_tree_spp)
     
-    ### age classes
+    ## age classes ----
     main_ages <- trees_main_df %>% 
       select(young, semi_mature, early_mature, mature) %>%
       summarise(across(everything(), ~ sum(.)))
@@ -439,16 +450,22 @@ extract_plot_survey_data <- function(
         tree_spp = list(
           ind.tree_spp_N_appropriate.main = ind.tree_spp_N_appropriate.main,
           ind.tree_spp_N_appropriate.supp = ind.tree_spp_N_appropriate.supp,
+          ind.tree_spp_N_appropriate.both = ind.tree_spp_N_appropriate.both,
           ind.tree_spp_n.main = ind.tree_spp_n.main,
           ind.tree_spp_n.supp = ind.tree_spp_n.supp,
+          ind.tree_spp_n.both = ind.tree_spp_n.both,
           ind.tree_spp_shannon.main = ind.tree_spp_shannon.main,
           ind.tree_spp_shannon.supp = ind.tree_spp_shannon.supp,
+          ind.tree_spp_shannon.both = ind.tree_spp_shannon.both,
           ind.tree_spp_shannon_appropriate.main = ind.tree_spp_shannon_appropriate.main,
           ind.tree_spp_shannon_appropriate.supp = ind.tree_spp_shannon_appropriate.supp,
+          ind.tree_spp_shannon_appropriate.both = ind.tree_spp_shannon_appropriate.both,
           ind.tree_spp_prop_appropriate.main = ind.tree_spp_prop_appropriate.main,
           ind.tree_spp_prop_appropriate.supp = ind.tree_spp_prop_appropriate.supp,
+          ind.tree_spp_prop_appropriate.both = ind.tree_spp_prop_appropriate.both,
           trees_main_spp_present = trees_main_spp_present,
           trees_supp_spp_present = trees_supp_spp_present,
+          trees_both_spp_present = trees_both_spp_present,
           list_appropriate_tree_spp = list_appropriate_tree_spp # list of appropriate tree species
         ),
         tree_age_classes = list(

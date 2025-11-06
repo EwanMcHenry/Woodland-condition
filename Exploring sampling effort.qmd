@@ -37,7 +37,7 @@ library(scales)
 max_plots <- 12
 min_plots <- 3
 iterations <- 500  # change as needed
-run.sim = T
+run.sim = F
 
 set.seed(2442)
 
@@ -527,7 +527,7 @@ plots <- plot_grid(ci_50_p, ci_80_p, nrow = 1
                   , align = "v", axis = "lr")
 # Add shared axis labels
 final_plot <- ggdraw(plots) +
-  draw_label("Offset from mean score", x = 0.015, y =
+  draw_label("Confidence around mean score", x = 0.015, y =
              0.5, angle = 90, size = 11, hjust = 0.5, vjust = 0.5) +
   draw_label("Number of plots", x = 0.5, y = 0
              , size = 11, hjust = 0.5, vjust = 0.5)
@@ -539,6 +539,8 @@ final_plot_with_legend
 
 
 ```
+
+
 
 ### Size of quantile ranges
 
@@ -607,9 +609,9 @@ The estimated reduction in quantile ranges that comes from adding an additional 
 marginal_reduction <- all_overall_scores_summary %>%
   arrange(site_zone, n_plots) %>%
   group_by(site_zone) %>%
-  mutate(marginal_reduction_50 = lag(ci_range_50) - ci_range_50,
-         marginal_reduction_80 = lag(ci_range_80) - ci_range_80,
-         marginal_reduction_95 = lag(ci_range_95) - ci_range_95) %>%
+  mutate(marginal_reduction_50 = abs(lag(ci_range_50) - ci_range_50),
+         marginal_reduction_80 = abs(lag(ci_range_80) - ci_range_80),
+         marginal_reduction_95 = abs(lag(ci_range_95) - ci_range_95)) %>%
   ungroup()
 
 # Fit GAMs (single smooth across all sites)

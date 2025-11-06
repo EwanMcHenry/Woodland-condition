@@ -206,7 +206,51 @@ create_age_summary <- function(){
            plot = factor(plot)) }
 
 create_tree_species_summary <- function(){
-  map_dfr(seq_along(survey_data), function(i) {
+  list(combined_table = map_dfr(seq_along(survey_data), function(i) {
+    ind <- survey_data[[i]]$indicators$tree_spp
+    
+    spp_both_t <- ind$trees_both_spp_present %>%
+      mutate(plot = i) %>% 
+      pivot_wider(
+        names_from = tree_species,
+        values_from = spp_total_trees,
+        values_fill = 0
+      )
+    
+    meta_both <- tibble(
+      plot = i,
+      per_of_appropriate_species = ind$ind.tree_spp_prop_appropriate.both * 100,
+      N_appropriate_species = ind$ind.tree_spp_N_appropriate.both,
+      spp_n = ind$ind.tree_spp_n.both,
+      shannon_index_appropriate = round(ind$ind.tree_spp_shannon_appropriate.both, 2)
+    )
+    
+    # Right join ensures meta is kept even if spp is empty
+    right_join(spp_both_t, meta_both, by = c("plot"))
+  }) %>%
+    # Closest match join using fuzzyjoin
+    fuzzyjoin::difference_inner_join(tree_spp_lookup,
+                                     by = c("per_of_appropriate_species" = "Proportion.of.appropriate.Tree...Shrub.Species"),
+                                     max_dist = Inf,
+                                     distance_col = "dist"
+    ) %>%
+    group_by(plot) %>%
+    slice_min(order_by = dist, n = 1) %>%  # Keep only the closest match
+    ungroup()  %>% 
+    # replace nas with 0 for everything
+    mutate(across(where(is.numeric), ~ replace_na(.x, 0))) %>%
+    select(-dist, -Proportion.of.appropriate.Tree...Shrub.Species) %>%
+    select(plot, value, per_of_appropriate_species,N_appropriate_species, spp_n, shannon_index_appropriate, everything())  %>%
+    relocate(
+      # Move alphabetically sorted species columns to the end, after metadata
+      sort(setdiff(names(.), c("plot", "value", "per_of_appropriate_species", "N_appropriate_species", "spp_n", "shannon_index_appropriate"))),
+      .after = shannon_index_appropriate
+    ) %>% 
+    mutate(
+      plot = factor(plot)
+    ),
+    
+    separate_table = map_dfr(seq_along(survey_data), function(i) {
     ind <- survey_data[[i]]$indicators$tree_spp
     
     # Add plot and type columns to each tibble
@@ -216,16 +260,17 @@ create_tree_species_summary <- function(){
     supp <- ind$trees_supp_spp_present %>%
       mutate(plot = i, plot_type = "supp")
     
+
     # Combine, pivot wider
-    spp <- bind_rows(main, supp) %>%
+    spp_separate_t <- bind_rows(main, supp) %>%
       pivot_wider(
         names_from = tree_species,
         values_from = spp_total_trees,
         values_fill = 0
       )
-    
+
     # Force rows to exist for both plot types
-    meta <- tibble(
+    meta_separate <- tibble(
       plot = i,
       plot_type = c("main", "supp"),
       per_of_appropriate_species = c(ind$ind.tree_spp_prop_appropriate.main, ind$ind.tree_spp_prop_appropriate.supp) * 100,
@@ -238,7 +283,7 @@ create_tree_species_summary <- function(){
     )
     
     # Right join ensures meta is kept even if spp is empty
-    right_join(spp, meta, by = c("plot", "plot_type"))
+    right_join(spp_separate_t, meta_separate, by = c("plot", "plot_type"))
   }) %>% 
     # Closest match join using fuzzyjoin
     fuzzyjoin::difference_inner_join(tree_spp_lookup,
@@ -262,6 +307,7 @@ create_tree_species_summary <- function(){
       plot = factor(plot),
       plot_type = factor(plot_type, levels = c("main", "supp"))
     )
+  )
 } 
 
 create_regen_summary <- function(){

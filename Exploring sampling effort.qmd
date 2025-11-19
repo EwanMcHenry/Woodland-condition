@@ -326,6 +326,7 @@ save(overall_scores_df, indicator_mean_values_df, file = "outputs/sampling effor
 }
 
 ```
+
 ```{r summarise sim results, warning=F, message=F}
 
 load("outputs/sampling effort simulation objects.RData")
@@ -539,8 +540,6 @@ final_plot_with_legend
 
 
 ```
-
-
 
 ### Size of quantile ranges
 

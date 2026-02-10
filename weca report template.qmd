@@ -362,9 +362,9 @@ for (i in seq_len(nrow(plot_photos))) {
 
 > If you're viewing a portable shared version of this report the photos above might not load right when you click on them. Sorry! Trust me it works fine when the viewer has the photos saved on their PC!
 
-# Survey details 
+# Survey details
 
-::: panel-tabset
+:::: panel-tabset
 ## Tree info
 
 Detailed tree and shrub data was collected at each main and supplementary, and can be explored by expanding the plot info below.
@@ -540,11 +540,9 @@ A Shannon diversity index could be an alternative measure with which to infer va
 
 The appropriate tree and shrub species list for this habitat type (`r survey_data[[1]]$survey_info$habitat_type`) has `r length(survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp)` species in it:
 
-<div style="columns: 3; -webkit-columns: 3; -moz-columns: 3;">
-<ul>
-`r paste0("<li>", sort(survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp), "</li>", collapse = "\n")`
-</ul>
-</div>
+::: {style="columns: 3; -webkit-columns: 3; -moz-columns: 3;"}
+<ul>`r paste0("<li>", sort(survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp), "</li>", collapse = "\n")`</ul>
+:::
 
 ```{r tree_species_richness_plot, warning=FALSE, message=FALSE}
 ggplot() +
@@ -579,6 +577,7 @@ ggplot() +
   theme_pubr() +
   theme(legend.position = "none")
 ```
+
 ```{r both_tree_species_richness_table, results='asis'}
 appropriate_species <- survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp
 
@@ -630,6 +629,7 @@ datatable(
     backgroundColor = styleInterval(0, c(NA, "gold"))
   )
 ```
+
 ```{r seperate_tree_species_richness_table, results='asis'}
 
 species_cols <- setdiff(names(tree_species_summary$separate_table),
@@ -1526,7 +1526,6 @@ Ground flora value is a function of the proportion of the appropriate ground flo
 
 For (`r survey_data[[1]]$survey_info$habiat_type`) there are `r length(survey_data[[1]]$indicators$ground_flora$appropriate_ground_flora)` appropriate species in the list:, they are: `r paste(sort(survey_data[[1]]$indicators$ground_flora$appropriate_ground_flora), collapse = ", ")`.
 
-
 ```{r ground_flora_plot, warning=FALSE, message=FALSE}
 ggplot() +
   geom_line(
@@ -1612,10 +1611,7 @@ datatable(
     backgroundColor = "gold"
   )
 ```
-
-
-
-:::
+::::
 
 .
 
@@ -1680,44 +1676,5 @@ datatable(
 .
 
 .
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 Just some intentionally blank space. Why? Reasons.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

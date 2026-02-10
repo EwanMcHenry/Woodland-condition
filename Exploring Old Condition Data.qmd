@@ -6,6 +6,13 @@ Prior to the WCA project, data was collected to inform management on WT estate s
 
 With that in mind, a bowel of salt should be liberally added to any interpretation of the results of any analysis considering or comparing data collected from them with that from the new approach.
 
+### Caveat: Inconsistent data collection
+
+The data using the old method often includes blank or NULL values. Often, it is clear that this is inferred as an absence of the feature being measured (e.g. no deadwood present), here analysis assumes that - where data exists for similar indicators within a plot - that missing data implies a "0", "absence" or "FALSE" for the indicator, as appropriate. 
+
+It should also be noted, that there are a number of improbable observations within the data: e.g. where a tree/shrub species cover is present, but the species count is 0. These instances have typically been left as they are.
+
+
 ### Caveat: a very different approach to indicator estimation and scoring
 
 Using the old method, indicators were estimated at the survey-zone (or "strata") level, rather than within sample plots[^exploring-old-condition-data-1], using a relatively subjective method. Estimating at zone-scale means that the size of the zone can have a very big impact on indicator measurements:
@@ -31,27 +38,88 @@ Our WECA approach typically measures and scores[^exploring-old-condition-data-3]
 ```{r libraries}
 library(tidyverse)
 ```
-
-```{r load data}
-
-cnd <- read.csv("Data//old condition data//Condition Assessment Data 2025_01.csv")
-
-names(cnd)
-
-
+```{r constants}
+# Regex patterns to detect plot numbers and overall columns
+plot_regex <- "(\\.|_)?[Pp]lot\\.?([0-9]+)$"  # matches variants like Plot1, plot.2, _plot3
+overall_regex <- "\\.Overall$"                # matches columns ending in .Overall
 
 ```
+```{r cnd_load}
+cnd <- read.csv("Data//old condition data//Condition Assessment Data 2025_01.csv")
 
-```{r ininital-curation}
-missing_vals <- c("NULL", "null", " ", "N/A", "", "NA", "n/a", "Null")
+```
+```{r cnd_rename_cols}
+
+curation_notes <- character()
+results <- list()
 
 #cbind(cnd$OpenSpaceRidesPercentMax.1, cnd$OpenSpaceRidesPercentMax) # dupliocated col, needs removed
 cnd <- cnd %>%
   select(-"OpenSpaceRidesPercentMax.1") %>% # removed duplicated col
-# rename cols RTS.Intervention.Desirable.1 RTS.Intervention.Achievable.1
-names(cnd[,c("RTS.Intervention.Desirable.1" , "RTS.Intervention.Achievable.1")]) <-   c("RSS.Intervention.Desirable" , "RSS.Intervention.Achievable")
+  # Rename "Intervention.Desirable" and "Intervention.Achievable" to be explicit RE cover of tree species, shrub species and open space of different types
+  rename(
+    Tree.shrub.space.cover_Intervention.Desirable = Intervention.Desirable,
+    Tree.shrub.space.cover_Intervention.Achievable = Intervention.Achievable,
+    # rename cols RTS.Intervention.Desirable.1 RTS.Intervention.Achievable.1
+    RSS.Intervention.Desirable = RTS.Intervention.Desirable.1,
+    RSS.Intervention.Achievable = RTS.Intervention.Achievable.1
+  )
+
+# standardising plot/overall indicator nomeculature in col names ----
+# Function to canonicalise a column name while keeping dots and adding Plot/Overall suffix
+canonicalise_colname <- function(x) {
+
+  # 1️⃣ Extract plot number (if any)
+  plot_num <- str_extract(x, plot_regex)
+  plot_num <- ifelse(is.na(plot_num), NA, str_extract(plot_num, "[0-9]+"))
+
+  # 2️⃣ Detect Overall
+  is_overall <- grepl(overall_regex, x)
+
+  # 3️⃣ Strip Plot / Overall FIRST
+  core <- x %>%
+    gsub(plot_regex, "", ., ignore.case = TRUE) %>%   # remove Plot suffix
+    gsub(overall_regex, "", ., ignore.case = TRUE)    # remove Overall suffix
+
+  # 4️⃣ Canonicalise indicator naming on the *core*
+  core <- core %>%
+    gsub("NativesNumberPresent$", ".Native.richness", ., ignore.case = FALSE) %>%
+    gsub("NonNativesNumberPresent$", ".Non.Native.richness", ., ignore.case = FALSE) %>%
+    gsub("\\.Natives\\.Present$", ".Native.richness", ., ignore.case = FALSE) %>%
+    gsub("\\.NonNatives\\.Present$", ".Non.Native.richness", ., ignore.case = FALSE) %>% 
+    gsub("\\SSDAFOROfCover$", "Shrub.Cover", ., ignore.case = FALSE) %>% 
+      # Fix cases like: 
+          # RSSNon.Native.richness  -> RSS.Non.Native.richness
+          # RSS.Non.Native.richness -> unchanged
+    gsub("^([A-Z]{2,4})\\.?Non\\.", "\\1.Non.", .)
 
 
+  # 5️⃣ Reattach Plot / Overall in a consistent way
+  if (!is.na(plot_num)) {
+    paste0(core, "_Plot", plot_num)
+  } else if (is_overall) {
+    paste0(core, "_Overall")
+  } else {
+    core
+  }
+}
+
+old.names <- names(cnd)
+names(cnd) <- names(cnd) %>% sapply(canonicalise_colname) %>% as.character()
+
+# some more renaming
+cnd <- cnd %>%
+  rename(
+    # Rename "Tree.shrub.space.cover_Intervention.Desirable" and "Tree.shrub.space.cover_Intervention.Achievable" back
+    SS.Native.richness_Overall = SSNativesPresent_Overall,
+    SS.Non.Native.richness_Overall = SSNonNativesPresent_Overall,
+    TS.Native.richness_Overall = TSNativesPresent_Overall,
+    TS.Non.Native.richness_Overall = TSNonNativesPresent_Overall
+  )
+
+```
+```{r cnd_standardise_missing_yesno}
+missing_vals <- c("NULL", "null", " ", "N/A", "", "NA", "n/a", "Null", "N")
 cnd <- cnd %>%
   mutate(across(where(is.character),
                 ~iconv(.x, from = "", to = "UTF-8", sub = " "))) %>% # 
@@ -59,7 +127,7 @@ cnd <- cnd %>%
     x <- trimws(as.character(.))
 
     # Standardize missing values
-    x[x %in% c("", " ", "NULL", "null", "NA", "N/A", "n/a", "Null")] <- NA
+    x[x %in% missing_vals] <- NA
 
     # yes/no → TRUE/FALSE
     x[tolower(x) == "yes"] <- TRUE
@@ -71,23 +139,328 @@ cnd <- cnd %>%
     x
   }))
 
+curation_notes <- c(
+  curation_notes,
+  "- Standardised missing values (NULL, N/A, etc.) were converted yes/no to TRUE/FALSE"
+  )
+```
+``` {r indicator_types_format_theme}
+
+## ID indicator names  ----
+indicator_names <- names(cnd) %>%
+  grep("_Overall$", ., value = TRUE) %>%
+  sub("_Overall$", "", .)
+
+## check entries at each indicator ---- 
+
+indicator_freq_tables <- indicator_names %>%
+  setNames(., .) %>%   # name the list by indicator
+  lapply(function(ind) {
+
+    # all columns for this indicator (plots + overall)
+    cols <- names(cnd) %>%
+      grep(paste0("^", ind, "_"), ., value = TRUE)
+
+    # combine values across plots + overall
+    values <- cnd %>%
+      dplyr::select(dplyr::all_of(cols)) %>%
+      unlist(use.names = FALSE)
+
+    # frequency table (including NA)
+    table(values, useNA = "ifany")
+  })
+
+# initial check that no wild unexpected entries
+# indicator_freq_tables 
+
+## format indicator types ----
+
+dafor_levels <- c("D", "A", "F", "O", "R", "Absent") %>% rev()# including "Absent" for missing data assumed as absence
+
+is_numeric_chr <- function(x) {
+  all(grepl("^[-+]?[0-9]*\\.?[0-9]+$", x))
+}
+
+is_logical_chr <- function(x) {
+  all(x %in% c("TRUE", "FALSE"))
+}
+
+is_dafor_chr <- function(x, dafor_levels) {
+  sum(x %in% dafor_levels) >= 3
+}
 
 
+indicator_types <- indicator_freq_tables %>%
+  imap_dfr(function(tbl, indicator) {
 
+    vals <- names(tbl)
+    vals <- vals[!is.na(vals) & vals != "<NA>"]
 
-# format to have two data frames, one for the event of the survey, the other for data collected, both with the id coloum to allow matching
+    tibble(
+      indicator    = indicator,
+      n_unique     = length(vals),
+      is_dafor     = is_dafor_chr(vals, dafor_levels),
+      is_logical   = is_logical_chr(vals),
+      is_numeric   = is_numeric_chr(vals)
+    )
+  }) %>%
+  mutate(
+    type = case_when(
+      is_dafor   ~ "dafor",
+      is_logical ~ "logical",
+      is_numeric ~ "numeric",
+      TRUE       ~ "unknown"
+    )
+  ) 
 
-# survey_info <-  
-## coloums for "id", "CostCentre", "Site.Name", "SiteManager", "Region", "PlannedObservationDate", "ActualObservationDate", "Surveyor", "Whole.Site", "Key.Feature", "Stratum", "Stratum.Description", "Overall.Intervention.Desirable", "Overall.Intervention.Achievable", "Overall.Conclusions.And.Recommendations", "TotalTreeCanopyCoverPercentCurrent", "TotalTreeCanopyCoverPercentMin", "TotalTreeCanopyCoverPercentMax", "OpenSpaceSemiNaturalHabitatPercentCurrent", "OpenSpaceSemiNaturalHabitatPercentMin", "OpenSpaceSemiNaturalHabitatPercentMax", "OpenSpaceRidesPercentCurrent", "OpenSpaceRidesPercentMin", "OpenSpaceRidesPercentMax", "OpenSpaceTemporaryPercentCurrent", "OpenSpaceTemporaryPercentMin", "OpenSpaceWaterFeaturesPercentCurrent", "OpenSpaceWaterFeaturesPercentMin", "OpenSpaceWaterFeaturesPercentMax", "ShrubCoverPercentCurrent", "ShrubCoverPercentMin", "ShrubCoverPercentMax", "Intervention.Desirable", "Intervention.Achievable", "NotesAction", "TAIntervention.Desirable", "TA.Intervention.Achievable", "TA.NotesActions", "TS.Intervention.Desirable", "TS.Intervention.Achievable", "TS.NotesActions", "SS.Intervention.Desirable", "SS.Intervention.Achievable", "SS.NotesActions", "LTR.Intervention.Desirable", "LTR.Intervention.Achievable", "LTR.NotesActions", "LSR.Intervention.Desirable", "LSR.Intervention.Achievable", "LSR.NotesActions", "RTS.Intervention.Desirable", "RTS.Intervention.Achievable", "RTS.NotesActions", "RSS.Intervention.Desirable" , "RSS.Intervention.Achievable", "RSS.NotesActions", "Flora.Intervention.Desirable", "Flora.Intervention.Achievable", "Flora.NotesActions", "Deadwood.Intervention.Desirable", "Deadwood.Intervention.Achievable", "Deadwood.NotesActions", "Animal.Damage.Intervention.Desirable", "Animal.Damage.Intervention.Achievable", "Animal.Damage.NotesActions", "Invasives.Intervention.Desirable", "Invasives.Intervention.Achievable", "Invasives.NotesActions", "Tree.Health.Intervention.Desirable", "Tree.Health.Intervention.Achievable", "Tree.Health.NotesActions", "Human.Impacts.Intervention.Desirable", "Human.Impacts.Intervention.Achievable", "Human.Impact.Notes"
+# group indicators by theme -----
+indicator_types$theme <- NA_character_
+indicator_types$theme[grep("^TA\\.", indicator_types$indicator)] <- "tree_age"
+indicator_types$theme[grep("^(TS|SS)\\.", indicator_types$indicator)] <- "tree_shrub_species_richness"
+indicator_types$theme[indicator_types$indicator %in% c("TS.Canopy.Dominated.By.One.Or.Two.SPP",
+                                                       "SS.Shrub.Layer.Dominated.By.One.Or.Two.SPP") ] <- "tree_shrub_species_dominated"
 
-## rename "Intervention.Desirable" and "Intervention.Achievable" "TS_cover_intervention..."
-## add a col for N plots based on max plot number
+indicator_types$theme[grep("Shrub.Cover", indicator_types$indicator)] <- "shrub_cover"
+indicator_types$theme[grep("^(LTR|LSR)\\.", indicator_types$indicator)] <- "regeneration_level"
+indicator_types$theme[grep("^(RTS|RSS)\\.", indicator_types$indicator)] <- "regeneration_species_richness"
+indicator_types$theme[indicator_types$indicator %in% c("RTS.Dominated.By.One.Or.Two.SPP",
+                                                       "RSS.Dominated.By.One.Or.Two.SPP") ] <- "regeneration_species_dominated"
 
+indicator_types$theme[grep("^Flora\\.", indicator_types$indicator)] <- "flora"
+indicator_types$theme[grep("^Deadwood\\.", indicator_types$indicator)] <- "deadwood"
+indicator_types$theme[grep("^Invasives\\.", indicator_types$indicator)] <- "invasives"
+indicator_types$theme[grep("^Animal\\.Damage\\.", indicator_types$indicator)] <- "animal_damage"
+indicator_types$theme[grep("^Human\\.Impacts\\.", indicator_types$indicator)] <- "human_impact"
+indicator_types$theme[grep("^Tree\\.Health\\.", indicator_types$indicator)] <- "tree_health"
 
-
-# old_condition_data <-  
-## cols: "id", PLOT NUMBER, indicator name, measure
+indicator_types <- indicator_types %>% 
+  arrange(theme)
 
 
 
 ```
+```{r f_format_indicators}
+
+# function to get all cols for an indicator ----
+indicator_cols <- function(df, indicator) {
+  grep(
+    paste0("^", indicator, "_(?:Plot[0-9]+|Overall)$"),
+    names(df),
+    value = TRUE
+  )
+}
+
+# function to format indicators ----
+format_indicators <- function(df, indicator_types) {
+
+
+  for (i in seq_len(nrow(indicator_types))) {
+    ind  <- indicator_types$indicator[i]
+    type <- indicator_types$type[i]
+    cols <- indicator_cols(df, ind)
+
+    if (length(cols) == 0) next
+    if (type == "dafor") {
+      df <- df %>%
+        mutate(
+          across(
+            all_of(cols),
+            ~ factor(.x, levels = dafor_levels, ordered = TRUE)
+          )
+        )} else if (type == "logical") {
+          df <- df %>%
+            mutate(across(all_of(cols), as.logical)
+                   )
+          } else if (type %in% c("numeric", "richness")) {
+            df <- df %>%
+              mutate(across(all_of(cols), as.numeric))
+          }}
+  df
+}
+
+```
+```{r cnd_type_formatting}
+# Apply type formatting to cnd ----
+cnd <- format_indicators(cnd, indicator_types)
+
+curation_notes <- c(
+  curation_notes,
+  "- Indicator column names were standardised to have consistent 'Plot'/'Overall' suffixes"
+  )
+
+
+```
+```{r plot-level-data-extraction}
+# plot-level indicator measurements ----
+plot_cols <- names(cnd)  %>% 
+  grep(plot_regex, ., value = TRUE, ignore.case = TRUE)
+
+## want a survey tidy data frame with:
+### id, Site.Name, ActualObservationDate, Key.Feature, Stratum, Plot.Number, measure for each indicator
+
+# initial curation ----
+long_plots  <- cnd %>%
+  select(
+    id,
+    Site.Name,
+    ActualObservationDate,
+    Key.Feature,
+    Stratum,
+    all_of(plot_cols)
+  ) %>%
+  # pivot longer to get col for indicator and plot number
+  mutate(across(all_of(plot_cols), as.character)) %>% ## covert to character to ensure pivot works
+  pivot_longer( # lengthen to get indicator and plot number cols
+    cols = all_of(plot_cols),
+    names_to = "indicator_plot",
+    values_to = "value"
+  ) %>%
+  mutate( # use to create Plot.Number and indicator cols
+    Plot.Number = str_extract(indicator_plot, "(?<=_Plot)\\d+") %>% as.integer(),
+    indicator   = str_remove(indicator_plot, "_Plot\\d+$")
+  ) %>%
+  # select relevant cols to take forward
+  select(
+    id,
+    Site.Name,
+    ActualObservationDate,
+    Key.Feature,
+    Stratum,
+    Plot.Number,
+    indicator,
+    value
+  ) %>%
+  # widen to have one col per indicator
+  pivot_wider(
+    names_from  = indicator,
+    values_from = value
+  ) %>%
+  # drop all rows with NA throuhgout all cols with names in indicator_types$indicator
+  filter(
+    if_any(
+      all_of(indicator_types$indicator),
+      ~ !is.na(.x)
+    )
+  ) %>% 
+  arrange(id, Plot.Number) %>% 
+  as.data.frame() %>% 
+  format_indicators(., indicator_types)
+
+
+curation_notes <- c(
+  curation_notes,
+  "- Plot-level data was extracted and converted into long format data frame (row for each plot)"
+  )
+
+results$n.plots_og <- nrow(long_plots)  
+results$n.plot_sites_og <- length(unique(long_plots$Site.Name))
+```
+```{r plot_level_formatting}
+# formating indicator types as in cnd ----
+## Apply type formatting
+
+# format each indicator coloum data type ----
+for (i in seq_along(indicator_types$indicator)) {
+  ind <- indicator_types$indicator[i]
+  
+  # look up the type for this indicator
+  ind_type <- indicator_types$type[indicator_types$indicator == ind]
+  
+  # apply formatting to the entire column
+  if (ind_type == "dafor") {
+    long_plots[, ind] <- factor(
+      long_plots[, ind],
+      levels  = dafor_levels,   # e.g. c("A","D","F","O","R")
+      ordered = TRUE
+    )} else if (ind_type == "logical") {
+      long_plots[, ind] <- as.logical(long_plots[, ind])
+      } else if (ind_type %in% c("numeric", "richness")) {
+        long_plots[, ind] <- as.numeric(long_plots[, ind])
+        } else {
+          # unknown type → leave unchanged
+          long_plots[, ind] <- long_plots[, ind]
+        }
+}
+```
+```{r plot_data_data_manipulation}
+curation_notes <- c(
+  curation_notes,
+  paste0( "- The initial plot data contained information from ", results$data_description$nplots_og, " plots, covering ", results$data_description$n_surveys_og, " surveys over ",  results$data_description$nplot_sites_og, " sites" )
+)
+
+source("Scripts//old_condition_plot_data_curation.R")
+
+```
+```{r create_survey_level_info}
+
+# survey_info <-  all relevent info collected at survey-level scale  ----
+
+## explain ----
+## coloums for:
+### survey info - "id", "CostCentre", "Site.Name", "SiteManager", "Region", "PlannedObservationDate", "ActualObservationDate", "Surveyor", "Whole.Site", "Key.Feature", "Stratum", "Stratum.Description", 
+### cover - "TotalTreeCanopyCoverPercentCurrent", "ShrubCoverPercentCurrent",  "OpenSpaceSemiNaturalHabitatPercentCurrent", "OpenSpaceRidesPercentCurrent", "OpenSpaceTemporaryPercentCurrent", "OpenSpaceWaterFeaturesPercentCurrent", 
+### target covers - "TotalTreeCanopyCoverPercentMin", "TotalTreeCanopyCoverPercentMax", "ShrubCoverPercentMin", "ShrubCoverPercentMax",  "OpenSpaceSemiNaturalHabitatPercentMin", "OpenSpaceSemiNaturalHabitatPercentMax", "OpenSpaceRidesPercentMin", "OpenSpaceRidesPercentMax","OpenSpaceTemporaryPercentMin", "OpenSpaceWaterFeaturesPercentMin", "OpenSpaceWaterFeaturesPercentMax", 
+### intervensions, reccomendationsm notes and actions - "Overall.Intervention.Desirable", "Overall.Intervention.Achievable", "Overall.Conclusions.And.Recommendations",      "Intervention.Desirable", "Intervention.Achievable", "NotesAction", "TAIntervention.Desirable", "TA.Intervention.Achievable", "TA.NotesActions", "TS.Intervention.Desirable", "TS.Intervention.Achievable", "TS.NotesActions", "SS.Intervention.Desirable", "SS.Intervention.Achievable", "SS.NotesActions", "LTR.Intervention.Desirable", "LTR.Intervention.Achievable", "LTR.NotesActions", "LSR.Intervention.Desirable", "LSR.Intervention.Achievable", "LSR.NotesActions", "RTS.Intervention.Desirable", "RTS.Intervention.Achievable", "RTS.NotesActions", "RSS.Intervention.Desirable" , "RSS.Intervention.Achievable", "RSS.NotesActions", "Flora.Intervention.Desirable", "Flora.Intervention.Achievable", "Flora.NotesActions", "Deadwood.Intervention.Desirable", "Deadwood.Intervention.Achievable", "Deadwood.NotesActions", "Animal.Damage.Intervention.Desirable", "Animal.Damage.Intervention.Achievable", "Animal.Damage.NotesActions", "Invasives.Intervention.Desirable", "Invasives.Intervention.Achievable", "Invasives.NotesActions", "Tree.Health.Intervention.Desirable", "Tree.Health.Intervention.Achievable", "Tree.Health.NotesActions", "Human.Impacts.Intervention.Desirable", "Human.Impacts.Intervention.Achievable", "Human.Impact.Notes"
+
+# 1. Identify columns 
+## Survey metadata columns
+survey_metadata_cols <- c(
+  "id","CostCentre","Site.Name","SiteManager","Region",
+  "PlannedObservationDate","ActualObservationDate","Surveyor",
+  "Whole.Site","Key.Feature","Stratum","Stratum.Description"
+)
+## intervention/notes 
+intervention_cols <- grep("Intervention|NotesAction|NotesActions|Recommendations", 
+                           names(cnd), value = TRUE)
+## cover (current) and target (min/max) columns
+cover_current_cols <- grep("PercentCurrent$", names(cnd), value = TRUE)
+cover_target_cols  <- grep("Percent(Min|Max)$", names(cnd), value = TRUE)
+## indicators estimated at overall-level scale 
+indicator_overall_cols <- grep("_Overall$", names(cnd), value = TRUE)
+
+# 2. Build survey_info
+survey_info <- cnd %>%
+  select(all_of(survey_metadata_cols),
+         all_of(cover_current_cols),
+         all_of(cover_target_cols),
+         all_of(intervention_cols),
+         all_of(indicator_overall_cols))
+
+# 3. Add number of plots
+plot_nums <- str_extract(names(cnd), "_Plot\\d+$") %>%  # "_Plot1", "_Plot2", etc.
+  str_remove("_Plot") %>%                   # remove "_Plot" prefix
+  as.numeric()   
+keep_cols <- which(!is.na(plot_nums)) # cols with plot info
+plot_nums_kept <- plot_nums[keep_cols] %>% as.matrix()   # these match plot_ind_present columns
+plot_ind_present <- !is.na(cnd[, keep_cols])*1
+that_plot_nums <- sweep(plot_ind_present, 2, plot_nums_kept, `*`) %>% 
+  replace(., . == 0, NA) # give everything its plot number where present, else NA
+survey_info$max_plot <- that_plot_nums %>%
+  # max of each row
+  apply(1, function(x) if(all(is.na(x))) NA else max(x, na.rm = TRUE))  %>% 
+  #replace NA with 0
+  replace(., is.na(.), 0)  
+rm(plot_ind_present)
+
+### troubleshooting ----
+# table(length(survey_info$max_plot))
+# #### explore frequency of each number of plots
+# df_freq <- as_tibble(that_plot_nums) %>%
+#   mutate(row_id = row_number()) %>%
+#   pivot_longer(-row_id, names_to = "col", values_to = "plot") %>%
+#   filter(!is.na(plot) & plot != 0) %>%   # ignore 0 / NA
+#   count(row_id, plot) %>%                # frequency table
+#   pivot_wider(names_from = plot,
+#               values_from = n,
+#               values_fill = 0)  %>%          # fill missing with 0
+#   
+# ### looks like there are 4 indicators that area always present
+# that_plot_nums[1, which(that_plot_nums[1, ]==4)]
+
+```
+
+
+Some curation decisions are documented below.
+
+- Some columns indicating whether plots were dominated by one or two species had "no" values where it was believed data was not collected (i.e. other data was NA). These were converted to NA.
+- The DAFOR scale has no "0" value. Absence was assumed when NA was entered in plots that had data recorded elsewhere for that indicator type, FALSE was assumed for logical data where data appeared similarly missing. 

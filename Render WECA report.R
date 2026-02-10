@@ -12,7 +12,7 @@ sites <- list(
     zone_name = "1",
     site_survey_folderpath = "Data\\Field Test\\Beechy Wood, Sussex - Corsican Pine PAWS\\Z01\\",
     site_survey_filename = "WCA - Beechy Wood - Field test 22.05.25.xlsx",
-    site_survey_habitat_type = "base_rich_lowland"
+    site_survey_habitat_type = "acidic_lowland"
   ),
   
   ## Ladypark Wood ----

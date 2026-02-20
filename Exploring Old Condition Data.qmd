@@ -2,38 +2,75 @@
 title: "Exploring Old condition data"
 ---
 
-Prior to the WCA project, data was collected to inform management on WT estate sites, with condition inferred mainly from the subjective assessment of whether or not management interventions were desirable or practical for the different indicators measured. Notably, the survey employed no structured sampling design, and took a very different approach to the measurement of indicators.
+Prior to the WCA project, data was collected WT estate sites, with the primary aim of informing management and serving as a reference for individual site managers. The favorability of condition was inferred mainly from the subjective assessment of whether or not management interventions were desirable or practical for each indicators. Notably, the survey employed no structured sampling design, and took a very different approach to the measurement of indicators compared to the WECA plot-based sample approach.
 
-With that in mind, a bowel of salt should be liberally added to any interpretation of the results of any analysis considering or comparing data collected from them with that from the new approach.
+With that in mind - and an appropriately large bowl of salt at hand to mask the flavour of the many caveats that must accompany any conclusions, interpretation and comparisons using this data - this document seeks to explore what useful information can be gleaned from this hard-won dataset to assess the historical state of ecological condition on the Woodland Trust Estate.
 
-### Caveat: Inconsistent data collection
+### Caveat 1: Measurement of indicators was relativly subjective and assessed at zone level
 
-The data using the old method often includes blank or NULL values. Often, it is clear that this is inferred as an absence of the feature being measured (e.g. no deadwood present), here analysis assumes that - where data exists for similar indicators within a plot - that missing data implies a "0", "absence" or "FALSE" for the indicator, as appropriate. 
-
-It should also be noted, that there are a number of improbable observations within the data: e.g. where a tree/shrub species cover is present, but the species count is 0. These instances have typically been left as they are.
-
-
-### Caveat: a very different approach to indicator estimation and scoring
-
-Using the old method, indicators were estimated at the survey-zone (or "strata") level, rather than within sample plots[^exploring-old-condition-data-1], using a relatively subjective method. Estimating at zone-scale means that the size of the zone can have a very big impact on indicator measurements:
+Using the old method, indicators estimation was primarily at the survey-zone (or "strata") level, rather than within sample plots[^exploring-old-condition-data-1], and that estimation was relatively subjective (as required by a large area covered non-systematically). The Sylva/FC method also typically uses zone-average measurements for many of the indicators.
 
 [^exploring-old-condition-data-1]: Plots were used in the old method but they were optional and not a structured sample. Further, the measurements taken were not averaged up to the zone level formally. Rather, scaling up to the zone was intuition-based, using the plots as a guide, along with the proportion areas of the woodland that they survey thought they represented.
 
+### Caveat 2: Plots lacked sampling structure 
+
+The plots (or rather "stops") were not part of a formalised sampling design, but rather intended to act as an optional informal aid for measuring indicators at zone level:
+
+-   "*The aim is not to aggregate the information from the plots \[...\] in a strict mathematical way, but to use \[...\] in conjunction with your broader observations from the walk through to make a judgement about these attributes*"
+
+<!-- -->
+
+-   *"more for your benefit than as a permanent record"*.
+
+-   "*Some people find these stops more helpful than others: it is not compulsory to use them, and they should not be used as a substitute for observation along the whole length of the walk."*
+
+Plot size was unfixed, with guidance suggesting "a rough boundary of, say 10 or 20m".
+
+Plot size and location were not recorded.
+
+### Caveat 3: Use of DAFOR scale
+
+The DAFOR scale was used to assess the combination of cover and abundance of indicators within a single score, with rough guidance attached. Notably, no 0 measurement was included, and so it is not always clear whether an absence implies a zero or represents a missing value.
+
+| Class      | Cover guidance |
+|------------|----------------|
+| Dominant   | \>75% cover    |
+| Abundant   | 51-75% cover   |
+| Frequent   | 26-50% cover   |
+| Occasional | 11-25% cover   |
+| Rare       | 1-10% cover    |
+
+### Caveat 4: Varying zone size will affect indicator measurements
+
+Estimating indicators at zone-scale allows the size of the zone to greatly impact measurements:
+
 -   Larger zones will likely have more species
 
--   Large areas are expected to contain more variation (large size captures more unusual obervations), but this is likely to be dampened in estimation due to averaging over those larger areas[^exploring-old-condition-data-2].
+-   Large areas are expected to contain more variation and rare occurances (large size captures more unusual obervations)
+
+-   Variation between larger areas is typically less, because they lack the resolution to pick up smaller-scale variation, meaning that measurements at larger sites will typically tend towards the global-average for those measurements[^exploring-old-condition-data-2].
 
 [^exploring-old-condition-data-2]: Known as "regression towards the mean"
 
-The survey's (optional) plot-stops collected detailed information (though, not their location). The Sylva/FC method also typically uses zone-average measurements for many of the indicators.
+### Caveat 5: Scaling up of indicator measurements, not indicator scores
 
-> *We are not assessing the condition of an imagined "average" area of woodland... We are assessing the condition of actual locations that represent the wider woodland*
+> *We are not aiming to assess the condition of an imagined "average" area of woodland. We are assessing the condition of actual locations, then aggregating those measures to the wider woodland*
 
-Our WECA approach typically measures and scores[^exploring-old-condition-data-3] indicators at plots, and then averages those scores across the survey-zone. This difference is important (averaging plot-level indicator value scores, rather than averaging their measurements then scoring that zone-wide average). WECA aims to represent the ecological condition of actual real-life locations within a wood, not the condition of an imagined area of "average" woodland. The thought experiment below illustrates the potential implications of these different approaches for scoring one indicator.
+Our new WECA approach typically measures and scores[^exploring-old-condition-data-3] indicators at plots, and then averages those [scores]{.underline} across the survey-zone. This difference is important (averaging plot-level indicator value scores, rather than averaging their measurements then scoring that zone-wide average measurement). WECA aims to represent the ecological condition of actual real-life locations within a wood, not the condition of an imagined area of "average" woodland. The thought experiment below illustrates the potential implications of these different approaches for scoring one indicator.
 
 [^exploring-old-condition-data-3]: using a value function
 
-![](){fig-align="center"}
+![](images/a thought experiment on aggregation of scores vs measurements 2025-04-17 12.02.58.excalidraw.png)
+
+### Caveat 6: Inconsistent data collection
+
+The data using the old method often includes blank or NULL values. Often, it is clear that this is inferred as an absence of the feature being measured (e.g. no deadwood present), here curation_notes_initial was carried out to determine where this could safely be assumed.
+
+### Caveat 7: Impossible data
+
+A notable number of impossible measurements were recorded (e.g. measurements of tree cover along with 0 tree species richness), curation_notes_initial attempted to rectify these and remove those data points, but they do speak to the challenges that are apparent in the data set relating to data recording and digitisation and the inconcistencies that can creep in through that process.
+
+## Data description and and curation_notes_initial 
 
 ```{r libraries}
 library(tidyverse)
@@ -50,20 +87,23 @@ cnd <- read.csv("Data//old condition data//Condition Assessment Data 2025_01.csv
 ```
 ```{r cnd_rename_cols}
 
-curation_notes <- character()
 results <- list()
 
-#cbind(cnd$OpenSpaceRidesPercentMax.1, cnd$OpenSpaceRidesPercentMax) # dupliocated col, needs removed
+#OpenSpaceRidesPercentMax.1 is duplicated cnd$OpenSpaceRidesPercentMaxit shoudl be TemporaryPercentMax.. which we dont have, so will rename it and NA throughout
 cnd <- cnd %>%
-  select(-"OpenSpaceRidesPercentMax.1") %>% # removed duplicated col
   # Rename "Intervention.Desirable" and "Intervention.Achievable" to be explicit RE cover of tree species, shrub species and open space of different types
   rename(
+    OpenSpaceTemporaryPercentMax = OpenSpaceRidesPercentMax.1,
     Tree.shrub.space.cover_Intervention.Desirable = Intervention.Desirable,
     Tree.shrub.space.cover_Intervention.Achievable = Intervention.Achievable,
     # rename cols RTS.Intervention.Desirable.1 RTS.Intervention.Achievable.1
     RSS.Intervention.Desirable = RTS.Intervention.Desirable.1,
     RSS.Intervention.Achievable = RTS.Intervention.Achievable.1
+  ) %>% 
+  mutate(
+    OpenSpaceTemporaryPercentMax = NA
   )
+
 
 # standardising plot/overall indicator nomeculature in col names ----
 # Function to canonicalise a column name while keeping dots and adding Plot/Overall suffix
@@ -114,7 +154,9 @@ cnd <- cnd %>%
     SS.Native.richness_Overall = SSNativesPresent_Overall,
     SS.Non.Native.richness_Overall = SSNonNativesPresent_Overall,
     TS.Native.richness_Overall = TSNativesPresent_Overall,
-    TS.Non.Native.richness_Overall = TSNonNativesPresent_Overall
+    TS.Non.Native.richness_Overall = TSNonNativesPresent_Overall,
+    TA.Intervention.Desirable = TAIntervention.Desirable,
+    Tree.shrub.space.cover.NotesActions = NotesAction
   )
 
 ```
@@ -139,12 +181,92 @@ cnd <- cnd %>%
     x
   }))
 
-curation_notes <- c(
-  curation_notes,
-  "- Standardised missing values (NULL, N/A, etc.) were converted yes/no to TRUE/FALSE"
+curation_notes_initial <- character()
+
+curation_notes_initial <- c(
+  curation_notes_initial,
+  "\n### Initial curation_notes_initial",
+  "- Standardised missing values (NULL, N/A, etc.) were converted yes/no to TRUE/FALSE",
+  "'TemporaryPercentMax' was missing in the original dataset, apparently replaced by a duplicate of OpenSpaceRidesPercentMax. This was renamed and filled with NA values (as the information was missing)."
   )
 ```
-``` {r indicator_types_format_theme}
+```{r f_format_indicators}
+
+# function to get all cols for an indicator ----
+indicator_cols <- function(df, indicator) {
+  grep(
+    paste0("^", indicator, "_(?:Plot[0-9]+|Overall)$"),
+    names(df),
+    value = TRUE
+  )
+}
+
+# function to format indicators ----
+format_indicators <- function(df, indicator_types) {
+
+
+  for (i in seq_len(nrow(indicator_types))) {
+    ind  <- indicator_types$indicator[i]
+    type <- indicator_types$type[i]
+    cols <- indicator_cols(df, ind)
+
+    if (length(cols) == 0) next
+    if (type == "dafor") {
+      df <- df %>%
+        mutate(
+          across(
+            all_of(cols),
+            ~ factor(.x, levels = dafor_levels, ordered = TRUE)
+          )
+        )} else if (type == "logical") {
+          df <- df %>%
+            mutate(across(all_of(cols), as.logical)
+                   )
+          } else if (type %in% c("numeric", "richness")) {
+            df <- df %>%
+              mutate(across(all_of(cols), as.numeric))
+          }}
+  df
+}
+
+```
+```{r cnd_type_formatting}
+# Apply type formatting to cnd ----
+cnd <- format_indicators(cnd, indicator_types)
+
+curation_notes_initial <- c(
+  curation_notes_initial,
+  "- Indicator column names were standardised to have consistent 'Plot'/'Overall' suffixes"
+  )
+
+
+```
+```{r identify col groupings}
+# identifyign different groupings of cols ----
+plot_cols <- names(cnd)  %>% 
+  grep(plot_regex, ., value = TRUE, ignore.case = TRUE)
+overall_ind_cols <- names(cnd)  %>% 
+  grep("_Overall", ., value = TRUE, ignore.case = TRUE)
+notes_cols <- names(cnd)  %>% 
+  grep("Notes|Recommendations", ., value = TRUE, ignore.case = TRUE)
+intervention_desirable_cols <- names(cnd)  %>% 
+  grep("Intervention", ., value = TRUE, ignore.case = TRUE) %>%
+  grep("Desirable", ., value = TRUE, ignore.case = TRUE)
+intervention_achievable_cols <- names(cnd)  %>% 
+  grep("Intervention", ., value = TRUE, ignore.case = TRUE) %>% 
+  grep("Achievable", ., value = TRUE, ignore.case = TRUE, invert = TRUE)
+
+survey.info.cols <- c("id", "CostCentre", "Site.Name", "SiteManager", "Region", 
+                      "PlannedObservationDate", "ActualObservationDate", "Surveyor",
+                      "Whole.Site", "Key.Feature", "Stratum", "Stratum.Description")
+overall_structure.cols <- c("TotalTreeCanopyCoverPercentCurrent", "TotalTreeCanopyCoverPercentMin", "TotalTreeCanopyCoverPercentMax",
+                    "OpenSpaceSemiNaturalHabitatPercentCurrent", "OpenSpaceSemiNaturalHabitatPercentMin", "OpenSpaceSemiNaturalHabitatPercentMax", 
+                    "OpenSpaceRidesPercentCurrent", "OpenSpaceRidesPercentMin", "OpenSpaceRidesPercentMax", 
+                    "OpenSpaceTemporaryPercentCurrent", "OpenSpaceTemporaryPercentMin", "OpenSpaceTemporaryPercentMax", 
+                    "OpenSpaceWaterFeaturesPercentCurrent", "OpenSpaceWaterFeaturesPercentMin", "OpenSpaceWaterFeaturesPercentMax",
+                    "ShrubCoverPercentCurrent", "ShrubCoverPercentMin", "ShrubCoverPercentMax")
+```
+```{r lookup_indicator_types_format_theme}
 
 ## ID indicator names  ----
 indicator_names <- names(cnd) %>%
@@ -236,76 +358,93 @@ indicator_types$theme[grep("^Tree\\.Health\\.", indicator_types$indicator)] <- "
 indicator_types <- indicator_types %>% 
   arrange(theme)
 
-
-
 ```
-```{r f_format_indicators}
+```{r lookup_extended}
 
-# function to get all cols for an indicator ----
-indicator_cols <- function(df, indicator) {
-  grep(
-    paste0("^", indicator, "_(?:Plot[0-9]+|Overall)$"),
-    names(df),
-    value = TRUE
+indicator <- indicator_types$indicator
+
+# indicator group rules
+indicator_group <- case_when(
+  indicator %in% indicator_types$indicator[indicator_types$theme == "tree_age"] ~ "TA",
+  indicator %in% indicator_types$indicator[indicator_types$theme == "shrub_cover"] ~ "SC",
+  indicator %in% indicator_types$indicator[indicator_types$theme == "flora"] ~ "Flora",
+  indicator %in% indicator_types$indicator[indicator_types$theme == "deadwood"] ~ "Deadwood",
+  indicator %in% indicator_types$indicator[indicator_types$theme == "invasives"] ~ "Invasives",
+  indicator %in% indicator_types$indicator[indicator_types$theme == "animal_damage"] ~ "Animal.Damage",
+  indicator %in% indicator_types$indicator[indicator_types$theme == "human_impact"] ~ "Human.Impacts",
+  indicator %in% indicator_types$indicator[indicator_types$theme == "tree_health"] ~ "Tree.Health",
+
+  str_detect(indicator, "^LTR") ~ "LTR",
+  str_detect(indicator, "^LSR") ~ "LSR",
+  
+  str_detect(indicator, "^TS") ~ "TS",
+  str_detect(indicator, "^SS") ~ "SS",
+  str_detect(indicator, "^RTS") ~ "RTS",
+  str_detect(indicator, "^RSS") ~ "RSS",
+  TRUE ~ NA_character_
+)
+
+# define group
+group_col_map <- tibble(
+  indicator_group = c(
+    "TA", "SC", "Flora", "Deadwood", "Invasives",
+    "Animal.Damage", "Human.Impacts", "Tree.Health",
+    "LTR", "LSR", "TS", "SS", "RTS", "RSS"
+  ),
+  notes_prefix = c(
+    "TA", "SS", "Flora", "Deadwood", "Invasives",
+    "Animal.Damage", "Human.Impact", "Tree.Health",
+    "LTR", "LSR", "TS", "SS", "RTS", "RSS"
   )
-}
+)
 
-# function to format indicators ----
-format_indicators <- function(df, indicator_types) {
+# build lookup
+indicator_lookup_extended <- tibble(
+  indicator = indicator_types$indicator,
+  indicator_group = indicator_group
+) %>%
+  left_join(group_col_map, by = "indicator_group") %>%
+  mutate(
+    notes_col = paste0(notes_prefix, ".NotesActions"),
+    intervention_desirable_col = paste0(notes_prefix, ".Intervention.Desirable"),
+    intervention_achievable_col = paste0(notes_prefix, ".Intervention.Achievable")
+  ) %>%
+  select(-notes_prefix)
 
-
-  for (i in seq_len(nrow(indicator_types))) {
-    ind  <- indicator_types$indicator[i]
-    type <- indicator_types$type[i]
-    cols <- indicator_cols(df, ind)
-
-    if (length(cols) == 0) next
-    if (type == "dafor") {
-      df <- df %>%
-        mutate(
-          across(
-            all_of(cols),
-            ~ factor(.x, levels = dafor_levels, ordered = TRUE)
-          )
-        )} else if (type == "logical") {
-          df <- df %>%
-            mutate(across(all_of(cols), as.logical)
-                   )
-          } else if (type %in% c("numeric", "richness")) {
-            df <- df %>%
-              mutate(across(all_of(cols), as.numeric))
-          }}
-  df
-}
-
-```
-```{r cnd_type_formatting}
-# Apply type formatting to cnd ----
-cnd <- format_indicators(cnd, indicator_types)
-
-curation_notes <- c(
-  curation_notes,
-  "- Indicator column names were standardised to have consistent 'Plot'/'Overall' suffixes"
+# add non indicator rows
+indicator_lookup_extended <- indicator_lookup_extended %>%
+  bind_rows(
+    tibble(
+      indicator = c("Overall", "Tree.shrub.space.cover"),
+      indicator_group = c("Overall", "Tree.shrub.space.cover"),
+      notes_col = c(
+        "Overall.Conclusions.And.Recommendations",
+        "Tree.shrub.space.cover.NotesActions"
+      ),
+      intervention_desirable_col = c(
+        "Overall.Intervention.Desirable",
+        "Tree.shrub.space.cover_Intervention.Desirable"
+      ),
+      intervention_achievable_col = c(
+        "Overall.Intervention.Achievable",
+        "Tree.shrub.space.cover_Intervention.Achievable"
+      )
+    )
   )
+
+
 
 
 ```
 ```{r plot-level-data-extraction}
-# plot-level indicator measurements ----
-plot_cols <- names(cnd)  %>% 
-  grep(plot_regex, ., value = TRUE, ignore.case = TRUE)
 
 ## want a survey tidy data frame with:
 ### id, Site.Name, ActualObservationDate, Key.Feature, Stratum, Plot.Number, measure for each indicator
 
-# initial curation ----
+# initial curation_notes_initial ----
 long_plots  <- cnd %>%
   select(
-    id,
-    Site.Name,
-    ActualObservationDate,
-    Key.Feature,
-    Stratum,
+    all_of(survey.info.cols),
     all_of(plot_cols)
   ) %>%
   # pivot longer to get col for indicator and plot number
@@ -321,11 +460,7 @@ long_plots  <- cnd %>%
   ) %>%
   # select relevant cols to take forward
   select(
-    id,
-    Site.Name,
-    ActualObservationDate,
-    Key.Feature,
-    Stratum,
+    all_of(survey.info.cols),
     Plot.Number,
     indicator,
     value
@@ -347,13 +482,36 @@ long_plots  <- cnd %>%
   format_indicators(., indicator_types)
 
 
-curation_notes <- c(
-  curation_notes,
-  "- Plot-level data was extracted and converted into long format data frame (row for each plot)"
+curation_notes_initial <- c(
+  curation_notes_initial,
+  "- Plot-level and overall data were separated, with plot data converted into long format (row for each plot)"
   )
 
 results$n.plots_og <- nrow(long_plots)  
 results$n.plot_sites_og <- length(unique(long_plots$Site.Name))
+```
+```{r overall-level-data-extraction}
+# overall-level indicator measurements ----
+
+overall <- cnd %>%
+  select(
+    all_of(survey.info.cols),
+    all_of(overall_ind_cols),
+    all_of(overall_structure.cols),
+    all_of(notes_cols),
+    all_of(intervention_desirable_cols),
+    all_of(intervention_achievable_cols)
+  ) %>%
+  filter(
+    if_any(
+      all_of(pasteindicator_types$indicator),
+      ~ !is.na(.x)
+    )
+  ) %>% 
+  arrange(id) %>% 
+  as.data.frame() %>% 
+  format_indicators(., indicator_types)
+
 ```
 ```{r plot_level_formatting}
 # formating indicator types as in cnd ----
@@ -383,13 +541,14 @@ for (i in seq_along(indicator_types$indicator)) {
 }
 ```
 ```{r plot_data_data_manipulation}
-curation_notes <- c(
-  curation_notes,
-  paste0( "- The initial plot data contained information from ", results$data_description$nplots_og, " plots, covering ", results$data_description$n_surveys_og, " surveys over ",  results$data_description$nplot_sites_og, " sites" )
-)
 
-source("Scripts//old_condition_plot_data_curation.R")
+source("Scripts//old_condition_plot_data_curation_notes_initial.R")
 
+```
+```{r plot_curation_notes_initial, results="asis"}
+
+cat(paste(curation_notes_initial, collapse = "\n\n"))
+cat(paste(curation_notes_plots, collapse = "\n\n"))
 ```
 ```{r create_survey_level_info}
 
@@ -458,9 +617,3 @@ rm(plot_ind_present)
 # that_plot_nums[1, which(that_plot_nums[1, ]==4)]
 
 ```
-
-
-Some curation decisions are documented below.
-
-- Some columns indicating whether plots were dominated by one or two species had "no" values where it was believed data was not collected (i.e. other data was NA). These were converted to NA.
-- The DAFOR scale has no "0" value. Absence was assumed when NA was entered in plots that had data recorded elsewhere for that indicator type, FALSE was assumed for logical data where data appeared similarly missing. 

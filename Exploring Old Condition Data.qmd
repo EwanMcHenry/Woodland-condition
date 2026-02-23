@@ -64,16 +64,56 @@ Our new WECA approach typically measures and scores[^exploring-old-condition-dat
 
 ### Caveat 6: Inconsistent data collection
 
-The data using the old method often includes blank or NULL values. Often, it is clear that this is inferred as an absence of the feature being measured (e.g. no deadwood present), here curation_notes_initial was carried out to determine where this could safely be assumed.
+The data using the old method often includes blank or NULL values. Often, it is clear that this is inferred as an absence of the feature being measured (e.g. no deadwood present), here curation was carried out to determine where this could safely be assumed.
 
 ### Caveat 7: Impossible data
 
-A notable number of impossible measurements were recorded (e.g. measurements of tree cover along with 0 tree species richness), curation_notes_initial attempted to rectify these and remove those data points, but they do speak to the challenges that are apparent in the data set relating to data recording and digitisation and the inconcistencies that can creep in through that process.
+A notable number of impossible measurements were recorded (e.g. measurements of tree cover along with 0 tree species richness), curation attempted to rectify these and remove those data points, but they do speak to the challenges that are apparent in the data set relating to data recording and digitisation and the inconcistencies that can creep in through that process.
 
-## Data description and and curation_notes_initial 
+## Data description and and curation 
 
 ```{r libraries}
 library(tidyverse)
+```
+```{r f_format_indicators}
+
+# function to get all cols for an indicator ----
+indicator_cols <- function(df, indicator) {
+  grep(
+    paste0("^", indicator, "_(?:Plot[0-9]+|Overall)$"),
+    names(df),
+    value = TRUE
+  )
+}
+
+# function to format indicators ----
+format_indicators <- function(df, indicator_types) {
+
+
+  for (i in seq_len(nrow(indicator_types))) {
+    ind  <- indicator_types$indicator[i]
+    type <- indicator_types$type[i]
+    cols <- indicator_cols(df, ind)
+
+    if (length(cols) == 0) next
+    if (type == "dafor") {
+      df <- df %>%
+        mutate(
+          across(
+            all_of(cols),
+            ~ factor(.x, levels = dafor_levels, ordered = TRUE)
+          )
+        )} else if (type == "logical") {
+          df <- df %>%
+            mutate(across(all_of(cols), as.logical)
+                   )
+          } else if (type %in% c("numeric", "richness")) {
+            df <- df %>%
+              mutate(across(all_of(cols), as.numeric))
+          }}
+  df
+}
+
 ```
 ```{r constants}
 # Regex patterns to detect plot numbers and overall columns
@@ -82,7 +122,11 @@ overall_regex <- "\\.Overall$"                # matches columns ending in .Overa
 
 ```
 ```{r cnd_load}
-cnd <- read.csv("Data//old condition data//Condition Assessment Data 2025_01.csv")
+cnd <- read.csv("Data//old condition data//Condition Assessment Data 2025_01.csv") %>% 
+# format date cols currently like 22/06/2016
+  mutate(PlannedObservationDate = as.Date(PlannedObservationDate,format = "%d/%m/%Y"),
+         ActualObservationDate = as.Date(ActualObservationDate,format = "%d/%m/%Y"))
+
 
 ```
 ```{r cnd_rename_cols}
@@ -185,61 +229,10 @@ curation_notes_initial <- character()
 
 curation_notes_initial <- c(
   curation_notes_initial,
-  "\n### Initial curation_notes_initial",
+  "\n### Initial curation\n",
   "- Standardised missing values (NULL, N/A, etc.) were converted yes/no to TRUE/FALSE",
-  "'TemporaryPercentMax' was missing in the original dataset, apparently replaced by a duplicate of OpenSpaceRidesPercentMax. This was renamed and filled with NA values (as the information was missing)."
+  "- 'TemporaryPercentMax' (which relates to the upper bound of appropriate temporary open habtiat percentage) was missing in the original dataset, apparently replaced by a duplicate of OpenSpaceRidesPercentMax. This was renamed and filled with NA values (as the information was missing)."
   )
-```
-```{r f_format_indicators}
-
-# function to get all cols for an indicator ----
-indicator_cols <- function(df, indicator) {
-  grep(
-    paste0("^", indicator, "_(?:Plot[0-9]+|Overall)$"),
-    names(df),
-    value = TRUE
-  )
-}
-
-# function to format indicators ----
-format_indicators <- function(df, indicator_types) {
-
-
-  for (i in seq_len(nrow(indicator_types))) {
-    ind  <- indicator_types$indicator[i]
-    type <- indicator_types$type[i]
-    cols <- indicator_cols(df, ind)
-
-    if (length(cols) == 0) next
-    if (type == "dafor") {
-      df <- df %>%
-        mutate(
-          across(
-            all_of(cols),
-            ~ factor(.x, levels = dafor_levels, ordered = TRUE)
-          )
-        )} else if (type == "logical") {
-          df <- df %>%
-            mutate(across(all_of(cols), as.logical)
-                   )
-          } else if (type %in% c("numeric", "richness")) {
-            df <- df %>%
-              mutate(across(all_of(cols), as.numeric))
-          }}
-  df
-}
-
-```
-```{r cnd_type_formatting}
-# Apply type formatting to cnd ----
-cnd <- format_indicators(cnd, indicator_types)
-
-curation_notes_initial <- c(
-  curation_notes_initial,
-  "- Indicator column names were standardised to have consistent 'Plot'/'Overall' suffixes"
-  )
-
-
 ```
 ```{r identify col groupings}
 # identifyign different groupings of cols ----
@@ -436,6 +429,17 @@ indicator_lookup_extended <- indicator_lookup_extended %>%
 
 
 ```
+```{r cnd_type_formatting}
+# Apply type formatting to cnd ----
+cnd <- format_indicators(cnd, indicator_types)
+
+curation_notes_initial <- c(
+  curation_notes_initial,
+  "- Indicator column names were standardised to have consistent 'Plot'/'Overall' suffixes"
+  )
+
+
+```
 ```{r plot-level-data-extraction}
 
 ## want a survey tidy data frame with:
@@ -484,7 +488,7 @@ long_plots  <- cnd %>%
 
 curation_notes_initial <- c(
   curation_notes_initial,
-  "- Plot-level and overall data were separated, with plot data converted into long format (row for each plot)"
+  "- Plot-level and overall data were separated, with plot data converted into long format (row for each plot)\n\n"
   )
 
 results$n.plots_og <- nrow(long_plots)  
@@ -502,9 +506,13 @@ overall <- cnd %>%
     all_of(intervention_desirable_cols),
     all_of(intervention_achievable_cols)
   ) %>%
+  # remove _overall suffix from indicators
+  rename_with(
+  ~ str_remove(.x, "_Overall$"),
+  all_of(overall_ind_cols)) %>% 
   filter(
     if_any(
-      all_of(pasteindicator_types$indicator),
+      all_of(indicator_types$indicator),
       ~ !is.na(.x)
     )
   ) %>% 
@@ -513,7 +521,7 @@ overall <- cnd %>%
   format_indicators(., indicator_types)
 
 ```
-```{r plot_level_formatting}
+```{r formatting}
 # formating indicator types as in cnd ----
 ## Apply type formatting
 
@@ -540,9 +548,9 @@ for (i in seq_along(indicator_types$indicator)) {
         }
 }
 ```
-```{r plot_data_data_manipulation}
+```{r data_manipulation}
 
-source("Scripts//old_condition_plot_data_curation_notes_initial.R")
+source("Scripts//old_condition_data_curation.R")
 
 ```
 ```{r plot_curation_notes_initial, results="asis"}
@@ -617,3 +625,8 @@ rm(plot_ind_present)
 # that_plot_nums[1, which(that_plot_nums[1, ]==4)]
 
 ```
+
+
+# Thanks
+
+Thanks to the site managers who endured my inquiries as I attempted to cast some shadow of structure from this dataset; one which (despite my best curatorial efforts) very much retains the subjective silhouette of of its intended purpose (a bespoke record for later reference), rather than that of a formalised statistically robust monitoring methodology.

@@ -1,18 +1,32 @@
 # Curation of old condition data prior to indicator calculation
 
 
+
+overall0 <- overall
 long_plots0 <- long_plots
 
-results$data_description <- list(NA)
-results$data_description$nplots_og = nrow(long_plots0)
-results$data_description$n_surveys_og <- length(unique(long_plots0$id))
-results$data_description$nplot_sites_og <- length(unique(long_plots0$Site.Name))
+results$plot_data_description <- list(NA)
+results$plot_data_description$nplots_og = nrow(long_plots0)
+results$plot_data_description$n_surveys_og <- length(unique(long_plots0$id))
+results$plot_data_description$nplot_sites_og <- length(unique(long_plots0$Site.Name))
 
+results$overall_data_description <- list(NA)
+results$overall_data_description$n_surveys_og <- length(unique(overall0$id))
+results$overall_data_description$nplot_sites_og <- length(unique(overall0$Site.Name))
+
+curation_notes_plots <- character()
+curation_notes_overall <- character()
 
 curation_notes_plots <- c(
   curation_notes_plots,
   "### Plot data curation",
-  paste0( "The initial plot data contained information from ", results$data_description$nplots_og, " plots, covering ", results$data_description$n_surveys_og, " surveys over ",  results$data_description$nplot_sites_og, " sites." )
+  paste0( "The initial plot data contained information from ", results$plot_data_description$nplots_og, " plots, covering ", results$plot_data_description$n_surveys_og, " surveys over ",  results$plot_data_description$nplot_sites_og, " sites." )
+)
+
+curation_notes_overall <- c(
+  curation_notes_overall,
+  "### Overall data curation",
+  paste0( "The initial overall data contained information from ", results$overall_data_description$n_surveys_og, " surveys over ",  results$overall_data_description$nplot_sites_og, " sites." )
 )
 
 # functions ----
@@ -97,28 +111,66 @@ shrub.regen.sr.indicators <- c("RSS.Native.richness",     "RSS.Non.Native.richne
 
 # 1. remove rows with NA across all tree related information (age class cover, regeneration, species count) ----
 ## identify tree rows
-plot_tree_cols <- indicator_types$indicator[indicator_types$theme %in% c("tree_age", "tree_shrub_species_richness", 
+tree_cols <- indicator_types$indicator[indicator_types$theme %in% c("tree_age", "tree_shrub_species_richness", 
                                                                          "shrub_cover", 
                                                                          "regeneration_level", "regeneration_species_richness")]
-plot_tree_cols <- plot_tree_cols[!grepl("Dominated", plot_tree_cols)] # remove those containing "Dominated"
+tree_cols <- tree_cols[!grepl("Dominated", tree_cols)] # remove those containing "Dominated"
 ## identify rows where all NA
-na_tree_rows = which(
-  long_plots0[,plot_tree_cols] %>% is.na() %>% rowSums() == length(plot_tree_cols)
-)
-# remove na_tree_rows
-long_plots0 <- long_plots0[-na_tree_rows, ]
+plot_na_tree_id = long_plots0$id[ which(
+  long_plots0[,tree_cols] %>% is.na() %>% rowSums() == length(tree_cols)
+)]
+long_plots0 <- long_plots0[!long_plots0$id %in% plot_na_tree_id, ]
 
-results$data_description$nplots_no_tree_info = length(na_tree_rows)
-results$data_description$nplots_tree_info = nrow(long_plots0)
-results$data_description$n_surveys_tree_info <- length(unique(long_plots0$id))
-results$data_description$nplot_sites_tree_info <- length(unique(long_plots0$Site.Name))
+overall_na_tree_id = overall0$id[which(
+  overall0[,tree_cols] %>% is.na() %>% rowSums() == length(tree_cols)
+)]
+overall0 <- overall0[!overall0$id %in% overall_na_tree_id, ]
+
+# which ids have plots but not overall tree info
+plot_but_no_overall_treeinfo_id <- long_plots0$id[long_plots0$id %in% overall_na_tree_id] %>% 
+  unique()
+overall_but_no_plot_treeinfo_id <- overall0$id[overall0$id %in% plot_na_tree_id] %>% 
+  unique()
+
+# remove na_tree_rows
+
+results$plot_data_description$nplots_no_tree_info = length(plot_na_tree_id)
+results$plot_data_description$nplots_tree_info = nrow(long_plots0)
+results$plot_data_description$n_surveys_tree_info <- length(unique(long_plots0$id))
+results$plot_data_description$n_strata_tree_info <- length(unique(paste(long_plots0$Stratum, long_plots0$Site.Name)))
+results$plot_data_description$nplot_sites_tree_info <- length(unique(long_plots0$Site.Name))
+
+
+results$overall_data_description$n_surveys_no_tree_info <- length(overall_na_tree_id)
+results$overall_data_description$n_surveys_tree_info <- length(unique(overall0$id))
+
+results$overall_data_description$n_strata_tree_info <- length(unique(paste(overall0$Stratum, overall0$Site.Name)))
+results$overall_data_description$n_sites_tree_info <- length(unique(overall0$Site.Name))
 
 curation_notes_plots <- c(
   curation_notes_plots,
   "#### Removing plots with no tree/shrub information",
-  paste0( "- Of the original dataset ", results$data_description$nplots_no_tree_info, " plots contained no information on trees or shrubs (i.e. tree age, species richness, shrub cover and regneration info was all missing). Those ",  
-          results$data_description$nplots_no_tree_info ," plots were removed, leaving data from ", 
-          results$data_description$nplots_tree_info, " plots, covering ", results$data_description$n_surveys_tree_info, " surveys over ",  results$data_description$nplot_sites_tree_info, " sites." )
+  paste0( "- Of the original dataset (", nrow(long_plots), " plots), ", results$plot_data_description$nplots_no_tree_info, 
+          " plots contained no information on trees or shrubs (i.e. tree age, species richness, shrub cover and regneration info was all missing). Those ",  
+          results$plot_data_description$nplots_no_tree_info ," plots were removed, leaving data from ", 
+          results$plot_data_description$nplots_tree_info, 
+          " plots, covering ", results$plot_data_description$n_surveys_tree_info, 
+          " surveys over ",  results$plot_data_description$n_strata_tree_info,
+          " strata, over ", results$plot_data_description$nplot_sites_tree_info, " sites." ),
+  paste0("- Notably, ", length(overall_but_no_plot_treeinfo_id), " of those removed plot surveys had tree/shrub information at the overall level but not at plot level (these plots were not considered hereafter). It is expected that these are mainly surveys where a surveyor chose not to employ plots (the methodology did not make them compulsory)")
+)
+
+curation_notes_overall <- c(
+  curation_notes_overall,
+  "#### Removing surveys with no tree/shrub information",
+  paste0( "- Of the original dataset (", results$overall_data_description$n_surveys_og, 
+          " surveys), ", results$overall_data_description$n_surveys_no_tree_info, 
+          " surveys contained no overall information on trees or shrubs (i.e. tree age, species richness, shrub cover and regneration info was all missing). Those ",  
+          results$overall_data_description$n_surveys_no_tree_info ,
+          " surveys were removed, leaving data from ", results$overall_data_description$n_surveys_tree_info, 
+          " surveys over ", results$overall_data_description$n_strata_tree_info,
+          " strata, over ", results$overall_data_description$nplot_sites_tree_info, " sites." ),
+  paste0("- Notably, ", length(plot_but_no_overall_treeinfo_id), " of those removed surveys had tree/shrub information at the plot level but not at overall strata level. Consulting with site managers, this seems to reflect the 'primarily-a-reference-note' nature of the dataset; site managers may just not have considered an overall summary useful for them and their decision making.")
 )
 
 
@@ -215,7 +267,7 @@ tree_shrub_species_richness.indicators <- indicator_types$indicator[indicator_ty
 tree_species_richness.indicators <- c("TS.Native.richness", "TS.Non.Native.richness")
 shrub_species_richness.indicators <- c("SS.Native.richness", "SS.Non.Native.richness")
 
-results$data_description$n_plots_missing_richness_any_before <- sum(
+results$plot_data_description$n_plots_missing_richness_any_before <- sum(
   rowSums(is.na(long_plots0[tree_shrub_species_richness.indicators])) > 0
 )
 
@@ -279,19 +331,19 @@ na_remaining_tree_sr_rows = which(
   # na in all tree species richness cols
   long_plots0[,tree_species_richness.indicators] %>% is.na() %>% rowSums() > 0
 )
-results$data_description$n_plots_missing_tree_richness_any_after <- length(na_remaining_tree_sr_rows)
+results$plot_data_description$n_plots_missing_tree_richness_any_after <- length(na_remaining_tree_sr_rows)
 
 na_remaining_shrub_sr_rows = which(
   # na in all shrub species richness cols
   long_plots0[,shrub_species_richness.indicators] %>% is.na() %>% rowSums() > 0
 )
-results$data_description$n_plots_missing_shrub_richness_any_after <- length(na_remaining_shrub_sr_rows)
+results$plot_data_description$n_plots_missing_shrub_richness_any_after <- length(na_remaining_shrub_sr_rows)
 
 na_remaining_tree_shrub_sr_rows = which(
   # na in all tree/shrub species richness cols
   long_plots0[,tree_shrub_species_richness.indicators] %>% is.na() %>% rowSums() > length(tree_shrub_species_richness.indicators)
 )
-results$data_description$n_plots_missing_treeandshrub_richness_any_after <- length(na_remaining_tree_shrub_sr_rows)
+results$plot_data_description$n_plots_missing_treeandshrub_richness_any_after <- length(na_remaining_tree_shrub_sr_rows)
 
 curation_notes_plots <- c(
   curation_notes_plots,
@@ -299,7 +351,7 @@ curation_notes_plots <- c(
   "Missing data were dealt with differently depending on the indicator",
   "##### Tree/shrub species richness",
   paste0(
-    "For ", results$data_description$n_plots_missing_richness_any_before,
+    "For ", results$plot_data_description$n_plots_missing_richness_any_before,
     " plots at least one tree/shrub species richness datum was missing. ",
     "Implied zeros were assumed in the following cases:\n\n",
     "- Missing tree species richness at ",
@@ -315,11 +367,11 @@ curation_notes_plots <- c(
     length(na_shrub_sr_rows_some),
     " plots that recorded one of native or non-native shrub species richness.\n\n",
     "This left ",
-    results$data_description$n_plots_missing_tree_richness_any_after,
+    results$plot_data_description$n_plots_missing_tree_richness_any_after,
     " plots with no tree species richness information, ",
-    results$data_description$n_plots_missing_shrub_richness_any_after,
+    results$plot_data_description$n_plots_missing_shrub_richness_any_after,
     " plots with no shrub species richness information and ",
-    results$data_description$n_plots_missing_treeandshrub_richness_any_after,
+    results$plot_data_description$n_plots_missing_treeandshrub_richness_any_after,
     " plots with neither)."
   )
 )
@@ -340,10 +392,10 @@ long_plots0 <- long_plots0 %>%
 
 ##### 3.2 Tree age indicators ----
 ###### 3.2.1 - where some age measurements present ----
-results$data_description$n_plots_missing_ta_any <- sum(
+results$plot_data_description$n_plots_missing_ta_any <- sum(
   rowSums(is.na(long_plots0[tree.ageclass.indicators])) > 0
 )
-results$data_description$n_plots_missing_ta_all <- sum(
+results$plot_data_description$n_plots_missing_ta_all <- sum(
   rowSums(is.na(long_plots0[indicator_types$indicator [indicator_types$theme == "tree_age"]])) > 0 &
     rowSums(!is.na(long_plots0[indicator_types$indicator [indicator_types$theme == "tree_age"]])) == 0
 )
@@ -397,17 +449,17 @@ na_remaining_tree_age_rows = which(
   long_plots0[,indicator_types$indicator [indicator_types$theme == "tree_age"]] %>% is.na() %>% rowSums() > 0
 )
 
-results$data_description$n_plots_missing_ta_after <- length(na_remaining_tree_age_rows)
+results$plot_data_description$n_plots_missing_ta_after <- length(na_remaining_tree_age_rows)
 
 curation_notes_plots <- c(
   curation_notes_plots,
   "##### Tree age class information",
   paste0(
-    "For ", results$data_description$n_plots_missing_ta_any,
+    "For ", results$plot_data_description$n_plots_missing_ta_any,
     " plots at least one tree age datum was missing. ",
     "Implied absences were assumed in the following cases:\n\n",
     "- For ",
-    results$data_description$n_plots_missing_ta_any - results$data_description$n_plots_missing_ta_all,
+    results$plot_data_description$n_plots_missing_ta_any - results$plot_data_description$n_plots_missing_ta_all,
     " plots with at least one tree age class indicator recorded.\n",
     "- The further ", length(na_ta_rows_0sr),
     " plots with tree species richness as 0.\n",
@@ -416,7 +468,7 @@ curation_notes_plots <- c(
     "- The further ", length(na_ta_rows_regen),
     " plots containing information on the level or species richness of regenerating trees or shrubs.\n\n",
     "This left ",
-    results$data_description$n_plots_missing_ta_after,
+    results$plot_data_description$n_plots_missing_ta_after,
     " plots with no tree age information."
   )
 )
@@ -425,7 +477,7 @@ curation_notes_plots <- c(
 ##### 3.3 Shrub cover  ----
 ####### 3.3.1 - shrub cover absent but shrub sr 0 ----
 
-results$data_description$n_plots_missing_shrub_cover_any <- sum(
+results$plot_data_description$n_plots_missing_shrub_cover_any <- sum(
   is.na(long_plots0[indicator_types$indicator [indicator_types$theme == "shrub_cover"]]))
 
 na_shrub_cover_rows_0sr = which(
@@ -452,13 +504,13 @@ na_remaining_shrub_cover_rows = which(
   # na in all shrub cover cols
   long_plots0[,indicator_types$indicator [indicator_types$theme == "shrub_cover"]] %>% is.na()
 )
-results$data_description$n_plots_missing_shrub_cover_after <- length(na_remaining_shrub_cover_rows)
+results$plot_data_description$n_plots_missing_shrub_cover_after <- length(na_remaining_shrub_cover_rows)
 
 curation_notes_plots <- c(
   curation_notes_plots,
   "##### Shrub cover information",
   paste0(
-    "For ", results$data_description$n_plots_missing_shrub_cover_any,
+    "For ", results$plot_data_description$n_plots_missing_shrub_cover_any,
     " plots shrub cover information was missing. ",
     "Implied absences were assumed in the following cases:\n\n",
     "- For ", length(na_shrub_cover_rows_0sr),
@@ -466,7 +518,7 @@ curation_notes_plots <- c(
     "- The further ", length(na_shrub_cover_rows_ta_sr),
     " plots containing tree age class or tree species richness information.\n\n",
     "This left ",
-    results$data_description$n_plots_missing_shrub_cover_after,
+    results$plot_data_description$n_plots_missing_shrub_cover_after,
     " plots with no shrub cover information."
   )
 )
@@ -476,7 +528,7 @@ curation_notes_plots <- c(
 regen.species.indicators <- indicator_types$indicator[indicator_types$theme == "regeneration_species_richness" &
                                                         indicator_types$type %in% c("numeric", "richness")] 
 
-results$data_description$n.missing.regen.species_before <- sum(
+results$plot_data_description$n.missing.regen.species_before <- sum(
   rowSums(is.na(long_plots0[regen.species.indicators])) > 0
 )
 
@@ -546,7 +598,7 @@ curation_notes_plots <- c(
   curation_notes_plots,
   "##### Regeneration species richness",
   paste0(
-    "For ", results$data_description$n.missing.regen.species_before,
+    "For ", results$plot_data_description$n.missing.regen.species_before,
     " plots at least one regeneration species richness datum was missing. ",
     "Implied zeros were assumed in the following cases:\n\n",
     "- Missing regenerating tree species richness at ",
@@ -587,13 +639,13 @@ long_plots0 <- long_plots0 %>%
 
 ##### 3.5 regen level ----
 
-results$data_description$n.missing.regen.level_before <- sum(
+results$plot_data_description$n.missing.regen.level_before <- sum(
   rowSums(is.na(long_plots0[regen.level.indicators])) > 0
 )
-results$data_description$n.missing.treeregen.level_before <- sum(
+results$plot_data_description$n.missing.treeregen.level_before <- sum(
   rowSums(is.na(long_plots0[tree.regen.level.indicators])) > 0
 )
-results$data_description$n.missing.shrubregen.level_before <- sum(
+results$plot_data_description$n.missing.shrubregen.level_before <- sum(
   rowSums(is.na(long_plots0[shrub.regen.level.indicators])) > 0
 )
 
@@ -697,11 +749,11 @@ curation_notes_plots <- c(
   curation_notes_plots,
   "##### Regeneration level information",
   paste0(
-    "For ", results$data_description$n.missing.regen.level_before,
+    "For ", results$plot_data_description$n.missing.regen.level_before,
     " plots at least one regeneration level datum was missing (",
-    results$data_description$n.missing.treeregen.level_before,
+    results$plot_data_description$n.missing.treeregen.level_before,
     " missing tree regeneration level and ",
-    results$data_description$n.missing.shrubregen.level_before,
+    results$plot_data_description$n.missing.shrubregen.level_before,
     " missing shrub regeneration level). ",
     "Implied zeros were assumed in the following cases:\n\n",
     "- Missing tree regeneration level at ",
@@ -739,13 +791,13 @@ deadwood.indicators <- indicator_types$indicator[indicator_types$theme == "deadw
 
 flora.deadwood.indicators <- c(flora.indicators, deadwood.indicators)
 
-results$data_description$n.missing.flora_before <- sum(
+results$plot_data_description$n.missing.flora_before <- sum(
   rowSums(is.na(long_plots0[flora.indicators])) > 0
 )
-results$data_description$n.missing.deadwood_before <- sum(
+results$plot_data_description$n.missing.deadwood_before <- sum(
   rowSums(is.na(long_plots0[deadwood.indicators])) > 0
 )
-results$data_description$n.missing.flora_deadwood_before <- sum(
+results$plot_data_description$n.missing.flora_deadwood_before <- sum(
   rowSums(is.na(long_plots0[flora.deadwood.indicators])) > 0
 )
 
@@ -756,33 +808,32 @@ long_plots0 <- long_plots0 %>%
     indicator_types
   )
 
-results$data_description$n.missing.flora_after <- sum(
+results$plot_data_description$n.missing.flora_after <- sum(
   rowSums(is.na(long_plots0[flora.indicators])) > 0
 )
-results$data_description$n.missing.deadwood_after <- sum(
+results$plot_data_description$n.missing.deadwood_after <- sum(
   rowSums(is.na(long_plots0[deadwood.indicators])) > 0
 )
 
-curation_notes_plots <- character() # initialise
 curation_notes_plots <- c(
   curation_notes_plots,
   "##### Features information (flora and deadwood)",
   paste0(
-    "For ", results$data_description$n.missing.flora_deadwood_before,
+    "For ", results$plot_data_description$n.missing.flora_deadwood_before,
     " plots at least one datum was missing from flora (",
-    results$data_description$n.missing.flora_before,
+    results$plot_data_description$n.missing.flora_before,
     " plots) or deadwood (",
-    results$data_description$n.missing.deadwood_before,
+    results$plot_data_description$n.missing.deadwood_before,
     " plots). ",
     "Implied absences were assumed in the following cases:\n\n",
-    "- ", results$data_description$n.missing.flora_deadwood_before - results$data_description$n.missing.flora_after,
+    "- ", results$plot_data_description$n.missing.flora_deadwood_before - results$plot_data_description$n.missing.flora_after,
     " plots with data entered for at least one of these 'features' indicators (",
-    results$data_description$n.missing.flora_before - results$data_description$n.missing.flora_after,
+    results$plot_data_description$n.missing.flora_before - results$plot_data_description$n.missing.flora_after,
     " plots filled for flora and ",
-    results$data_description$n.missing.deadwood_before - results$data_description$n.missing.flora_after,
+    results$plot_data_description$n.missing.deadwood_before - results$plot_data_description$n.missing.flora_after,
     " for deadwood).\n\n",
     "This left ",
-    results$data_description$n.missing.flora_after,
+    results$plot_data_description$n.missing.flora_after,
     " plots with no flora or deadwood information."
   )
 )
@@ -800,19 +851,19 @@ threats.indicators <- c(
   tree_health.indicators
 )
 
-results$data_description$n.missing.invasives_before <- sum(
+results$plot_data_description$n.missing.invasives_before <- sum(
   rowSums(is.na(long_plots0[invasives.indicators])) > 0
 )
-results$data_description$n.missing.animal_damage_before <- sum(
+results$plot_data_description$n.missing.animal_damage_before <- sum(
   rowSums(is.na(long_plots0[animal_damage.indicators])) > 0
 )
-results$data_description$n.missing.human_impact_before <- sum(
+results$plot_data_description$n.missing.human_impact_before <- sum(
   rowSums(is.na(long_plots0[human_impact.indicators])) > 0
 )
-results$data_description$n.missing.tree_health_before <- sum(
+results$plot_data_description$n.missing.tree_health_before <- sum(
   rowSums(is.na(long_plots0[tree_health.indicators])) > 0
 )
-results$data_description$n.missing.threats_before <- sum(
+results$plot_data_description$n.missing.threats_before <- sum(
   rowSums(is.na(long_plots0[threats.indicators])) > 0
 )
 
@@ -823,20 +874,20 @@ long_plots0 <- long_plots0 %>%
     indicator_types
   )
 
-results$data_description$n.missing.invasives_after <- sum(
+results$plot_data_description$n.missing.invasives_after <- sum(
   rowSums(is.na(long_plots0[invasives.indicators])) > 0
 )
-results$data_description$n.missing.animal_damage_after <- sum(
+results$plot_data_description$n.missing.animal_damage_after <- sum(
   rowSums(is.na(long_plots0[animal_damage.indicators])) > 0
 )
-results$data_description$n.missing.human_impact_after <- sum(
+results$plot_data_description$n.missing.human_impact_after <- sum(
   rowSums(is.na(long_plots0[human_impact.indicators])) > 0
 )
-results$data_description$n.missing.tree_health_after <- sum(
+results$plot_data_description$n.missing.tree_health_after <- sum(
   rowSums(is.na(long_plots0[tree_health.indicators])) > 0
 )
 
-results$data_description$n.missing.threats_after <- sum(
+results$plot_data_description$n.missing.threats_after <- sum(
   rowSums(is.na(long_plots0[threats.indicators])) > 0
 )
 
@@ -844,36 +895,36 @@ curation_notes_plots <- c(
   curation_notes_plots,
   "##### Threats information (invasives, animal damage, human impact and tree health)",
   paste0(
-    "For ", results$data_description$n.missing.threats_before,
+    "For ", results$plot_data_description$n.missing.threats_before,
     " plots at least one datum was missing across threats, including: invasives (",
-    results$data_description$n.missing.invasives_before,
+    results$plot_data_description$n.missing.invasives_before,
     " plots), animal damage (",
-    results$data_description$n.missing.animal_damage_before,
+    results$plot_data_description$n.missing.animal_damage_before,
     " plots), human impact (",
-    results$data_description$n.missing.human_impact_before,
+    results$plot_data_description$n.missing.human_impact_before,
     " plots) and tree health (",
-    results$data_description$n.missing.tree_health_before,
+    results$plot_data_description$n.missing.tree_health_before,
     " plots). ",
     "Implied absences were assumed in the following cases:\n\n",
-    "- ", results$data_description$n.missing.threats_before - results$data_description$n.missing.human_impact_after,
+    "- ", results$plot_data_description$n.missing.threats_before - results$plot_data_description$n.missing.human_impact_after,
     " plots with data entered for at least one of these 'threats' indicators (",
-    results$data_description$n.missing.invasives_before - results$data_description$n.missing.invasives_after,
+    results$plot_data_description$n.missing.invasives_before - results$plot_data_description$n.missing.invasives_after,
     " for invasives; ",
-    results$data_description$n.missing.animal_damage_before - results$data_description$n.missing.animal_damage_after,
+    results$plot_data_description$n.missing.animal_damage_before - results$plot_data_description$n.missing.animal_damage_after,
     " for animal damage; ",
-    results$data_description$n.missing.human_impact_before - results$data_description$n.missing.human_impact_after,
+    results$plot_data_description$n.missing.human_impact_before - results$plot_data_description$n.missing.human_impact_after,
     " for human impact; ",
-    results$data_description$n.missing.tree_health_before - results$data_description$n.missing.tree_health_after,
+    results$plot_data_description$n.missing.tree_health_before - results$plot_data_description$n.missing.tree_health_after,
     " for tree health).\n\n",
     "This left ",
-    results$data_description$n.missing.invasives_after,
+    results$plot_data_description$n.missing.invasives_after,
     " plots with no information on threats."
   )
 )
 
 ##### 3.8 remaining empty feature or threat indicators ----
 
-results$data_description$n.missing.features_threats_before <- sum(
+results$plot_data_description$n.missing.features_threats_before <- sum(
   rowSums(is.na(long_plots0[c(flora.deadwood.indicators, threats.indicators)])) > 0
 )
 
@@ -884,24 +935,24 @@ long_plots0 <- long_plots0 %>%
     indicator_types
   )
 
-results$data_description$n.missing.features_threats_after <- sum(
+results$plot_data_description$n.missing.features_threats_after <- sum(
   rowSums(is.na(long_plots0[c(flora.deadwood.indicators, threats.indicators)])) > 0
 )
 curation_notes_plots <- c(
   curation_notes_plots,
   "##### Remaining features and threats information",
   paste0(
-    "Of the ", results$data_description$n.missing.features_threats_before,
+    "Of the ", results$plot_data_description$n.missing.features_threats_before,
     " plots remaining that contained missing data across features (N = ",
-    results$data_description$n.missing.deadwood_after,
+    results$plot_data_description$n.missing.deadwood_after,
     ") or threats (N = ",
-    results$data_description$n.missing.invasives_after,
+    results$plot_data_description$n.missing.invasives_after,
     "), ",
-    results$data_description$n.missing.features_threats_before - results$data_description$n.missing.features_threats_after,
+    results$plot_data_description$n.missing.features_threats_before - results$plot_data_description$n.missing.features_threats_after,
     " plots contained information on at least one of those indicators. ",
     "These were assumed to be implied absences. \n",
     "This left ",
-    results$data_description$n.missing.features_threats_after,
+    results$plot_data_description$n.missing.features_threats_after,
     " plots with no information on features or threats."
   )
 )
@@ -912,22 +963,22 @@ curation_notes_plots <- c(
 ## "Dominated.By.One.Or.Two.SPP" is never NA - where blank it is "no", even where no corresponeding species are recorded (eitehr 0 or NA)
 ##### set to NA where corresponding species richness is 0 or NA
 
-results$data_description$n.fixed_dominated_rts <- sum(
+results$plot_data_description$n.fixed_dominated_rts <- sum(
   long_plots0$RTS.Dominated.By.One.Or.Two.SPP[long_plots0$tot_tree_regn_SR == 0 |
                                                 is.na(long_plots0$tot_tree_regn_SR)] == FALSE,
   na.rm = TRUE
 )
-results$data_description$n.fixed_dominated_rss <- sum(
+results$plot_data_description$n.fixed_dominated_rss <- sum(
   long_plots0$RSS.Dominated.By.One.Or.Two.SPP[long_plots0$tot_shrub_regen_SR == 0 |
                                                 is.na(long_plots0$tot_shrub_regen_SR)] == FALSE,
   na.rm = TRUE
 )
-results$data_description$n.fixed_dominated_ts <- sum(
+results$plot_data_description$n.fixed_dominated_ts <- sum(
   long_plots0$TS.Canopy.Dominated.By.One.Or.Two.SPP[long_plots0$tot_tree_SR == 0 |
                                                       is.na(long_plots0$tot_tree_SR)] == FALSE,
   na.rm = TRUE
 )
-results$data_description$n.fixed_dominated_ss <- sum(
+results$plot_data_description$n.fixed_dominated_ss <- sum(
   long_plots0$SS.Shrub.Layer.Dominated.By.One.Or.Two.SPP[long_plots0$tot_shrub_SR == 0 |
                                                            is.na(long_plots0$tot_shrub_SR)] == FALSE,
   na.rm = TRUE
@@ -948,10 +999,10 @@ curation_notes_plots <- c(
     "Orignally 'Dominated by one or two species', indicators were FALSE by default and manually overwritten to TRUE when needed.\n ",
     "- This left FALSE values even when records of zeo or NA species richness implied the indicator should be NA.", 
     " In those cases (",
-    results$data_description$n.fixed_dominated_rts, " for renerating trees, ", 
-    results$data_description$n.fixed_dominated_rss, " for regenerating shrubs, ", 
-    results$data_description$n.fixed_dominated_ts, " for tree species, ",
-    results$data_description$n.fixed_dominated_ss, " for shrub species",
+    results$plot_data_description$n.fixed_dominated_rts, " for renerating trees, ", 
+    results$plot_data_description$n.fixed_dominated_rss, " for regenerating shrubs, ", 
+    results$plot_data_description$n.fixed_dominated_ts, " for tree species, ",
+    results$plot_data_description$n.fixed_dominated_ss, " for shrub species",
     "), the indicator was changed to 'NA'"
   )
 )
@@ -993,9 +1044,10 @@ curation_notes_plots <- c(
   curation_notes_plots,
   "### Curated plot data description",
   paste0(
-    "The curated dataset contained information from:\n",
+    "The curated dataset contained information from:\n\n",
     "- ", nrow(long_plots0), " plots\n",
     "- ", length(unique(long_plots0$id)), " individual surveys\n",
+    "- ", length(unique(paste(long_plots0$Site.Name, long_plots0$Stratum ))), " individual strata\n",
     "- ", length(unique(long_plots0$Site.Name)), " individual sites\n",
     "- Covering ", 
     format(min(as.Date(long_plots0$ActualObservationDate, format = "%d/%m/%Y"), na.rm = TRUE), "%Y"),
@@ -1004,14 +1056,14 @@ curation_notes_plots <- c(
     ".\n\n",
     "Of these, ", sum(long_plots0$na_count > 0), " plots (",
     round(100 * sum(long_plots0$na_count > 0) / nrow(long_plots0), 2), "%) still contained missing data for at least one indicator:\n\n",
-    "- Tree species richness: ", results$data_description$n_plots_missing_tree_richness_any_after, " plots missing data (",
-    round(100 * results$data_description$n_plots_missing_tree_richness_any_after / nrow(long_plots0), 2), "%)\n",
-    "- Shrub species richness: ", results$data_description$n_plots_missing_shrub_richness_any_after, " plots missing data (",
-    round(100 * results$data_description$n_plots_missing_shrub_richness_any_after / nrow(long_plots0), 2), "%)\n",
-    "- Tree age category covers: ", results$data_description$n_plots_missing_ta_after, " plots missing data (",
-    round(100 * results$data_description$n_plots_missing_ta_after / nrow(long_plots0), 2), "%)\n",
-    "- Shrub cover: ", results$data_description$n_plots_missing_shrub_cover_after, " plots missing data (",
-    round(100 * results$data_description$n_plots_missing_shrub_cover_after / nrow(long_plots0), 2), "%)\n",
+    "- Tree species richness: ", results$plot_data_description$n_plots_missing_tree_richness_any_after, " plots missing data (",
+    round(100 * results$plot_data_description$n_plots_missing_tree_richness_any_after / nrow(long_plots0), 2), "%)\n",
+    "- Shrub species richness: ", results$plot_data_description$n_plots_missing_shrub_richness_any_after, " plots missing data (",
+    round(100 * results$plot_data_description$n_plots_missing_shrub_richness_any_after / nrow(long_plots0), 2), "%)\n",
+    "- Tree age category covers: ", results$plot_data_description$n_plots_missing_ta_after, " plots missing data (",
+    round(100 * results$plot_data_description$n_plots_missing_ta_after / nrow(long_plots0), 2), "%)\n",
+    "- Shrub cover: ", results$plot_data_description$n_plots_missing_shrub_cover_after, " plots missing data (",
+    round(100 * results$plot_data_description$n_plots_missing_shrub_cover_after / nrow(long_plots0), 2), "%)\n",
     "- Regeneration tree species richness: ", length(na_remainging_tree_regen_sr_rows), " plots missing data (",
     round(100 * length(na_remainging_tree_regen_sr_rows) / nrow(long_plots0), 2), "%)\n",
     "- Regeneration shrub species richness: ", length(na_remainging_shrub_regen_sr_rows), " plots missing data (",
@@ -1020,8 +1072,8 @@ curation_notes_plots <- c(
     round(100 * length(na_treeregen_level_after) / nrow(long_plots0), 2), "%)\n",
     "- Regeneration level (shrubs): ", length(na_shrubregen_level_after), " plots missing data (",
     round(100 * length(na_shrubregen_level_after) / nrow(long_plots0), 2), "%)\n",
-    "- Features and threats indicators: ", results$data_description$n.missing.features_threats_after, " plots missing data (",
-    round(100 * results$data_description$n.missing.features_threats_after / nrow(long_plots0), 2), "%)"
+    "- Features and threats indicators: ", results$plot_data_description$n.missing.features_threats_after, " plots missing data (",
+    round(100 * results$plot_data_description$n.missing.features_threats_after / nrow(long_plots0), 2), "%)"
   )
 )
 

@@ -170,7 +170,8 @@ curation_notes_overall <- c(
           " surveys were removed, leaving data from ", results$overall_data_description$n_surveys_tree_info, 
           " surveys over ", results$overall_data_description$n_strata_tree_info,
           " strata, over ", results$overall_data_description$nplot_sites_tree_info, " sites." ),
-  paste0("- Notably, ", length(plot_but_no_overall_treeinfo_id), " of those removed surveys had tree/shrub information at the plot level but not at overall strata level. Consulting with site managers, this seems to reflect the 'primarily-a-reference-note' nature of the dataset; site managers may just not have considered an overall summary useful for them and their decision making.")
+  paste0("- Notably, of those ", results$overall_data_description$n_surveys_no_tree_info, " overall surveys removed here, ", length(plot_but_no_overall_treeinfo_id), " had tree/shrub information at the plot level.", 
+         " Consulting with site managers, this seems to reflect the 'primarily-a-reference-note' nature of the dataset: an overall summary may not have been considered useful for them and their decision making.")
 )
 
 

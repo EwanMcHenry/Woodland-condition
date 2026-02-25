@@ -629,4 +629,4 @@ rm(plot_ind_present)
 
 # Thanks
 
-Thanks to the site managers who endured my inquiries as I attempted to cast some shadow of structure from this dataset; one which (despite my best curatorial efforts) very much retains the subjective silhouette of of its intended purpose (a bespoke record for later reference), rather than that of a formalised statistically robust monitoring methodology.
+Thanks to the site managers who endured my inquiries as I attempted to cast some shadow of structure from this dataset; one which (despite my best curatorial efforts) very much retains the subjective silhouette of of its intended purpose (a bespoke record for later reference), rather than that of a formalised statistically robust monitoring methodology. In particular: Hannah Patterson, Colin Riley, Daniel Aiken and Richard Brown.

@@ -38,6 +38,7 @@ bibliography: references.bib
 format:
   html:
     theme: cosmo
+    lightbox: true
     code-fold: true       # Enables folding
     code-summary: "Show code"  # Optional: custom label on the fold button
     fig-width: 6

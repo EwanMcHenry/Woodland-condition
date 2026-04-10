@@ -2,35 +2,79 @@
 title: "Exploring Old condition data"
 ---
 
-Prior to the WCA project, data was collected WT estate sites, with the primary aim of informing management and serving as a reference for individual site managers. The favorability of condition was inferred mainly from the subjective assessment of whether or not management interventions were desirable or practical for each indicators. Notably, the survey employed no structured sampling design, and took a very different approach to the measurement of indicators compared to the WECA plot-based sample approach.
+Prior to the WCA project, data was collected WT estate sites, prinicply to inform management decision making at the site or strata scale.
 
-With that in mind - and an appropriately large bowl of salt at hand to mask the flavour of the many caveats that must accompany any conclusions, interpretation and comparisons using this data - this document seeks to explore what useful information can be gleaned from this hard-won dataset to assess the historical state of ecological condition on the Woodland Trust Estate.
+-   Primarily survey data acted as a reference note for individual site managers.
 
-### Caveat 1: Measurement of indicators was relativly subjective and assessed at zone level
+-   The favorability of condition was inferred mainly from the subjective assessment of whether or not management interventions were desirable or practical for each indicators.
 
-Using the old method, indicators estimation was primarily at the survey-zone (or "strata") level, rather than within sample plots[^exploring-old-condition-data-1], and that estimation was relatively subjective (as required by a large area covered non-systematically). The Sylva/FC method also typically uses zone-average measurements for many of the indicators.
+-   Notably, the survey employed no structured sampling design, and took a very different approach to the measurement of indicators compared to the WECA plot-based sample approach.
 
-[^exploring-old-condition-data-1]: Plots were used in the old method but they were optional and not a structured sample. Further, the measurements taken were not averaged up to the zone level formally. Rather, scaling up to the zone was intuition-based, using the plots as a guide, along with the proportion areas of the woodland that they survey thought they represented.
+With that in mind - and an appropriately large bowl of salt at hand to mask the overly caveated flavor that must accompany any conclusions, interpretations and comparisons using this data - this document seeks to explore what useful information can be gleaned from this hard-won dataset to assess and report on the historical state of ecological condition on the Woodland Trust Estate.
 
-### Caveat 2: Plots lacked sampling structure 
+# Methodological Caveats
 
-The plots (or rather "stops") were not part of a formalised sampling design, but rather intended to act as an optional informal aid for measuring indicators at zone level:
+## Caveat 1: Measurement of indicators was relatively subjective and assessed at zone level
+
+Using the old method, indicator estimation was primarily at the survey-zone (or "strata") level, rather than within sample plots[^exploring-old-condition-data-1], and that estimation was relatively subjective (as required by a large area covered non-systematically). The Sylva/FC method also typically uses zone-average measurements for many of the indicators.
+
+[^exploring-old-condition-data-1]: Plots were used, but they were optional and not a structured sample or formal estimation process.
+
+## Caveat 2: Plots are not a reliable representation of the zone
+
+The plots (or rather "stops") were not part of a formalised sampling design, but rather intended to act as an optional, informal, and intuition-based aid for estimating indicators at zone level:
 
 -   "*The aim is not to aggregate the information from the plots \[...\] in a strict mathematical way, but to use \[...\] in conjunction with your broader observations from the walk through to make a judgement about these attributes*"
-
-<!-- -->
-
 -   *"more for your benefit than as a permanent record"*.
-
 -   "*Some people find these stops more helpful than others: it is not compulsory to use them, and they should not be used as a substitute for observation along the whole length of the walk."*
 
-Plot size was unfixed, with guidance suggesting "a rough boundary of, say 10 or 20m".
+Plot sizes and locations were not recorded.
 
-Plot size and location were not recorded.
+## Caveat 3: Varying plot and zone size affect indicator measurements
 
-### Caveat 3: Use of DAFOR scale
+Plot size was unfixed
 
-The DAFOR scale was used to assess the combination of cover and abundance of indicators within a single score, with rough guidance attached. Notably, no 0 measurement was included, and so it is not always clear whether an absence implies a zero or represents a missing value.
+-   Guidance suggested *"a rough boundary of, say 10 or 20m"*.
+
+Woodland zone/strata also obviously varied in size
+
+Estimating indicators at a variable-scale will greatly impact measurements:
+
+-   Larger zones will likely have more species
+
+-   Large areas are expected to contain more variation and rare occurrences (large size captures more unusual observations)
+
+-   Variation BETWEEN observations over larger areas is typically less
+
+    -   Measurments at larger scales (e.g. larger strata) lack the resolution to pick up smaller-scale variation, and measurements increasingly drift towards the "global-average"[^exploring-old-condition-data-2].
+
+[^exploring-old-condition-data-2]: Known as "regression towards the mean"
+
+![Comparing across variably-sized survey areas can be challenging: Observations over larger areas typically capture more variation and record measurments closer to the "global mean" with less variation between them. This is particuarlly obvious in the example here, where one site is split into different survey sizes, but the same effect exists in comparisons between different sites with diffferent survey sizes](images/quadrat%20size%20effect%202026-02-27%2010.41.53.excalidraw.png){width="907"}
+
+## Caveat 4: Scaling up of indicator measurements, not indicator scores
+
+> *We are not aiming to assess the condition of an imagined "average" area of woodland. We are assessing the condition of actual locations, then aggregating those measures to the wider woodland*
+
+Our new WECA approach typically measures and scores[^exploring-old-condition-data-3] indicators at plots, and then averages those [scores]{.underline} across the survey-zone. This difference is important (averaging plot-level indicator value scores, rather than averaging their measurements then scoring that zone-wide average measurement). WECA aims to represent the ecological condition of actual real-life locations within a wood, not the condition of an imagined area of "average" woodland. The thought experiment below illustrates the potential implications of these different approaches for scoring one indicator.
+
+[^exploring-old-condition-data-3]: using a value function
+
+![](images/a%20thought%20experiment%20on%20aggregation%20of%20scores%20vs%20measurements%202025-04-17%2012.02.58.excalidraw.png)
+
+## Caveat 5: Inconsistent data collection: missing data or implied absence
+
+The data using the old method often includes blank or NULL values. Often, it is clear that this is inferred as an absence of the feature being measured (e.g. no deadwood present), here curation was carried out to determine where this could safely be assumed.
+
+## Caveat 6: Impossible data
+
+A notable number of impossible measurements were recorded (e.g. measurements of tree cover along with 0 tree species richness), curation attempted to rectify these and remove those data points, but they do speak to the challenges that are apparent in the data set relating to data recording and digitisation and the inconcistencies that can creep in through that process.
+
+## Caveat 7: Use of DAFOR scale
+
+The DAFOR scale was used to assess the combination of cover and abundance of indicators within a single score, with rough guidance attached that also suggested inconsistency was expected between indicators in the meaning of different DAFOR categories.
+
+Notably, no 0 measurement was included, and so it is not always clear whether an absence implies a zero or represents a missing value.
 
 | Class      | Cover guidance |
 |------------|----------------|
@@ -40,41 +84,16 @@ The DAFOR scale was used to assess the combination of cover and abundance of ind
 | Occasional | 11-25% cover   |
 | Rare       | 1-10% cover    |
 
-### Caveat 4: Varying zone size will affect indicator measurements
 
-Estimating indicators at zone-scale allows the size of the zone to greatly impact measurements:
+## Caveat 8: Does DAFOR Rare mean absent??????!?!?!?!
 
--   Larger zones will likely have more species
 
--   Large areas are expected to contain more variation and rare occurances (large size captures more unusual obervations)
-
--   Variation between larger areas is typically less, because they lack the resolution to pick up smaller-scale variation, meaning that measurements at larger sites will typically tend towards the global-average for those measurements[^exploring-old-condition-data-2].
-
-[^exploring-old-condition-data-2]: Known as "regression towards the mean"
-
-### Caveat 5: Scaling up of indicator measurements, not indicator scores
-
-> *We are not aiming to assess the condition of an imagined "average" area of woodland. We are assessing the condition of actual locations, then aggregating those measures to the wider woodland*
-
-Our new WECA approach typically measures and scores[^exploring-old-condition-data-3] indicators at plots, and then averages those [scores]{.underline} across the survey-zone. This difference is important (averaging plot-level indicator value scores, rather than averaging their measurements then scoring that zone-wide average measurement). WECA aims to represent the ecological condition of actual real-life locations within a wood, not the condition of an imagined area of "average" woodland. The thought experiment below illustrates the potential implications of these different approaches for scoring one indicator.
-
-[^exploring-old-condition-data-3]: using a value function
-
-![](images/a thought experiment on aggregation of scores vs measurements 2025-04-17 12.02.58.excalidraw.png)
-
-### Caveat 6: Inconsistent data collection
-
-The data using the old method often includes blank or NULL values. Often, it is clear that this is inferred as an absence of the feature being measured (e.g. no deadwood present), here curation was carried out to determine where this could safely be assumed.
-
-### Caveat 7: Impossible data
-
-A notable number of impossible measurements were recorded (e.g. measurements of tree cover along with 0 tree species richness), curation attempted to rectify these and remove those data points, but they do speak to the challenges that are apparent in the data set relating to data recording and digitisation and the inconcistencies that can creep in through that process.
-
-## Data description and and curation 
+# Data curation
 
 ```{r libraries}
 library(tidyverse)
 ```
+
 ```{r f_format_indicators}
 
 # function to get all cols for an indicator ----
@@ -115,20 +134,24 @@ format_indicators <- function(df, indicator_types) {
 }
 
 ```
+
 ```{r constants}
 # Regex patterns to detect plot numbers and overall columns
 plot_regex <- "(\\.|_)?[Pp]lot\\.?([0-9]+)$"  # matches variants like Plot1, plot.2, _plot3
 overall_regex <- "\\.Overall$"                # matches columns ending in .Overall
 
 ```
+
 ```{r cnd_load}
 cnd <- read.csv("Data//old condition data//Condition Assessment Data 2025_01.csv") %>% 
 # format date cols currently like 22/06/2016
   mutate(PlannedObservationDate = as.Date(PlannedObservationDate,format = "%d/%m/%Y"),
          ActualObservationDate = as.Date(ActualObservationDate,format = "%d/%m/%Y"))
 
+figure_plots <- list()
 
 ```
+
 ```{r cnd_rename_cols}
 
 results <- list()
@@ -204,6 +227,7 @@ cnd <- cnd %>%
   )
 
 ```
+
 ```{r cnd_standardise_missing_yesno}
 missing_vals <- c("NULL", "null", " ", "N/A", "", "NA", "n/a", "Null", "N")
 cnd <- cnd %>%
@@ -234,6 +258,7 @@ curation_notes_initial <- c(
   "- 'TemporaryPercentMax' (which relates to the upper bound of appropriate temporary open habtiat percentage) was missing in the original dataset, apparently replaced by a duplicate of OpenSpaceRidesPercentMax. This was renamed and filled with NA values (as the information was missing)."
   )
 ```
+
 ```{r identify col groupings}
 # identifyign different groupings of cols ----
 plot_cols <- names(cnd)  %>% 
@@ -259,6 +284,7 @@ overall_structure.cols <- c("TotalTreeCanopyCoverPercentCurrent", "TotalTreeCano
                     "OpenSpaceWaterFeaturesPercentCurrent", "OpenSpaceWaterFeaturesPercentMin", "OpenSpaceWaterFeaturesPercentMax",
                     "ShrubCoverPercentCurrent", "ShrubCoverPercentMin", "ShrubCoverPercentMax")
 ```
+
 ```{r lookup_indicator_types_format_theme}
 
 ## ID indicator names  ----
@@ -352,6 +378,7 @@ indicator_types <- indicator_types %>%
   arrange(theme)
 
 ```
+
 ```{r lookup_extended}
 
 indicator <- indicator_types$indicator
@@ -429,6 +456,7 @@ indicator_lookup_extended <- indicator_lookup_extended %>%
 
 
 ```
+
 ```{r cnd_type_formatting}
 # Apply type formatting to cnd ----
 cnd <- format_indicators(cnd, indicator_types)
@@ -440,6 +468,7 @@ curation_notes_initial <- c(
 
 
 ```
+
 ```{r plot-level-data-extraction}
 
 ## want a survey tidy data frame with:
@@ -494,6 +523,7 @@ curation_notes_initial <- c(
 results$n.plots_og <- nrow(long_plots)  
 results$n.plot_sites_og <- length(unique(long_plots$Site.Name))
 ```
+
 ```{r overall-level-data-extraction}
 # overall-level indicator measurements ----
 
@@ -521,6 +551,7 @@ overall <- cnd %>%
   format_indicators(., indicator_types)
 
 ```
+
 ```{r formatting}
 # formating indicator types as in cnd ----
 ## Apply type formatting
@@ -548,85 +579,31 @@ for (i in seq_along(indicator_types$indicator)) {
         }
 }
 ```
-```{r data_manipulation}
+
+```{r curation_data_manipulation}
 
 source("Scripts//old_condition_data_curation.R")
 
 ```
+
 ```{r plot_curation_notes_initial, results="asis"}
 
-cat(paste(curation_notes_initial, collapse = "\n\n"))
-cat(paste(curation_notes_plots, collapse = "\n\n"))
+cat(paste( curation_notes_initial, collapse = "\n\n"))
+cat(paste( curation_notes_plots, collapse = "\n\n"))
+
+cat(paste( curation_notes_overall, collapse = "\n\n"))
+
+
 ```
-```{r create_survey_level_info}
 
-# survey_info <-  all relevent info collected at survey-level scale  ----
+# Data Description (curated)
 
-## explain ----
-## coloums for:
-### survey info - "id", "CostCentre", "Site.Name", "SiteManager", "Region", "PlannedObservationDate", "ActualObservationDate", "Surveyor", "Whole.Site", "Key.Feature", "Stratum", "Stratum.Description", 
-### cover - "TotalTreeCanopyCoverPercentCurrent", "ShrubCoverPercentCurrent",  "OpenSpaceSemiNaturalHabitatPercentCurrent", "OpenSpaceRidesPercentCurrent", "OpenSpaceTemporaryPercentCurrent", "OpenSpaceWaterFeaturesPercentCurrent", 
-### target covers - "TotalTreeCanopyCoverPercentMin", "TotalTreeCanopyCoverPercentMax", "ShrubCoverPercentMin", "ShrubCoverPercentMax",  "OpenSpaceSemiNaturalHabitatPercentMin", "OpenSpaceSemiNaturalHabitatPercentMax", "OpenSpaceRidesPercentMin", "OpenSpaceRidesPercentMax","OpenSpaceTemporaryPercentMin", "OpenSpaceWaterFeaturesPercentMin", "OpenSpaceWaterFeaturesPercentMax", 
-### intervensions, reccomendationsm notes and actions - "Overall.Intervention.Desirable", "Overall.Intervention.Achievable", "Overall.Conclusions.And.Recommendations",      "Intervention.Desirable", "Intervention.Achievable", "NotesAction", "TAIntervention.Desirable", "TA.Intervention.Achievable", "TA.NotesActions", "TS.Intervention.Desirable", "TS.Intervention.Achievable", "TS.NotesActions", "SS.Intervention.Desirable", "SS.Intervention.Achievable", "SS.NotesActions", "LTR.Intervention.Desirable", "LTR.Intervention.Achievable", "LTR.NotesActions", "LSR.Intervention.Desirable", "LSR.Intervention.Achievable", "LSR.NotesActions", "RTS.Intervention.Desirable", "RTS.Intervention.Achievable", "RTS.NotesActions", "RSS.Intervention.Desirable" , "RSS.Intervention.Achievable", "RSS.NotesActions", "Flora.Intervention.Desirable", "Flora.Intervention.Achievable", "Flora.NotesActions", "Deadwood.Intervention.Desirable", "Deadwood.Intervention.Achievable", "Deadwood.NotesActions", "Animal.Damage.Intervention.Desirable", "Animal.Damage.Intervention.Achievable", "Animal.Damage.NotesActions", "Invasives.Intervention.Desirable", "Invasives.Intervention.Achievable", "Invasives.NotesActions", "Tree.Health.Intervention.Desirable", "Tree.Health.Intervention.Achievable", "Tree.Health.NotesActions", "Human.Impacts.Intervention.Desirable", "Human.Impacts.Intervention.Achievable", "Human.Impact.Notes"
-
-# 1. Identify columns 
-## Survey metadata columns
-survey_metadata_cols <- c(
-  "id","CostCentre","Site.Name","SiteManager","Region",
-  "PlannedObservationDate","ActualObservationDate","Surveyor",
-  "Whole.Site","Key.Feature","Stratum","Stratum.Description"
-)
-## intervention/notes 
-intervention_cols <- grep("Intervention|NotesAction|NotesActions|Recommendations", 
-                           names(cnd), value = TRUE)
-## cover (current) and target (min/max) columns
-cover_current_cols <- grep("PercentCurrent$", names(cnd), value = TRUE)
-cover_target_cols  <- grep("Percent(Min|Max)$", names(cnd), value = TRUE)
-## indicators estimated at overall-level scale 
-indicator_overall_cols <- grep("_Overall$", names(cnd), value = TRUE)
-
-# 2. Build survey_info
-survey_info <- cnd %>%
-  select(all_of(survey_metadata_cols),
-         all_of(cover_current_cols),
-         all_of(cover_target_cols),
-         all_of(intervention_cols),
-         all_of(indicator_overall_cols))
-
-# 3. Add number of plots
-plot_nums <- str_extract(names(cnd), "_Plot\\d+$") %>%  # "_Plot1", "_Plot2", etc.
-  str_remove("_Plot") %>%                   # remove "_Plot" prefix
-  as.numeric()   
-keep_cols <- which(!is.na(plot_nums)) # cols with plot info
-plot_nums_kept <- plot_nums[keep_cols] %>% as.matrix()   # these match plot_ind_present columns
-plot_ind_present <- !is.na(cnd[, keep_cols])*1
-that_plot_nums <- sweep(plot_ind_present, 2, plot_nums_kept, `*`) %>% 
-  replace(., . == 0, NA) # give everything its plot number where present, else NA
-survey_info$max_plot <- that_plot_nums %>%
-  # max of each row
-  apply(1, function(x) if(all(is.na(x))) NA else max(x, na.rm = TRUE))  %>% 
-  #replace NA with 0
-  replace(., is.na(.), 0)  
-rm(plot_ind_present)
-
-### troubleshooting ----
-# table(length(survey_info$max_plot))
-# #### explore frequency of each number of plots
-# df_freq <- as_tibble(that_plot_nums) %>%
-#   mutate(row_id = row_number()) %>%
-#   pivot_longer(-row_id, names_to = "col", values_to = "plot") %>%
-#   filter(!is.na(plot) & plot != 0) %>%   # ignore 0 / NA
-#   count(row_id, plot) %>%                # frequency table
-#   pivot_wider(names_from = plot,
-#               values_from = n,
-#               values_fill = 0)  %>%          # fill missing with 0
-#   
-# ### looks like there are 4 indicators that area always present
-# that_plot_nums[1, which(that_plot_nums[1, ]==4)]
-
+```{r data_description, results="asis"}
+cat(paste( curated_data_description_plots, collapse = "\n\n"))
+cat(paste( curated_data_description_overall, collapse = "\n\n"))
 ```
 
 
 # Thanks
 
-Thanks to the site managers who endured my inquiries as I attempted to cast some shadow of structure from this dataset; one which (despite my best curatorial efforts) very much retains the subjective silhouette of of its intended purpose (a bespoke record for later reference), rather than that of a formalised statistically robust monitoring methodology. In particular: Hannah Patterson, Colin Riley, Daniel Aiken and Richard Brown.
+Thanks to the site managers who endured my inquiries as I attempted to cast some shadow of structure from this dataset, which (despite my best curatorial efforts) very much retains the silhouette of of its subjective intended purpose (a bespoke record for later reference), rather than that of a formalised statistically robust monitoring methodology. In particular: Hannah Patterson, Colin Riley, Daniel Aiken and Richard Brown.

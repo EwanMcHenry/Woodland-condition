@@ -150,6 +150,8 @@ cnd <- read.csv("Data//old condition data//Condition Assessment Data 2025_01.csv
 
 figure_plots <- list()
 
+load("outputs\\all_value_functions.RData")
+
 ```
 
 ```{r cnd_rename_cols}

@@ -1,6 +1,9 @@
 # Load the lookup tables
-age_lookup <- read.csv("outputs\\lookup_tables\\Tree age distribution_vf_lookup.csv")
-tree_spp_lookup <- read.csv("outputs\\lookup_tables\\N tree & shrub spp._vf_lookup.csv")
+age_lookup <- read.csv("outputs\\lookup_tables\\Tree age distribution_vf_lookup.csv") %>% 
+  rename(N_ages = N.Tree.Age.Categories) %>%
+  rbind(data.frame(N_ages = 0, value = 0), .) # add row for 0 age classes
+tree_spp_lookup <- read.csv("outputs\\lookup_tables\\N tree & shrub spp._vf_lookup.csv") %>% 
+  rename(per_spp = Proportion.of.appropriate.Tree...Shrub.Species) 
 antropogenic_damage_lookup <- read.csv("outputs\\lookup_tables\\Anthropogenic damage_vf_lookup_domin.csv")
 deadwood_lookup <- read.csv("outputs\\lookup_tables\\Deadwood_vf_lookup.csv")
 ground_flora_lookup <- read.csv("outputs\\lookup_tables\\Ground flora_vf_lookup.csv")

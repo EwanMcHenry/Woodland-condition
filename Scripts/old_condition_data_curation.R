@@ -427,7 +427,7 @@ results$overall_data_description$n_sites_tree_info <- length(unique(overall0$Sit
 curation_notes_plots <- c(
   curation_notes_plots,
   "#### Removing plots with no tree/shrub information",
-  paste0( "- Of the original dataset (", nrow(long_plots), " plots), ", 
+  paste0( "- Of the original dataset (", nrow(long_plots0), " plots), ", 
           results$plot_data_description$nplots_no_tree_info, " plots contained no information on trees or shrubs (i.e. tree age, species richness, shrub cover and regneration info was all missing).", 
           " Those ", results$plot_data_description$nplots_no_tree_info ," plots were removed, leaving data from ", 
           results$plot_data_description$nplots_tree_info, 
@@ -2136,7 +2136,6 @@ curated_data_description_overall <- c(
   "## Curated overall data description",
   paste0(
     "The curated dataset contained information from:\n\n",
-    "- ", nrow(overall0), " surveys\n",
     "- ", length(unique(overall0$id)), " individual surveys\n",
     "- ", length(unique(paste(overall0$Site.Name, overall0$Stratum ))), " individual strata\n",
     "- ", length(unique(overall0$Site.Name)), " individual sites\n",

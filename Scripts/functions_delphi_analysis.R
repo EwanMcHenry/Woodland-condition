@@ -279,27 +279,37 @@ generate_interactive_PCA <- function(data, weight_variable) {
 }
 
 ## function to plot continuous delphi results ------------
-continuous_vf_fig <- function(line.col = "black", 
-                              filtered_data = filtered_data, 
-                              respondant_colours = NULL ){
-  # filtered data is all data for this indicator
+continuous_vf_fig <- function(
+    filtered_data,
+    line.col = "black",
+    respondant_colours = NULL
+){
   
-  plot <- ggplot_gam_resp_vf(indicator_name = indicator_name,
-                             x.lab = ind.axis.title, 
-                             gam.col = line.col, 
-                             filtered_data)
+  plot <- ggplot_gam_resp_vf(
+    indicator_name = indicator_name,
+    x.lab = ind.axis.title,
+    gam.col = line.col,
+    filtered_data
+  )
   
-  ggsave(filename = paste0("Figs//ind_",
-                           formatC(ind.num, width = 2, format = "d", flag = "0"),
-                           "_", indicator_name, "vf_continuous.png"),
-         plot = plot,
-         width = 300, height = 150, units = "mm")
+  ggsave(
+    filename = paste0(
+      "Figs//ind_",
+      formatC(ind.num, width = 2, format = "d", flag = "0"),
+      "_",
+      indicator_name,
+      "vf_continuous.png"
+    ),
+    plot = plot,
+    width = 300,
+    height = 150,
+    units = "mm"
+  )
   
-  ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
-    config(displayModeBar = F) %>% 
+  ggplotly(plot, tooltip = "text", dynamicTicks = FALSE) %>%
+    config(displayModeBar = FALSE) %>%
     layout(yaxis = list(range = c(-5, 105)))
 }
-
 ## FUNCTION - PLOT RESPONDANTS' continuous INDICATOR VFs ------------
 ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.matcher.df$ind.axis.title[i], 
                                pal = respondant_colours,

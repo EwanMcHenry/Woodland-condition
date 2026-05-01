@@ -1,5 +1,6 @@
 ---
 title: "Exploring Old condition data"
+cache: TRUE
 ---
 
 Prior to the WCA project, data was collected WT estate sites, prinicply to inform management decision making at the site or strata scale.
@@ -90,6 +91,10 @@ Notably, no 0 measurement was included, and so it is not always clear whether an
 
 ```{r libraries}
 library(tidyverse)
+library(ggExtra)
+library(patchwork)
+library(cowplot)
+
 ```
 
 ```{r f_format_indicators}
@@ -132,14 +137,12 @@ format_indicators <- function(df, indicator_types) {
 }
 
 ```
-
 ```{r constants}
 # Regex patterns to detect plot numbers and overall columns
 plot_regex <- "(\\.|_)?[Pp]lot\\.?([0-9]+)$"  # matches variants like Plot1, plot.2, _plot3
 overall_regex <- "\\.Overall$"                # matches columns ending in .Overall
 
 ```
-
 ```{r cnd_load}
 cnd <- read.csv("Data//old condition data//Condition Assessment Data 2025_01.csv") %>% 
 # format date cols currently like 22/06/2016
@@ -147,8 +150,8 @@ cnd <- read.csv("Data//old condition data//Condition Assessment Data 2025_01.csv
          ActualObservationDate = as.Date(ActualObservationDate,format = "%d/%m/%Y"))
 
 figure_plots <- list()
-
-load("outputs\\all_value_functions.RData")
+source("Scripts\\load_weca_tables.R")
+# load("outputs\\all_value_functions.RData") 
 
 ```
 
@@ -601,28 +604,18 @@ cat(paste( curation_notes_overall, collapse = "\n\n"))
 
 ```{r data_description, results="asis"}
 cat(paste( curated_data_description_plots, collapse = "\n\n"))
+overall %>%
+  count(n_plots) %>%
+  knitr::kable(col.names = c("Number of plots", "Frequency"))
+
 cat(paste( curated_data_description_overall, collapse = "\n\n"))
 
 ```
 
 # Deriving WECA-equivalent Values
 
-Here follows an initial draft of a method to transcribe the data collected during historic woodland condition assessment to something comparible to the methods used to measure and value the new WECA indicators.
-
-The approach for each indicator was to do one of the following (in order of priority as possibility dictated):
-
-1.  Derive measurements akin to those from WECA and apply the same value functions.
-2.  Value what information was available or could be derived, based on the expert opinion of EMcH and MH and referencing that indicator's value functions.
-3.  Report some measurement or derived measurement that at least bared some relevance to the WECA indicator, while not comparable or assessable in terms of ecological value.
-
-This was done at plot and overall level (note surveys did not include plot-level info) , and each indicator was scored at each of those levels in terms of the reliability of comparison to the WECA method (0-5 score, expert opinion of EMcH and MH).
-
-Note caveats mentioned above, especially [Caveat 4: Scaling up of indicator measurements, not indicator scores].
-
-1.  \n\n", "The WECA value functions were estimated for the plot level, so typically that is where they are most appropriate to use. However, the WCA data had many surveys with only 'overall woodland' data, and so a certain dergree of loose interpretation was required here to build comparible values. ", "Generally, where a feature was to be determined present or absent, we assumed that DAFOR estimates related to plot presentace presence as follows: Absent = 0, R = 0.2, O = 0.4, F = 0.7 and A/D = 1. Here, it is important to emphasise the caveat stated above RE the scale at which measures were valued.\n\n", "We scored our confidence in the comparibility of each indicator at the plot and overall level on a scale of 1-5."
-
-```{r deriving_weca_equivalent_values}
-# 7. transcribe to WECA-like indicators -----
+```{r WECA-transcribe_setup}
+#  transcribe to WECA-like indicators -----
 # ...based on some intuitive thinking with MH, assuming 5 sampling plots
 weca_faux_indicators <- data.frame(
   indicator = NA,
@@ -642,80 +635,100 @@ overall_weighting_lookup <- c(
   "D" = 1
 )
 
-transcribe_to_weca_notes <- c(
-  transcribe_to_weca_notes,
-  "### Overall approach",
-  )
+```
 
+Here follows an initial draft of a method to transcribe the data collected during historic woodland condition assessment to something comparable to the methods used to measure and value the new WECA indicators.
 
+Each indicator's WECA-transcription methodolgy was scored in terms of the reliability (0-5 score, expert opinion of EMcH and MH) at plot and overall level.
+
+## General approach
+
+The approach for each indicator was one of the following (in order of priority):
+
+1.  Derive measurements akin to those from the WECA process and apply those same value functions.
+2.  Apply value scores based on available or derived measurements, based on the expert opinion of EMcH and MH referencing that indicator's value functions.
+3.  Report some measurement or derived measurement that bared some relevance to the WECA indicator, without any attempt to apply an ecological value.
+4.  Not report on the indicator
+
+This was done at plot and overall level (note `r mean(1*overall$n_plots == 0)` % of surveys did not include plot-level info).
+
+Where a WECA-analogous value was derivable at plot level, we took the mean across plots, to allow zone-level assessment and comparison with the valuation of overall-level measurements.
+
+### Converting "overall"-level DAFOR to plot-presence rate
+
+Importantly, the WECA value functions were developed for plot level, so that is where they are most appropriate to use. Our approach to scoring "overall"-level DAFOR of features relating to indicators assumed that each DAFOR related to an expected proportion of plot-level presence for that features at a rate of: Absent = 0, R = 0.2, O = 0.4, F = 0.7 and A/D = 1. Note caveats mentioned above, especially [Caveat 4: Scaling up of indicator measurements, not indicator scores].
+
+-   Note this is very much non-ideal because it tells us nothing about the distribution of different features across plots e.g. for plot-level-presence of 0.5 for two different features, there is no way of knowing if 0.5 of plots have both, 0.5 have one and the other 0.5 the other, or anywhere in between those extremes. This is important because when the non-linear value functions are applied to measurements it will produce a very different average value if half of plots have 2 or 0, or if all have 1 of the features.
+
+## Tree Age Structure
+
+Plot-level comparability: 4.5
+
+Overall-level comparability: 3
+
+The WECA tree age structure indicator is based on the number of age classes present in each plot (maximum of 4: young, juvenile, Adult and mature). The old WCA data included DAFOR of five age classes trees (\< 20 years, 20-50 years, 50-100 years, 100-200 years and Veteran/Pollards/Ancient/Coppice Stools), which - while not directly comparable - are analogous.
+
+1.  We combined the TA.Veteran.Pollards.Ancient.Coppice.Stools and TA.100.200.Years indicators to create a 'mature' category (max of their DAFOR).
+2.  We counted the number of age classes present in plots.
+3.  For "overall" data we assumed plot-level presence at a rate as described above ([Converting "overall"-level DAFOR to plot-presence rate]) and summed these across the age class indicators to give a score between 0 and 4.".
+4.  The WECA value function was then applied to those 0-4 measurements.
+
+```{r age_class_indicators_derivation}
 ## 7.1 age class indicators ----
 # number of age classes present, combinign max(TA.Veteran.Pollards.Ancient.Coppice.Stools and TA.100.200.Years)
 
 # does R mean absent???
 # 0-4 age classes, max of top two in upper  
 
-# plot
+# plot level -----
 ## mature is row max of TA.Veteran.Pollards.Ancient.Coppice.Stools and TA.100.200.Years
 
-long_plots0$TA_mature <- pmax(long_plots0$TA.Veteran.Pollards.Ancient.Coppice.Stools,
-  long_plots0$TA.100.200.Years, na.rm = TRUE
+long_plots$TA_mature <- pmax(long_plots$TA.Veteran.Pollards.Ancient.Coppice.Stools,
+  long_plots$TA.100.200.Years, na.rm = TRUE
 )
-long_plots0$TA_count <- rowSums(
-  long_plots0[, c( "TA.Less.Than.20.Years", "TA.20.50.Years", "TA.50.100.Years", "TA_mature")] > "Absent")
+long_plots$TA_count <- row_sum_na_if_all_na(
+  long_plots[, c( "TA.Less.Than.20.Years", "TA.20.50.Years", "TA.50.100.Years", "TA_mature")] > "Absent")
 
-# aa = long_plots0[,c("TA.Less.Than.20.Years", "TA.20.50.Years", "TA.50.100.Years", "TA.100.200.Years","TA.Veteran.Pollards.Ancient.Coppice.Stools", "TA_mature", "TA_count")]
+# aa = long_plots[,c("TA.Less.Than.20.Years", "TA.20.50.Years", "TA.50.100.Years", "TA.100.200.Years","TA.Veteran.Pollards.Ancient.Coppice.Stools", "TA_mature", "TA_count")]
 
-# overall
-# at overall F = 0.8 O = 0.4 R = 0.2
-overall0$TA_mature <- pmax(overall0$TA.Veteran.Pollards.Ancient.Coppice.Stools,
-  overall0$TA.100.200.Years, na.rm = TRUE
+# overall ----
+overall$TA_mature <- pmax(overall$TA.Veteran.Pollards.Ancient.Coppice.Stools,
+  overall$TA.100.200.Years, na.rm = TRUE
 )
-#cbind(overall0$TA.Veteran.Pollards.Ancient.Coppice.Stools, overall0$TA.100.200.Years, overall0$TA_mature)
-overall0$TA_count <- rowSums(
-  overall0[, c( "TA.Less.Than.20.Years", "TA.20.50.Years", "TA.50.100.Years", "TA_mature")] %>% 
+#cbind(overall$TA.Veteran.Pollards.Ancient.Coppice.Stools, overall$TA.100.200.Years, overall$TA_mature)
+overall$TA_count <- row_sum_na_if_all_na(
+  overall[, c( "TA.Less.Than.20.Years", "TA.20.50.Years", "TA.50.100.Years", "TA_mature")] %>% 
     mutate_all(~ overall_weighting_lookup[.]))
 
-## valuing
-age_structure_predictions <- rbind(
-  data.frame(measure = 0, value = 0),
-  age_structure_predictions)
+## valuing ---- 
 
-long_plots0$WECA_tree_age_score <- approx(
-  x = age_structure_predictions$measure,
-  y = age_structure_predictions$value,
-  xout = long_plots0$TA_count
+long_plots$WECA_tree_age_score <- approx(
+  x = age_lookup$N_ages,
+  y = age_lookup$value,
+  xout = long_plots$TA_count
 )$y
 
-plot_av_bysurvey_tree_age_score <- long_plots0 %>%
+plot_av_bysurvey_tree_age <- long_plots %>%
   group_by(id) %>%
   summarise(
+    plot_av_n_tree_ages = mean(TA_count, na.rm = TRUE),
     plot_av_tree_age_score = mean(WECA_tree_age_score, na.rm = TRUE)
   )
 
-overall0$WECA_tree_age_score_overall <- approx(
-  x = age_structure_predictions$measure,
-  y = age_structure_predictions$value,
-  xout = overall0$TA_count
+overall$WECA_tree_age_score_overall <- approx(
+  x = age_lookup$N_ages,
+  y = age_lookup$value,
+  xout = overall$TA_count
 )$y
 
-overall0$WECA_tree_age_score_plot_av <- overall0$TA_count %>% 
-  left_join(plot_av_bysurvey_tree_age_score, by = "id") %>%
-  pull(plot_av_tree_age_score)
+overall <- overall %>% 
+  left_join(plot_av_bysurvey_tree_age, by = "id")                
+# cbind(overall$TA_count, overall$WECA_tree_age_score_overall, overall$plot_av_n_tree_ages, overall$plot_av_tree_age_score)  
+                                                                
                                                                   
-                                                                  
-                                                                  
-transcribe_to_weca_notes <- c(
-  transcribe_to_weca_notes,
-  "### Age class indicators",
-  "WECA age class indicators are based on the number of age classes present, with a maximum of 4 (Youne, Juvinile, Adult and Mature). ",
-  "The old WCA data included DAFOR cover of trees < 20 years, 20-50 years, 50-100 years, 100-200 years and Veteran/Pollards/Ancient/Coppice Stools. ",
-  "Here, we combined the TA.Veteran.Pollards.Ancient.Coppice.Stools and TA.100.200.Years indicators to create a 'mature' category (max of DAFOR).", 
-  "For plots we counted the number of age classes present.",
-  "For overall surveys, we assumed that R = 0.2, O = 0.4, F = 0.7 and A/D = 1 for each age class indicator (recreating an analogoud survey of 5 plots where that age class was detected at 1, 2, 3-4 and 5 plots, respectivly), and summed these across the age class indicators to give a score between 0 and 4.")
-
 weca_faux_indicators <- weca_faux_indicators %>%
   add_row(
-    indicator = "Age class diversity",
+    indicator = "Age structure",
     plot_comparibility = 4.5,
     overall_comparibility = 3,
     useful_weca_alternative = NA,
@@ -727,56 +740,147 @@ weca_faux_indicators <- weca_faux_indicators %>%
 ## plot 4.5
 ## overall 3
 
+```
 
+Here I drew some plots exploring how the average value from plots against the overall value for TA, to see how well they align. 
+
+Generally it looks like plot-level averages have scored higher, and had higher average number of age classes. Its well possible that this might relate to the hack-job we have done trying to estiamte plot-level-presence rates from overall DAFOR... its the best we can do with that data.
+
+Worryingly it looks like a fair few have 0 overall score and 100 plot-average! 
+
+```{r n_tree_ages_plot}
+
+x_mean <- mean(overall$plot_av_n_tree_ages, na.rm = TRUE)
+y_mean <- mean(overall$TA_count, na.rm = TRUE)
+
+p <- ggplot(overall, aes(
+  x = plot_av_n_tree_ages,
+  y = TA_count
+)) +
+  geom_jitter(width = 0.1, height = 0.1, alpha = 0.2) +
+  geom_abline(slope = 1, intercept = 0,
+              linetype = "dashed", color = "red") +
+  geom_vline(xintercept = x_mean, linetype = "dotted") +
+  geom_hline(yintercept = y_mean, linetype = "dotted") +
+  labs(
+    title = "Comparison of plot-level average and overall tree age structure measurements",
+    x = "Average plot-level number of tree age classes",
+    y = "Overall tree age structure measurement\n(sum of DAFOR-weighted age classes)"
+  ) +
+  theme_minimal()
+
+ggMarginal(
+  p,
+  type = "histogram",
+  bins = 20,
+  fill = "grey80",
+  col = "white"
+)
+```
+```{r age_structure_value_plot_marginal}
+x_mean <- mean(overall$plot_av_tree_age_score, na.rm = TRUE)
+y_mean <- mean(overall$WECA_tree_age_score_overall, na.rm = TRUE)
+
+p <- ggplot(overall, aes(
+  x = plot_av_tree_age_score,
+  y = WECA_tree_age_score_overall
+)) +
+  geom_jitter(width = 1, height = 1, alpha = 0.2) +
+  geom_abline(slope = 1, intercept = 0,
+              linetype = "dashed", color = "red") +
+  geom_vline(xintercept = x_mean, linetype = "dotted") +
+  geom_hline(yintercept = y_mean, linetype = "dotted") +
+  labs(
+    title = "Comparison of plot-level average and overall tree age structure scores",
+    x = "Average plot-level tree age structure score",
+    y = "Overall tree age structure score"
+  ) +
+  theme_minimal()
+
+p_marg <- ggMarginal(
+  p,
+  type = "histogram",
+  bins = 20,
+  fill = "grey80",
+  col = "white"
+)
+
+p_marg
+
+
+```
+
+
+## Canopy nativness
+
+Plot-level comparability: 1
+
+Overall-level comparability: 0.5
+
+WECA canopy nativness is based on the percentage volume of the tree and shrub canopy that is UK-native. The closest measurements in the old WCA data was native and non-native species richness for both tree and shrub species separately. Here, we report those species richness measurements, and use them to determine if the canopy is entirely native, or entirely non-native or mixed (unable to give any higher precision), we made no attempt here to value this indicator ecologically.
+
+We can be confident about the extremities (all native or all non-native), but valuing mixed canopies was deemed unreliable.
+
+Note [Caveat 3: Varying plot and zone size affect indicator measurements]: larger plots/zones are more likely to be mixed, purely because of their larger sampling area being more likely to pick up different species.
+
+```{r canopy_nativness}
 ## 7.2 canopy nativness ----
 ## TS.Native.richness, TS.Non.Native.richness, TS.Canopy.Dominated.By.One.Or.Two.SPP, SS.Native.richness, SS.Non.Native.richness, SS.Shrub.Layer.Dominated.By.One.Or.Two.SPP
 
 # where only native/ non native can be sure
 # where shrub is one and tree species another???
 # cant graduate
+sum_na_if_all_na <- function(x) {
+  out <- rowSums(x, na.rm = TRUE)
+  out[rowSums(!is.na(x)) == 0] <- NA
+  out
+}
 
-long_plots0$canopy_all_native <- NA
-long_plots0$canopy_all_native <- ifelse(
-  (long_plots0$TS.Non.Native.richness == 0 & long_plots0$TS.Native.richness > 0 &
-    long_plots0$SS.Native.richness > 0 & long_plots0$SS.Non.Native.richness == 0),
-  TRUE, NA)
-long_plots0$canopy_all_nonnative <- NA
-long_plots0$canopy_all_nonnative <- ifelse(
-  (long_plots0$TS.Non.Native.richness > 0 & long_plots0$TS.Native.richness == 0 &
-    long_plots0$SS.Native.richness == 0 & long_plots0$SS.Non.Native.richness > 0),
-  TRUE, NA)
-long_plots0$canopy_mixed <- NA
-long_plots0$canopy_mixed <- ifelse(
-  (long_plots0$TS.Non.Native.richness > 0 & long_plots0$TS.Native.richness > 0) |
-    (long_plots0$SS.Native.richness > 0 & long_plots0$SS.Non.Native.richness > 0),
-  TRUE, NA)
+long_plots$N_native_treeshrub <- sum_na_if_all_na(cbind(long_plots$TS.Native.richness,
+                                                        long_plots$SS.Native.richness))
 
-overall0$canopy_all_native <- NA
-overall0$canopy_all_native <- ifelse(
-  (overall0$TS.Non.Native.richness == 0 & overall0$TS.Native.richness > 0 &
-    overall0$SS.Native.richness > 0 & overall0$SS.Non.Native.richness == 0),
-  TRUE, NA)
-overall0$canopy_all_nonnative <- NA
-overall0$canopy_all_nonnative <- ifelse(
-  (overall0$TS.Non.Native.richness > 0 & overall0$TS.Native.richness == 0 &
-    overall0$SS.Native.richness == 0 & overall0$SS.Non.Native.richness > 0),
-  TRUE, NA)
-overall0$canopy_mixed <- NA
-overall0$canopy_mixed <- ifelse(
-  (overall0$TS.Non.Native.richness > 0 & overall0$TS.Native.richness > 0) |
-    (overall0$SS.Native.richness > 0 & overall0$SS.Non.Native.richness > 0),
-  TRUE, NA)
+long_plots$N_nonnative_treeshrub <- sum_na_if_all_na(cbind(long_plots$TS.Non.Native.richness,
+                                                           long_plots$SS.Non.Native.richness))
 
-transcribe_to_weca_notes <- c(
-  transcribe_to_weca_notes,
-  "### Canopy nativness",
-  "WECA canopy nativness is based on the volume of the tree and shrub canopy that is UK-native. ",
-  "The old WCA data included native and non-native species richness for both the canopy and shrub species seperatly.",
-  "Here, we created indicators of whether the canopy was all native, all non-native or mixed (where both native and non-native species were present).",
-  "We can be confident about the extremities (all native or all non-natuive), but valuing mixed canopies was deemed unreliable.",
-  "Note that larger plots/zones are more likley to be mixed, purely becasue of their larger sampling area. ",
-  "No attempt was made here to value this indicator"
+overall$N_native_treeshrub <- sum_na_if_all_na(cbind(overall$TS.Native.richness,
+                                                     overall$SS.Native.richness))
+
+overall$N_nonnative_treeshrub <- sum_na_if_all_na(cbind(overall$TS.Non.Native.richness,
+                                                        overall$SS.Non.Native.richness))
+
+long_plots$canopy_all_native <- ifelse(
+  long_plots$N_nonnative_treeshrub == 0 & long_plots$N_native_treeshrub > 0 ,
+  TRUE, NA)
+long_plots$canopy_all_nonnative <- ifelse(
+  long_plots$N_nonnative_treeshrub > 0 & long_plots$N_native_treeshrub == 0 ,
+  TRUE, NA)
+long_plots$canopy_mixed <- ifelse(
+  long_plots$N_nonnative_treeshrub > 0 & long_plots$N_native_treeshrub > 0,
+  TRUE, NA)
+long_plots$canopy_makeup <- case_when(
+  long_plots$canopy_all_native ~ "All native",
+  long_plots$canopy_all_nonnative ~ "All non-native",
+  long_plots$canopy_mixed ~ "Mixed",
+  TRUE ~ NA_character_
 )
+
+overall$canopy_all_native <- ifelse(
+  (overall$N_nonnative_treeshrub == 0 & overall$N_native_treeshrub > 0 ),
+  TRUE, NA)
+overall$canopy_all_nonnative <- ifelse(
+  (overall$N_nonnative_treeshrub > 0 & overall$N_native_treeshrub == 0 ),
+  TRUE, NA)
+overall$canopy_mixed <- ifelse(
+  (overall$N_nonnative_treeshrub > 0 & overall$N_native_treeshrub > 0),
+  TRUE, NA)
+overall$canopy_makeup <- case_when(
+  overall$canopy_all_native ~ "All native",
+  overall$canopy_all_nonnative ~ "All non-native",
+  overall$canopy_mixed ~ "Mixed",
+  TRUE ~ NA_character_
+)
+                                     
+
 
 weca_faux_indicators <- weca_faux_indicators %>%
   add_row(
@@ -787,199 +891,523 @@ weca_faux_indicators <- weca_faux_indicators %>%
     notes = "Extremes (all native or all non-native) are comparable, but mixed canopy is not.")
 
 
+```
+
+Overall canopy nativeness records
+
+```{r table_canopy_makeup}
+overall %>%
+  count(canopy_makeup) %>%
+  knitr::kable(col.names = c("Canopy makeup", "Frequency"))
+```
+
+Plots canopy nativeness records
+
+```{r table_plot_canopy_makeup}
+long_plots %>%
+  count(canopy_makeup) %>%
+  knitr::kable(col.names = c("Canopy makeup", "Frequency"))
+```
+
+
+## Vertical structure
+
+Plot-level comparability: 2
+
+Overall-level comparability: 1
+
+WECA vertical structure is based on the number of vegetation layers with \>10% vegetation cover in plots (six layers: ground, field, shrub, canopy low, mid & high). The old WCA data did not have directly comparable data, but did have some measurements that related to vegetation at the lower three vertical layers that we used to create some indicators with some degree of indirect comparability. Importantly, the lowest two strata needed to be combined (ground/field, shrub) and any comparison would only be possible with the lower-canopy levels from the new WECA data, and even then, with the caveat that the strata are indirect estimates.
+
+-   Ground and field layer (inseparable):
+
+    -   DAFOR of different ground flora classes, seedlings and saplings of trees and shrubs
+
+-   Shrub layer: DAFOR max of shrub cover and trees \< 20 years
+
+-   Canopy layers (not possible): tree age class DAFOR were deemed inappropriate for defining vertical stratification.
+
+A score to aproximpate the number of the three lower strata with ecologically functioning vegetation structure (DAFOR score \>= O) was calculated by summing scores (notably allowing for half-presences):
+
+-   Shrub layer (1): Shrub cover
+
+-   Ground flora (1): max( Flora.Ancient.Woodland.Plants..Specialists., Flora.Other.Woodland.Plants..Generalists., Flora.Other.Native.Plants, Flora.Coarse.Vegetation, Flora.Other.Plants)
+
+-   Seedlings (0.5): max(LTR.Seedlings.Less.Than.10cm, LTR.Seedlings.10.100cm, LSR.Seedlings.Less.Than.10cm, LSR.Seedlings.10.100cm)
+
+-   Saplings (0.5): max (LTR.Saplings.Greater.Than.100cm, LSR.Saplings.Greater.Than.100cm)
+
+The overall level further weighted each score indicator by the assumed plot-level presence rate (see [Converting "overall"-level DAFOR to plot-presence rate]).
+
+No attempt was made here to value this indicator. Any comparison to the new WECA should be based on comparision to those lower three layers."
+
+Note [Caveat 3: Varying plot and zone size affect indicator measurements]: larger plots/zones are more likely to have more vertical layers simply because of their larger sampling area.
+
+```{r verticle_structure}
 ## 7.3 verticle structure ----
 
 # WECA
 ## count of 0-6
 ## only where >DOMIN 5 10% cover of plot
 
-transcribe_to_weca_notes <- c(
-  transcribe_to_weca_notes,
-  "### Vertical structure",
-  "The WECA vertical structure metric is based on the number of six potential vegetation layers (ground, field, shrub, canopy low, mid & high) with >10% vegetation volume in the plot.",
-  " The old WCA data did not have directly comparible indicators for the different verticle strata, but did have a range of indicators that could be used to create some indicators with a degree of indirect comparibility to three of the strata:\n\n", 
-  "- Ground and field layer (inseperatable): DAFOR of different ground flora classes, seedlings and saplings of trees and shrubs\n",
-  "- Shrub layer: DAFOR of shrub cover\n",
-  "- Canopy layers (not possible): tree age class DAFOR were deemed inappropriate for defining verticle stratification.\n",
-  "Importantly, the first two needed to be combined (ground/field, shrub) and any comparison would only be possible with the lower-canopy levels from the new WECA data, and even then, with the caveat that the strata are indirect estimates. ",
-  "No attempt was made here to value this indicator. Any comparison to the new WECA should be based on comparision to those lower three layers."
-)
-  
 # considering only occational or greater (>11%) at plot level
 
-# ground layer <0.1  or field layer
+# ground layer <0.1  or field layer ----
 # Flora.Ancient.Woodland.Plants..Specialists., Flora.Other.Woodland.Plants..Generalists., Flora.Other.Native.Plants, Flora.Coarse.Vegetation, Flora.Other.Plants, Flora.No.Vegitation
 # LTR.Seedlings.Less.Than.10cm, LTR.Saplings.Greater.Than.100cm, LTR.Coppice.Regrowth.or.Suckering
 # LSR.Seedlings.Less.Than.10cm, LSR.Saplings.Greater.Than.100cm, 
 
-long_plots0$ground_flora <- pmax(
-  long_plots0$Flora.Ancient.Woodland.Plants..Specialists.,
-  long_plots0$Flora.Other.Woodland.Plants..Generalists.,
-  long_plots0$Flora.Other.Native.Plants,
-  long_plots0$Flora.Coarse.Vegetation,
-  long_plots0$Flora.Other.Plants,
+long_plots$ground_flora <- pmax(
+  long_plots$Flora.Ancient.Woodland.Plants..Specialists.,
+  long_plots$Flora.Other.Woodland.Plants..Generalists.,
+  long_plots$Flora.Other.Native.Plants,
+  long_plots$Flora.Coarse.Vegetation,
+  long_plots$Flora.Other.Plants,
   na.rm = TRUE
 )
-overall0$ground_flora <- pmax(
-  overall0$Flora.Ancient.Woodland.Plants..Specialists.,
-  overall0$Flora.Other.Woodland.Plants..Generalists.,
-  overall0$Flora.Other.Native.Plants,
-  overall0$Flora.Coarse.Vegetation,
-  overall0$Flora.Other.Plants,
-  na.rm = TRUE
-)
-
-
-long_plots0$seedlings <- pmax(
-  long_plots0$LTR.Seedlings.Less.Than.10cm,
-  long_plots0$LTR.Seedlings.10.100cm,
-  long_plots0$LSR.Seedlings.Less.Than.10cm,
-  long_plots0$LSR.Seedlings.10.100cm,
-  na.rm = TRUE
-)
-overall0$seedlings <- pmax(
-  overall0$LTR.Seedlings.Less.Than.10cm,
-  overall0$LTR.Seedlings.10.100cm,
-  overall0$LSR.Seedlings.Less.Than.10cm,
-  overall0$LSR.Seedlings.10.100cm,
+overall$ground_flora <- pmax(
+  overall$Flora.Ancient.Woodland.Plants..Specialists.,
+  overall$Flora.Other.Woodland.Plants..Generalists.,
+  overall$Flora.Other.Native.Plants,
+  overall$Flora.Coarse.Vegetation,
+  overall$Flora.Other.Plants,
   na.rm = TRUE
 )
 
-long_plots0$saplings <- pmax(
-  long_plots0$LTR.Saplings.Greater.Than.100cm,
-  long_plots0$LSR.Saplings.Greater.Than.100cm,
+
+long_plots$seedlings <- pmax(
+  long_plots$LTR.Seedlings.Less.Than.10cm,
+  long_plots$LTR.Seedlings.10.100cm,
+  long_plots$LSR.Seedlings.Less.Than.10cm,
+  long_plots$LSR.Seedlings.10.100cm,
   na.rm = TRUE
 )
-overall0$saplings <- pmax(
-  overall0$LTR.Saplings.Greater.Than.100cm,
-  overall0$LSR.Saplings.Greater.Than.100cm,
+overall$seedlings <- pmax(
+  overall$LTR.Seedlings.Less.Than.10cm,
+  overall$LTR.Seedlings.10.100cm,
+  overall$LSR.Seedlings.Less.Than.10cm,
+  overall$LSR.Seedlings.10.100cm,
   na.rm = TRUE
 )
 
-# shrub layer
+long_plots$saplings <- pmax(
+  long_plots$LTR.Saplings.Greater.Than.100cm,
+  long_plots$LSR.Saplings.Greater.Than.100cm,
+  na.rm = TRUE
+)
+overall$saplings <- pmax(
+  overall$LTR.Saplings.Greater.Than.100cm,
+  overall$LSR.Saplings.Greater.Than.100cm,
+  na.rm = TRUE
+)
+
+# shrub layer ----
 # Shrub.Cover
-# TA.Less.Than.20.Years
 
-long_plots0$shrub_layer <- pmax(
-  long_plots0$Shrub.Cover,
-  long_plots0$TA.Less.Than.20.Years,
+long_plots$shrub_layer <- pmax(
+  long_plots$Shrub.Cover,
+  long_plots$TA.Less.Than.20.Years,
   na.rm = TRUE
 )
-overall0$shrub_layer <- pmax(
-  overall0$Shrub.Cover,
-  overall0$TA.Less.Than.20.Years,
-  na.rm = TRUE
-)
-
-
-# Alt measurement out of 3
-
-long_plots0$verticle_structure_score <- rowSums(
-  cbind(1*(long_plots0$ground_flora > "O"),
-        0.5*(long_plots0$seedlings > "O"),
-        0.5*(long_plots0$saplings > "O"),
-        1*(long_plots0$Shrub.Cover > "O"),
-        1*(long_plots0$shrub_layer > "O")),
-  
-  na.rm = TRUE
-)
-# overall weigthed by aupssumed plot-level presence (R = 0.2, O = 0.4, F = 0.7, A/D = 1)
-overall0$verticle_structure_score <- rowSums(
-  cbind(1*(overall_weighting_lookup[overall0$ground_flora] %>% as.numeric()),
-        0.5*(overall_weighting_lookup[overall0$seedlings] %>% as.numeric()),
-        0.5*(overall_weighting_lookup[overall0$saplings] %>% as.numeric()),
-        1*(overall_weighting_lookup[overall0$Shrub.Cover] %>% as.numeric()),
-        1*(overall_weighting_lookup[overall0$shrub_layer] %>% as.numeric())),
+overall$shrub_layer <- pmax(
+  overall$Shrub.Cover,
+  overall$TA.Less.Than.20.Years,
   na.rm = TRUE
 )
 
-transcribe_to_weca_notes <- c(
-  transcribe_to_weca_notes,
-  "A score to aproximpate the number of the three lower strata with ecologically functioning vegetation structure (DAFOR score >= O) was calculated by summing thusly (noteably allowing for half-presences):\n\n",
-   "- shrub layer (1)\n",
-   "- ground flora (1)\n",
-   "- seedlings (0.5)\n",
-   "- saplings (0.5)\n",
-  "An analogous score at the overall level further weighted each indicator by the assumed plot-level presence from overall cover (R = 0.2, O = 0.4, F = 0.7, A/D = 1)."
+
+# Alt measurement out of 3 ----
+
+long_plots$verticle_structure_N <- row_sum_na_if_all_na(
+  cbind(1*(long_plots$ground_flora > "O"),
+        0.5*(long_plots$seedlings > "O"),
+        0.5*(long_plots$saplings > "O"),
+        1*(long_plots$shrub_layer > "O")))
+
+plot_av_bysurvey_verticle_structure <- long_plots %>%
+  group_by(id) %>%
+  summarise(
+    plot_av_verticle_structure_N = mean(verticle_structure_N, na.rm = TRUE)
   )
 
+# overall weigthed by aupssumed plot-level presence (R = 0.2, O = 0.4, F = 0.7, A/D = 1)
+overall$verticle_structure_N_overall <- row_sum_na_if_all_na(
+  cbind(1*(overall_weighting_lookup[overall$ground_flora] %>% as.numeric()),
+        0.5*(overall_weighting_lookup[overall$seedlings] %>% as.numeric()),
+        0.5*(overall_weighting_lookup[overall$saplings] %>% as.numeric()),
+        1*(overall_weighting_lookup[overall$shrub_layer] %>% as.numeric())))
+overall <- overall %>%
+  left_join(plot_av_bysurvey_verticle_structure, by = "id")
+  
+
 # poss alt WECA indicator for comparison combining these three layers (with one combined)
-
-
-
-
-# 15 - 12, 12 - 20 and 20 +
-# TA.Veteran.Pollards.Ancient.Coppice.Stools
-# TA.100.200.Years
-# TA.50.100.Years
-# TA.20.50.Years
-# "uncertain"?
-
-# alternative comparision indicator for lower layer
-
 
 # plot level 2
 # overall 1
 
+```
+
+This plot explores the lower layers measurement: plot-level average and overall level measurement. 
+
+- Notably, there are many 0 measurements at the overall level, this could be an artifact from the curation process, where absence was assumed incorrectly, regardless, it casts some doubt on the reliability of those overall-level measures of this indicator. It might be worth removing those from further analysis (accepting that this will fail to represent those surveys that in truth had no lower canopy layers)  
+- Beyond that, there is a reasonable trend between the two versions of this measure: overall and plot-average (though not strictly 1:1)
+```{r verticle_structure_plot}
+x_mean <- mean(overall$plot_av_verticle_structure_N, na.rm = TRUE)
+y_mean <- mean(overall$verticle_structure_N_overall, na.rm = TRUE)
+
+p <- ggplot(overall, aes(
+  x = plot_av_verticle_structure_N,
+  y = verticle_structure_N_overall
+)) +
+  geom_jitter(width = 0.05, height = 0.05, alpha = 0.2) +
+  geom_abline(slope = 1, intercept = 0,
+              linetype = "dashed", color = "red") +
+  geom_vline(xintercept = x_mean, linetype = "dotted") +
+  geom_hline(yintercept = y_mean, linetype = "dotted") +
+  labs(
+    title = "Comparison of plot-level average and overall vertical structure measurements",
+    x = "Average plot-level number of lower vertical layers present",
+    y = "Overall vertical structure measurement\n(DAFOR-weighted number of lower vertical layers)"
+  ) +
+  theme_minimal()
+
+p_marg <- ggMarginal(
+  p,
+  type = "histogram",
+  bins = 20,
+  fill = "grey80",
+  col = "white"
+)
+p_marg
+```
+  
+## Tree and Shrub - Appropriate species
+
+Plot-level comparability: 3
+
+Overall-level comparability: 2
+
+WECA recorded all tree and shrub species present in plots and calculated the proportion of species present (young or older) from a list of appropriate species for that habitat type (of six habitat types). The old WCA recorded the number of native tree and the number of native shrub species and did not record habitat type in a way comparable to WECA.
+
+Here we:
+
+1.  Summed the number of native tree and shrub species at plot and overall levels
+2.  Calculated the region-specific 80th percentile of native tree and shrub SR, and used that as the "expected native SR", for plots and overall separately.
+3.  Calculated the proportion of "expected native SR" present in each plot and overall survey (truncated to a ceiling of 1).
+4.  Transformed the value function for tree and shrub species richness so that it maxed out at 100 where "proportion of expected native SR" was 1.
+5.  Applied the transformed value function
+
+Note, this is really a different value function, but transfers some of the "spirit" of the WECA value function approach. It might be worth experimenting with different percentiles for better comparison, once WECA data starts coming in and/or create an alternative WECA indicator for legacy comparison purposes.
+
+```{r species-approprite}
 ## 7.4 native species richness ------
 
-# TS.Native.richness, SS.Native.richness
-
-long_plots0$tot_native_SR_trees_shrubs <- rowSums(long_plots0[, c("TS.Native.richness", "SS.Native.richness")], na.rm = TRUE)
-overall0$tot_native_SR_trees_shrubs <- rowSums(overall0[, c("TS.Native.richness", "SS.Native.richness")], na.rm = TRUE)
-
 # trust site managers to know nativnes
-# take regional 80th of all in regoin for denominator
+# take regional 90th of all in regoin for denominator, calc proportion of that and hold that up to the value function
 
-plot_regional_80th_native_sr_trees_shrubs <- long_plots0 %>% 
+# TS.Native.richness, SS.Native.richness
+# N_native_treeshrub derived above in canopy nativness section
+
+
+# regional percentiles ----
+plot_regional_90th_native_sr_trees_shrubs <- long_plots %>% 
   group_by(Region) %>%
   summarise(
-    regional_80th_native_sr_trees_shrubs = quantile(tot_native_SR_trees_shrubs, 0.8, na.rm = TRUE)
+    regional_90th_native_sr_trees_shrubs = quantile(N_native_treeshrub, 0.9, na.rm = TRUE)
   )
-overall_regional_80th_native_sr_trees_shrubs <- overall0 %>%
+overall_regional_90th_native_sr_trees_shrubs <- overall %>%
   group_by(Region) %>%
   summarise(
-    regional_80th_native_sr_trees_shrubs = quantile(tot_native_SR_trees_shrubs, 0.8, na.rm = TRUE)
+    regional_90th_native_sr_trees_shrubs = quantile(N_native_treeshrub, 0.9, na.rm = TRUE)
     )
 
-long_plots0$prop_native_sr_trees_shrubs <- long_plots0$tot_native_SR_trees_shrubs / 
-  overall_regional_80th_native_sr_trees_shrubs$regional_80th_native_sr_trees_shrubs[match(long_plots0$Region, overall_regional_80th_native_sr_trees_shrubs$Region)]
-long_plots0$prop_native_sr_trees_shrubs[long_plots0$prop_native_sr_trees_shrubs>1] <- 1
-overall0$prop_native_sr_trees_shrubs <- overall0$tot_native_SR_trees_shrubs / 
-  overall_regional_80th_native_sr_trees_shrubs$regional_80th_native_sr_trees_shrubs[match(overall0$Region, overall_regional_80th_native_sr_trees_shrubs$Region)]
-overall0$prop_native_sr_trees_shrubs[overall0$prop_native_sr_trees_shrubs>1] <- 1
+# prop of regional 90th present ----
+long_plots$prop_native_sr_trees_shrubs <- long_plots$N_native_treeshrub / 
+  overall_regional_90th_native_sr_trees_shrubs$regional_90th_native_sr_trees_shrubs[match(long_plots$Region, overall_regional_90th_native_sr_trees_shrubs$Region)]
+long_plots$prop_native_sr_trees_shrubs[long_plots$prop_native_sr_trees_shrubs>1] <- 1
+overall$prop_native_sr_trees_shrubs <- overall$N_native_treeshrub / 
+  overall_regional_90th_native_sr_trees_shrubs$regional_90th_native_sr_trees_shrubs[match(overall$Region, overall_regional_90th_native_sr_trees_shrubs$Region)]
+overall$prop_native_sr_trees_shrubs[overall$prop_native_sr_trees_shrubs>1] <- 1
+
+# valuation ----
+# transform value function to be 0 - 1
+
+tree_spp_lookup$per_spp <- tree_spp_lookup$per_spp - min(tree_spp_lookup$per_spp)
+tree_spp_lookup$per_spp <- tree_spp_lookup$per_spp / max(tree_spp_lookup$per_spp)
+
+long_plots$WECA_tree_shrub_sr_value_plot <- approx(
+  x = tree_spp_lookup$per_spp,
+  y = tree_spp_lookup$value,
+  xout = long_plots$prop_native_sr_trees_shrubs
+)$y
+
+overall$WECA_tree_shrub_sr_value_overall <- approx(
+  x = tree_spp_lookup$per_spp,
+  y = tree_spp_lookup$value,
+  xout = overall$prop_native_sr_trees_shrubs
+)$y
+
+# av and max plot value ----
+plot_av.max_prop_native_sr_trees_shrubs <- long_plots %>%
+  group_by(id) %>%
+  summarise(
+    plotmax_prop_native_sr_trees_shrubs = max(prop_native_sr_trees_shrubs, na.rm = TRUE),
+    plotav_prop_native_sr_trees_shrubs = mean(prop_native_sr_trees_shrubs, na.rm = TRUE),
+    WECA_tree_shrub_sr_value_plot_av = mean(WECA_tree_shrub_sr_value_plot, na.rm = TRUE),
+    ) %>% 
+  select(id, plotmax_prop_native_sr_trees_shrubs, plotav_prop_native_sr_trees_shrubs, WECA_tree_shrub_sr_value_plot_av) %>% 
+  # if inf og -inf make NA
+  mutate(
+    plotmax_prop_native_sr_trees_shrubs = ifelse(is.infinite(plotmax_prop_native_sr_trees_shrubs), NA, plotmax_prop_native_sr_trees_shrubs),
+    plotav_prop_native_sr_trees_shrubs = ifelse(is.infinite(plotav_prop_native_sr_trees_shrubs), NA, plotav_prop_native_sr_trees_shrubs)
+  )
+overall <- overall %>%
+  left_join(plot_av.max_prop_native_sr_trees_shrubs, by = "id")
 
 
-# overall
 # could compare to alt WECA summing species over site
 
 # plot score 3
 # overall score 2
 
+```
 
-# look into relationship between plot max and overall estimate
-plotmax_prop_native_sr_trees_shrubs <- long_plots0 %>%
-  group_by(id) %>%
-  summarise(
-    plotmax_prop_native_sr_trees_shrubs = max(prop_native_sr_trees_shrubs, na.rm = TRUE)
-  ) %>% 
-  select(id, plotmax_prop_native_sr_trees_shrubs)
-overall0 <- overall0 %>%
-  left_join(plotmax_prop_native_sr_trees_shrubs, by = "id")
+The regional 90th percentiles are below
 
-figure_plots$prop_native_sr_trees_shrubs.overall.plotmax <- ggplot(overall0, aes(x = prop_native_sr_trees_shrubs, y = plotmax_prop_native_sr_trees_shrubs,
-                                                                                 color = sr_changed_in_curation)) +
-  geom_jitter(width = 0.01, height = 0.01, alpha = 0.5) +
-  geom_abline(slope = 1, intercept = 0) +
-  labs(x = "Overall", y = "Plot-max",
-       title = "Proportion of expected native tree and shrub species present",
+```{r table_regional_90th_native_sr_trees_shrubs}
+plot_regional_90th_native_sr_trees_shrubs %>%
+  knitr::kable(col.names = c("Region", "90th percentile of native tree and shrub SR in plots"))
+
+overall_regional_90th_native_sr_trees_shrubs %>%
+  knitr::kable(col.names = c("Region", "90th percentile of native tree and shrub SR in overall surveys"))
+```
+
+Plot of value of tree and shrub species below, comparing mean of plots to overall. 
+
+```{r plot_tree_shrub_sr_value_plot_av_overall}
+
+x_mean <- mean(overall$WECA_tree_shrub_sr_value_overall, na.rm = TRUE)
+y_mean <- mean(overall$WECA_tree_shrub_sr_value_plot_av, na.rm = TRUE)
+
+p <- ggplot(overall, aes(x = WECA_tree_shrub_sr_value_plot_av, y = WECA_tree_shrub_sr_value_overall,
+               color = sr_changed_in_curation)) +
+  geom_jitter(width = 1, height = 1, alpha = 0.5) +
+  labs(
+       title = "Value of tree and shrub species richness",
+       x = "Average plot-level value",
+       y = "Overall value",
        color = "SR changed in curation") +
-  theme_minimal()+
+  geom_abline(slope = 1, intercept = 0) +
+  geom_vline(xintercept = x_mean, linetype = "dotted") +
+  geom_hline(yintercept = y_mean, linetype = "dotted") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+figure_plots$tree_shrub_sr_value_plot_av_overall <- ggMarginal(
+  p,
+  type = "histogram",
+  bins = 20,
+  fill = "grey80",
+  col = "white"
+)
+
+
+figure_plots$tree_shrub_sr_value_plot_av_overall
+
+
+
+
+               
+
+```
+
+These plots explore the relationship between the max (a) and average (b) plot-level native tree/shrub proportion and the overall-level measure .
+
+```{r tree-sr_plotmax-vs-overall}
+
+# =========================================================
+# (a) MAX plot-level vs overall
+# =========================================================
+
+model_max <- lm(
+  prop_native_sr_trees_shrubs ~
+    plotmax_prop_native_sr_trees_shrubs,
+  data = overall
+)
+
+rsq_max <- summary(model_max)$r.squared
+
+x_mean_max <- mean(
+  overall$plotmax_prop_native_sr_trees_shrubs,
+  na.rm = TRUE
+)
+
+y_mean_max <- mean(
+  overall$prop_native_sr_trees_shrubs,
+  na.rm = TRUE
+)
+
+p_max <- ggplot(
+  overall,
+  aes(
+    x = plotmax_prop_native_sr_trees_shrubs,
+    y = prop_native_sr_trees_shrubs,
+    color = sr_changed_in_curation
+  )
+) +
+
+  geom_jitter(
+    width = 0.01,
+    height = 0.01,
+    alpha = 0.5
+  ) +
+
+  geom_abline(
+    slope = 1,
+    intercept = 0
+  ) +
+
+  geom_vline(
+    xintercept = x_mean_max,
+    linetype = "dotted"
+  ) +
+
+  geom_hline(
+    yintercept = y_mean_max,
+    linetype = "dotted"
+  ) +
+
+  annotate(
+    "text",
+    x = 0.2,
+    y = 0.7,
+    label = paste0(
+      "R² = ",
+      round(rsq_max, 3)
+    )
+  ) +
+
+  labs(
+    x = "Plot-max proportion tree-shrub SR",
+    y = "'Overall' proportion tree-shrub SR",
+    title = "(a) Maximum plot-level vs overall proportion tree-shrub SR",
+    color = "SR changed in curation"
+  ) +
+
+  theme_minimal() +
+
   theme(
     legend.position = "bottom"
   )
 
-figure_plots$prop_native_sr_trees_shrubs.plotmax_nplot <-   ggplot(overall0, aes(x = n_plots, 
+figure_plots$prop_native_sr_trees_shrubs.overall.plotmax <-
+  ggMarginal(
+    p_max,
+    type = "histogram",
+    bins = 20,
+    fill = "grey80",
+    col = "white"
+  )
+
+
+
+# =========================================================
+# (b) AVERAGE plot-level vs overall
+# =========================================================
+
+model_av <- lm(
+  prop_native_sr_trees_shrubs ~
+    plotav_prop_native_sr_trees_shrubs,
+  data = overall
+)
+
+rsq_av <- summary(model_av)$r.squared
+
+x_mean_av <- mean(
+  overall$plotav_prop_native_sr_trees_shrubs,
+  na.rm = TRUE
+)
+
+y_mean_av <- mean(
+  overall$prop_native_sr_trees_shrubs,
+  na.rm = TRUE
+)
+
+p_av <- ggplot(
+  overall,
+  aes(
+    x = plotav_prop_native_sr_trees_shrubs,
+    y = prop_native_sr_trees_shrubs,
+    color = sr_changed_in_curation
+  )
+) +
+
+  geom_jitter(
+    width = 0.01,
+    height = 0.01,
+    alpha = 0.5
+  ) +
+
+  geom_abline(
+    slope = 1,
+    intercept = 0
+  ) +
+
+  geom_vline(
+    xintercept = x_mean_av,
+    linetype = "dotted"
+  ) +
+
+  geom_hline(
+    yintercept = y_mean_av,
+    linetype = "dotted"
+  ) +
+
+  annotate(
+    "text",
+    x = 0.2,
+    y = 0.7,
+    label = paste0(
+      "R² = ",
+      round(rsq_av, 3)
+    )
+  ) +
+
+  labs(
+    x = "Plot-average proportion tree-shrub SR",
+    y = "'Overall' proportion tree-shrub SR",
+    title = "(b) Average plot-level vs overall proportion tree-shrub SR",
+    color = "SR changed in curation"
+  ) +
+
+  theme_minimal() +
+
+  theme(
+    legend.position = "bottom"
+  )
+
+figure_plots$prop_native_sr_trees_shrubs.overall.plotav <-
+  ggMarginal(
+    p_av,
+    type = "histogram",
+    bins = 20,
+    fill = "grey80",
+    col = "white"
+  )
+
+
+
+# print plots
+figure_plots$prop_native_sr_trees_shrubs.overall.plotmax
+
+figure_plots$prop_native_sr_trees_shrubs.overall.plotav
+
+```
+
+I also did a quick exploration of how sample size affected how plot-max SR. Generally the difference between plot-max and overall SR got less as the number of plots increased, as is expected: more plots gets you closer to the overall (though note strange increase in variation at 5 plots).
+
+```{r SR-Sample_size effects}
+
+figure_plots$prop_native_sr_trees_shrubs.plotmax_nplot <-   ggplot(overall, aes(x = n_plots, 
                                                                                  y = plotmax_prop_native_sr_trees_shrubs / prop_native_sr_trees_shrubs,
                                                                                  color = sr_changed_in_curation)) +
   
@@ -1007,6 +1435,26 @@ figure_plots$prop_native_sr_trees_shrubs.plotmax_nplot <-   ggplot(overall0, aes
 # look into consideration of variation in scoring etc where plot level info exisits
 # relate WECA scores to
 
+figure_plots$prop_native_sr_trees_shrubs.plotmax_nplot
+```
+
+
+## Invasives
+
+Plot-level comparability: 3.5
+
+Overall-level comparability: 2
+
+WECA records the cover of individual invasive species and cover of all invasives combined within plots, value is 0 if any species classed as "high threat" are present, or otherwise assigned based on combined cover of invasives. The WCA data contains DAFOR cover estimates for Rhododendron, Himalayan balsam, Japanese knot-weed, giant hogweed and "other invasives". Those named species are all on the "high threat" list, but it also contains more species not recorded in WCA.
+
+Here we:
+
+1.  Assigned a value of 0 to plots with a named invasive present.
+2.  Assigned value to plots with no named invasives based on DAFOR of "other invasives" , referencing the WECA value function (D or A = 0; F = 10; O = 33; R = 70; Absent = 100)
+3.  Assigned an "initial value" to overall surveys based on plot-presence rate derived from DAFOR of named invasives (see [Converting "overall"-level DAFOR to plot-presence rate].
+4.  Multiplied overall-level "initial value" by a factor based on DAFOR of "other invasives" (as above for plot level)
+
+```{r invasives}
 ## 7.5 invasives ------
 #caveat some high therat not on list
 # confidence score:
@@ -1018,54 +1466,142 @@ figure_plots$prop_native_sr_trees_shrubs.plotmax_nplot <-   ggplot(overall0, aes
 # other = Invasives.Other
 
 # high threat at plot = 0 score
-long_plots0$high_threat_invasive <- pmax(
-  long_plots0$Invasives.Rhododendron,
-  long_plots0$Invasives.Himalayan.Balsam,
-  long_plots0$Invasives.Japanese.Knotweed,
+long_plots$high_threat_invasive <- pmax(
+  long_plots$Invasives.Rhododendron,
+  long_plots$Invasives.Himalayan.Balsam,
+  long_plots$Invasives.Japanese.Knotweed,
   na.rm = TRUE
 )
-overall0$high_threat_invasive <- pmax(
-  overall0$Invasives.Rhododendron,
-  overall0$Invasives.Himalayan.Balsam,
-  overall0$Invasives.Japanese.Knotweed,
+overall$high_threat_invasive <- pmax(
+  overall$Invasives.Rhododendron,
+  overall$Invasives.Himalayan.Balsam,
+  overall$Invasives.Japanese.Knotweed,
   na.rm = TRUE
 )
 
 # only other, value  R = 0.7  , O = 0.33ish  F = 0.10, A = 0
 
-long_plots0$invasive_value_other <- case_when(
-  long_plots0$Invasives.Other == "Absent" ~ 1,
-  long_plots0$Invasives.Other == "R" ~ 0.7,
-  long_plots0$Invasives.Other == "O" ~ 0.33,
-  long_plots0$Invasives.Other == "F" ~ 0.1,
-  long_plots0$Invasives.Other %in% c("A", "D") ~ 0
+long_plots$invasive_value_other <- case_when(
+  long_plots$Invasives.Other == "Absent" ~ 1,
+  long_plots$Invasives.Other == "R" ~ 0.7,
+  long_plots$Invasives.Other == "O" ~ 0.33,
+  long_plots$Invasives.Other == "F" ~ 0.1,
+  long_plots$Invasives.Other %in% c("A", "D") ~ 0
 )
-overall0$invasive_value_other <- case_when(
-  overall0$Invasives.Other == "Absent" ~ 1,
-  overall0$Invasives.Other == "R" ~ 0.7,
-  overall0$Invasives.Other == "O" ~ 0.33,
-  overall0$Invasives.Other == "F" ~ 0.1,
-  overall0$Invasives.Other %in% c("A", "D") ~ 0
+overall$invasive_value_other <- case_when(
+  overall$Invasives.Other == "Absent" ~ 1,
+  overall$Invasives.Other == "R" ~ 0.7,
+  overall$Invasives.Other == "O" ~ 0.33,
+  overall$Invasives.Other == "F" ~ 0.1,
+  overall$Invasives.Other %in% c("A", "D") ~ 0
 )
 
-long_plots0$invasive_value_high_threat_multiplier <- ifelse(long_plots0$high_threat_invasive > "Absent", 0, 1)
+long_plots$invasive_value_high_threat_multiplier <- ifelse(long_plots$high_threat_invasive > "Absent", 0, 1)
+
 # hi threat at overall
 # R = 0.8
 # O = 0.6
 # F = 0.2 
 # D-A = 0
-overall0$invasive_value_high_threat_multiplier <- case_when(
-  overall0$high_threat_invasive == "Absent" ~ 1,
-  overall0$high_threat_invasive == "R" ~ 0.8,
-  overall0$high_threat_invasive == "O" ~ 0.6,
-  overall0$high_threat_invasive == "F" ~ 0.2,
-  overall0$high_threat_invasive %in% c("A", "D") ~ 0
+# 1*(overall_weighting_lookup[overall$high_threat_invasive] %>% as.numeric())
+
+overall$invasive_value_high_threat_multiplier <- 1-(1*(overall_weighting_lookup[overall$high_threat_invasive] %>% as.numeric()))
+
+long_plots$WECA_invasive_score <- long_plots$invasive_value_other * long_plots$invasive_value_high_threat_multiplier
+
+overall$WECA_invasive_score <- overall$invasive_value_other * overall$invasive_value_high_threat_multiplier
+
+plot_ave_bysurvey_invasives <- long_plots %>%
+  group_by(id) %>%
+  summarise(
+    plot_av_invasive_score = mean(WECA_invasive_score, na.rm = TRUE)
+  )
+overall <- overall %>%
+  left_join(plot_ave_bysurvey_invasives, by = "id")
+
+```
+
+Plot of invasive value, comparing mean of plots to overall.
+
+```{r plot_invasive_score_plot_av_overall}
+x_mean <- mean(overall$WECA_invasive_score, na.rm = TRUE)
+y_mean <- mean(overall$plot_av_invasive_score, na.rm = TRUE)
+
+p <- ggplot(overall, aes(x = plot_av_invasive_score, y = WECA_invasive_score,
+               color = sr_changed_in_curation)) +
+  geom_jitter(width = 0.01, height = 0.01, alpha = 0.5) +
+  labs(
+       title = "Invasive species score",
+       x = "Average plot-level score",
+       y = "Overall score",
+       color = "SR changed in curation") +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_vline(xintercept = x_mean, linetype = "dotted") +
+  geom_hline(yintercept = y_mean, linetype = "dotted") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+figure_plots$invasive_score_plot_av_overall <- ggMarginal(
+  p,
+  type = "histogram",
+  bins = 20,
+  fill = "grey80",
+  col = "white"
 )
+figure_plots$invasive_score_plot_av_overall
+```
 
-long_plots0$WECA_invasive_score <- long_plots0$invasive_value_other * long_plots0$invasive_value_high_threat_multiplier
-overall0$WECA_invasive_score <- overall0$invasive_value_other * overall0$invasive_value_high_threat_multiplier
+Frequency tables for different DAFOR covers of named invasives and "other invasives" below.
+
+Plots
+
+```{r table_invasives_plots}
+long_plots %>%
+  count(high_threat_invasive) %>%
+    mutate(density = n / sum(n) ) %>%
+  knitr::kable(col.names = c("DAFOR high threat invasives", "Number of plots", "Density"))
+
+long_plots %>%
+  count(Invasives.Other) %>%
+  mutate(density = n / sum(n) ) %>%
+  knitr::kable(col.names = c("DAFOR other invasives", "Number of plots", "Density"))
+```
+
+Overall
+```{r table_invasives_overall}
+overall %>%
+  count(high_threat_invasive) %>%
+  mutate(density = n / sum(n) ) %>%
+  knitr::kable(col.names = c("DAFOR high threat invasives", "Number of overall surveys", "Density"))
+  
+overall %>%
+  count(Invasives.Other) %>%
+  mutate(density = n / sum(n) ) %>%
+  knitr::kable(col.names = c("DAFOR other invasives", "Number of overall surveys", "Density"))
+  
+```
 
 
+## Deadwood
+
+Plot-level comparability: 2
+
+Overall-level comparability: 1
+
+WECA records the presence of four different deadwood types in each plot-quarter (lying, standing, in-canopy and stumps), and sums these (max 16). The WCA data recorded DAFOR of deadwood standing and fallen, separately.
+
+Here we:
+
+1.  Assumed that standing and fallen deadwood categories from WCA were analogous to the standing and lying WECA categories, respectively.
+2.  Assumed that plot-level DAFOR related to plot-quarter presences (D = 4; A = 2; F or O = 1; R or Absent = 0)
+3.  Summed the plot-quarter-deadwood-types at plot level (max 8)
+4.  Calculated the max cover of standing and lying deadwood at "overall"-level, for comparison and reporting across WCA surveys.
+
+Valuation of the plot-level measurements was not attempted yet, this may be possible by e.g. exploring WECA data to calibrate the expected WECA score based solely on lying and standing deadwood. It will also be possible to use this analog indicator to track change in a subset of the WECA deadwood data (i.e. standing and lying deadwood only)
+
+No attempt is made to value the WCA overall-level deadwood cover estimates, we simply report the cover of standing and fallen deadwood, and their maximum.
+
+```{r deadwood}
 ## 7.6 deadwood ------
 # only two types - Deadwood.Standing, Deadwood.Fallen
 ## could compare to the standing and fallen parts of WECA 
@@ -1080,37 +1616,146 @@ overall0$WECA_invasive_score <- overall0$invasive_value_other * overall0$invasiv
 # A = 2
 # O & F = 1
 #  R = 0
-long_plots0$deadwood_score_standing <- case_when(
-  long_plots0$Deadwood.Standing == "Absent" ~ 0,
-  long_plots0$Deadwood.Standing == "R" ~ 0,
-  long_plots0$Deadwood.Standing == "O" ~ 1,
-  long_plots0$Deadwood.Standing == "F" ~ 1,
-  long_plots0$Deadwood.Standing %in% c("A", "D") ~ 2
+long_plots$deadwood_score_standing <- case_when(
+  long_plots$Deadwood.Standing == "Absent" ~ 0,
+  long_plots$Deadwood.Standing == "R" ~ 0,
+  long_plots$Deadwood.Standing == "O" ~ 1,
+  long_plots$Deadwood.Standing == "F" ~ 1,
+  long_plots$Deadwood.Standing == "A" ~ 2,
+  long_plots$Deadwood.Standing == "D" ~ 4
 )
-long_plots0$deadwood_score_fallen <- case_when(
-  long_plots0$Deadwood.Fallen == "Absent" ~ 0,
-  long_plots0$Deadwood.Fallen == "R" ~ 0,
-  long_plots0$Deadwood.Fallen == "O" ~ 1,
-  long_plots0$Deadwood.Fallen == "F" ~ 1,
-  long_plots0$Deadwood.Fallen %in% c("A", "D") ~ 2
+long_plots$deadwood_score_fallen <- case_when(
+  long_plots$Deadwood.Fallen == "Absent" ~ 0,
+  long_plots$Deadwood.Fallen == "R" ~ 0,
+  long_plots$Deadwood.Fallen == "O" ~ 1,
+  long_plots$Deadwood.Fallen == "F" ~ 1,
+  long_plots$Deadwood.Fallen == "A" ~ 2,
+  long_plots$Deadwood.Fallen == "D" ~ 4
 )
-# overall
-overall0$deadwood_score_standing <- case_when(
-  overall0$Deadwood.Standing == "Absent" ~ 0,
-  overall0$Deadwood.Standing == "R" ~ 0,
-  overall0$Deadwood.Standing == "O" ~ 0.5,
-  overall0$Deadwood.Standing == "F" ~ 0.5,
-  overall0$Deadwood.Standing %in% c("A", "D") ~ 1
-)
-overall0$deadwood_score_fallen <- case_when(
-  overall0$Deadwood.Fallen == "Absent" ~ 0,
-  overall0$Deadwood.Fallen == "R" ~ 0,
-  overall0$Deadwood.Fallen == "O" ~ 0.5,
-  overall0$Deadwood.Fallen == "F" ~ 0.5,
-  overall0$Deadwood.Fallen %in% c("A", "D") ~ 1
+long_plots$deadwood_score_both <- row_sum_na_if_all_na(
+  cbind(
+    long_plots$deadwood_score_standing,
+    long_plots$deadwood_score_fallen
+  )
 )
 
- 
+# overall
+overall$deadwood_max <- pmax(
+  overall$Deadwood.Standing,
+  overall$Deadwood.Fallen,
+  na.rm = TRUE
+)
+
+plot_av_bysurvey_deadwood_score_both <- long_plots %>%
+  group_by(id) %>%
+  summarise(
+    plot_av_deadwood_score = mean(deadwood_score_both, na.rm = TRUE)
+  )
+overall <- overall %>%
+  left_join(plot_av_bysurvey_deadwood_score_both, by = "id")
+
+
+```
+
+Histogram of plot-level WCA deadwood score (a) and plot-average score across surveys (b).
+
+```{r histogram_deadwood_score_both}
+
+# means for reference lines
+mean_plot <- mean(
+  long_plots$deadwood_score_both,
+  na.rm = TRUE
+)
+
+mean_av <- mean(
+  overall$plot_av_deadwood_score,
+  na.rm = TRUE
+)
+
+# (a) plot-level histogram
+# (a)
+p1 <- ggplot(
+  long_plots,
+  aes(x = deadwood_score_both)
+) +
+
+  geom_histogram(
+    binwidth = 1,
+    boundary = -0.5,
+    fill = "grey80",
+    color = "white"
+  ) +
+
+  geom_vline(
+    xintercept = mean_plot,
+    linetype = "dashed"
+  ) +
+
+  scale_x_continuous(
+    limits = c(-0.5, 8.5),
+    breaks = seq(0, 8, by = 1)
+  ) +
+
+  labs(
+    title = "(a) Plot-level deadwood score",
+    x = "Deadwood score (standing + fallen)",
+    y = "Number of plots"
+  ) +
+
+  theme_minimal()
+
+
+
+# (b)
+p2 <- ggplot(
+  overall,
+  aes(x = plot_av_deadwood_score)
+) +
+
+  geom_histogram(
+    binwidth = 1,
+    boundary = -0.5,
+    fill = "grey80",
+    color = "white"
+  ) +
+
+  geom_vline(
+    xintercept = mean_av,
+    linetype = "dashed"
+  ) +
+
+  scale_x_continuous(
+    limits = c(-0.5, 8.5),
+    breaks = seq(0, 8, by = 1)
+  ) +
+
+  labs(
+    title = "(b) Plot-average deadwood score across surveys",
+    x = "Average deadwood score (standing + fallen)",
+    y = "Number of survey areas"
+  ) +
+
+  theme_minimal()
+
+
+
+print(p1) 
+print(p2)
+
+```
+
+
+## AVTs
+
+Plot-level comparability: NA
+
+Overall-level comparability: 3
+
+WECA records the number of AVTs within 10 m of a 100m long transect from plots, uses that to estimate AVT density at each plot, and subsequently average density across the zone which is then valued using the value function. The WCA data includes DAFOR cover of "Veteran.Pollards.Ancient.Coppice.Stools". 
+
+Here, we took the DAFOR of "Veteran.Pollards.Ancient.Coppice.Stools" at overall level and valued it, referring to the value function (D = 100; A = 75; F = 50; O = 25; R = 10; Absent = 0)
+
+```{r AVTs}
 
 ## 7.7 AVTs ------
 # TA.Veteran.Pollards.Ancient.Coppice.Stools
@@ -1122,70 +1767,233 @@ overall0$deadwood_score_fallen <- case_when(
 # O = 0.25
 # R = 0.1
 
-overall0$WECA_avt_score <- case_when(
-  overall0$TA.Veteran.Pollards.Ancient.Coppice.Stools == "Absent" ~ 0,
-  overall0$TA.Veteran.Pollards.Ancient.Coppice.Stools == "R" ~ 0.1,
-  overall0$TA.Veteran.Pollards.Ancient.Coppice.Stools == "O" ~ 0.25,
-  overall0$TA.Veteran.Pollards.Ancient.Coppice.Stools == "F" ~ 0.5,
-  overall0$TA.Veteran.Pollards.Ancient.Coppice.Stools == "A" ~ 0.75,
-  overall0$TA.Veteran.Pollards.Ancient.Coppice.Stools == "D" ~ 1
+overall$WECA_avt_score <- case_when(
+  overall$TA.Veteran.Pollards.Ancient.Coppice.Stools == "Absent" ~ 0,
+  overall$TA.Veteran.Pollards.Ancient.Coppice.Stools == "R" ~ 10,
+  overall$TA.Veteran.Pollards.Ancient.Coppice.Stools == "O" ~ 25,
+  overall$TA.Veteran.Pollards.Ancient.Coppice.Stools == "F" ~ 50,
+  overall$TA.Veteran.Pollards.Ancient.Coppice.Stools == "A" ~ 75,
+  overall$TA.Veteran.Pollards.Ancient.Coppice.Stools == "D" ~ 1
 )
 
 # overall score - 3
 
+```
+
+`r mean(is.na(overall$WECA_avt_score))*100` % of surveys had no value recorded. We might assume that in these, there were no AVTs.
+
+Histogram of overall-level AVT score.
+
+```{r histogram_avt_score}
+mean_avt <- mean(overall$WECA_avt_score, na.rm = TRUE)
+
+ggplot(overall, aes(x = WECA_avt_score)) +
+  
+  geom_histogram(
+    binwidth = 10,
+    boundary = 0,
+    closed = "left",
+    fill = "grey80",
+    colour = "white"
+  ) +
+  
+  geom_vline(
+    xintercept = mean_avt,
+    linetype = "dashed"
+  ) +
+  
+  scale_x_continuous(
+    breaks = seq(0, 100, 10),
+    limits = c(0, 100)
+  ) +
+  
+  labs(
+    title = "Overall-level AVT score",
+    x = "AVT score",
+    y = "Number of survey areas"
+  ) +
+  
+  theme_minimal()
+```
+
+Frequency table of DAFOR of "Veteran.Pollards.Ancient.Coppice.Stools" at overall level.
+
+```{r table_avt_overall}
+overall %>%
+  count(TA.Veteran.Pollards.Ancient.Coppice.Stools) %>%
+  mutate(density = n / sum(n) ) %>%
+  knitr::kable(col.names = c("AVT DAFOR", "Number of overall surveys", "Density"))
+
+```
+
+
+## Regeneration
+
+Plot-level comparability: 5
+
+Overall-level comparability: 3
+
+Both WECA and the WCA record the cover of the same regen classes: seedlings, saplings and young trees. The WCA records these separately for trees and shrubs, and also splits saplings into two classes (\< 10 cm and 10 - 100 cm).
+
+Here we:
+
+1.  Took the max cover of all seedling regneration and all sapling regeneration, separately, at plot and "overall"-levels.
+2.  Summed the number of regeneration classes present in each plot
+3.  Converted the cover of each class at "overall"-level to a plot-presence rate (see [Converting "overall"-level DAFOR to plot-presence rate]) and summed these.
+4.  Valued the regen class number using the (interpolated) value function
+
+```{r regenetation}
 ## 7.8 regeneration ------
 # LTR.Seedlings.Less.Than.10cm, LTR.Seedlings.10.100cm, LTR.Saplings.Greater.Than.100cm, 
 # LSR.Seedlings.Less.Than.10cm, LSR.Seedlings.10.100cm, LSR.Saplings.Greater.Than.100cm, 
 # TA young
 # max 
-
-long_plots0$seedlings <- pmax(
-  long_plots0$LTR.Seedlings.Less.Than.10cm,
-  long_plots0$LTR.Seedlings.10.100cm,
-  long_plots0$LSR.Seedlings.Less.Than.10cm,
-  long_plots0$LSR.Seedlings.10.100cm,
-  na.rm = TRUE
-)
-overall0$seedlings <- pmax(
-  overall0$LTR.Seedlings.Less.Than.10cm,
-  overall0$LTR.Seedlings.10.100cm,
-  overall0$LSR.Seedlings.Less.Than.10cm,
-  overall0$LSR.Seedlings.10.100cm,
-  na.rm = TRUE
-)
-long_plots0$saplings <- pmax(
-  long_plots0$LTR.Saplings.Greater.Than.100cm,
-  long_plots0$LSR.Saplings.Greater.Than.100cm,
-  na.rm = TRUE
-)
-overall0$saplings <- pmax(
-  overall0$LTR.Saplings.Greater.Than.100cm,
-  overall0$LSR.Saplings.Greater.Than.100cm,
-  na.rm = TRUE
-)
-long_plots0$TA_young <- long_plots0$TA.Less.Than.20.Years
-overall0$TA_young <- overall0$TA.Less.Than.20.Years
-
-long_plots0$regeneration_score <- rowSums(
-  cbind(1*(long_plots0$seedlings > "Absent"),
-        1*(long_plots0$saplings > "Absent"),
-        1*(long_plots0$TA_young > "Absent")),
-  na.rm = TRUE
-)
-overall0$regeneration_score <- rowSums(
-  cbind(1*(overall_weighting_lookup[overall0$seedlings] %>% as.numeric()),
-        1*(overall_weighting_lookup[overall0$saplings] %>% as.numeric()),
-        1*(overall_weighting_lookup[overall0$TA_young] %>% as.numeric())),
-  na.rm = TRUE
-)
-
 # plot score 5
 # overall score 3
 
 
+long_plots$seedlings <- pmax(
+  long_plots$LTR.Seedlings.Less.Than.10cm,
+  long_plots$LTR.Seedlings.10.100cm,
+  long_plots$LSR.Seedlings.Less.Than.10cm,
+  long_plots$LSR.Seedlings.10.100cm,
+  na.rm = TRUE
+)
+overall$seedlings <- pmax(
+  overall$LTR.Seedlings.Less.Than.10cm,
+  overall$LTR.Seedlings.10.100cm,
+  overall$LSR.Seedlings.Less.Than.10cm,
+  overall$LSR.Seedlings.10.100cm,
+  na.rm = TRUE
+)
+long_plots$saplings <- pmax(
+  long_plots$LTR.Saplings.Greater.Than.100cm,
+  long_plots$LSR.Saplings.Greater.Than.100cm,
+  na.rm = TRUE
+)
+overall$saplings <- pmax(
+  overall$LTR.Saplings.Greater.Than.100cm,
+  overall$LSR.Saplings.Greater.Than.100cm,
+  na.rm = TRUE
+)
+long_plots$TA_young <- long_plots$TA.Less.Than.20.Years
+overall$TA_young <- overall$TA.Less.Than.20.Years
+
+long_plots$regeneration_score <- row_sum_na_if_all_na(
+  cbind(1*(long_plots$seedlings > "Absent"),
+        1*(long_plots$saplings > "Absent"),
+        1*(long_plots$TA_young > "Absent")))
+  
+overall$regeneration_score <- row_sum_na_if_all_na(
+  cbind(1*(overall_weighting_lookup[overall$seedlings] %>% as.numeric()),
+        1*(overall_weighting_lookup[overall$saplings] %>% as.numeric()),
+        1*(overall_weighting_lookup[overall$TA_young] %>% as.numeric()))
+)
+
+# value regeneration score using value function - 
+
+long_plots$WECA_regen_value_plot <- approx(
+  x = regen_lookup$N.Regen.classes.present,
+  y = regen_lookup$value,
+  xout = long_plots$regeneration_score
+)$y
+
+overall$WECA_regen_value_overall <- approx(
+  x = regen_lookup$N.Regen.classes.present,
+  y = regen_lookup$value,
+  xout = overall$regeneration_score
+)$y
+
+plot_av.bysurvey_regeneration <- long_plots %>%
+  group_by(id) %>%
+  summarise(
+    plot_av_regeneration_N_classes_present = mean(regeneration_score, na.rm = TRUE),
+    WECA_regen_value_plot_av = mean(WECA_regen_value_plot, na.rm = TRUE)
+  )
+overall <- overall %>%
+  left_join(plot_av.bysurvey_regeneration, by = "id")
+
+```
+
+There was missing regeneration value for:
+- `r mean(is.na(long_plots$WECA_regen_value_plot))*100` % of plots 
+- `r mean(is.na(overall$WECA_regen_value_overall))*100` % of survey overall
+- `r mean(is.na(overall$WECA_regen_value_plot_av))*100` % of survey plot-averages
+
+### Plot of regeneration score, comparing mean of plots to overall.
+
+Generally, the plot-average regeneration score is higher than the overall score
+- probably partly due to the plot-rate-presence calculation.
+- The non-representative nature of plots likely to also play a role.
+
+The large number of 0 Overall score (particularly where plot-average is high) is worrying, these data may be best removed from further analysis.
+
+```{r plot_regeneration_score_plot_av_overall}
+x_mean <- mean(overall$WECA_regen_value_plot_av, na.rm = TRUE)
+y_mean <- mean(overall$WECA_regen_value_overall, na.rm = TRUE)
+
+p <- ggplot(overall, aes(x = WECA_regen_value_plot_av, 
+                         y = WECA_regen_value_overall,
+               color = sr_changed_in_curation)) +
+  geom_jitter(width = 1, height = 1, alpha = 0.5) +
+  labs(
+       title = "Regeneration score",
+       x = "Average plot-level score",
+       y = "Overall score",
+       color = "SR changed in curation") +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_vline(xintercept = x_mean, linetype = "dotted") +
+  geom_hline(yintercept = y_mean, linetype = "dotted") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+figure_plots$regeneration_score_plot_av_overall <- ggMarginal(
+  p,
+  type = "histogram",
+  bins = 20,
+  fill = "grey80",
+  col = "white"
+)
+figure_plots$regeneration_score_plot_av_overall
+  
+```
+
+Plot of 
+               
+
+## Herbivore impact
+
+Plot-level comparability: 1.5
+
+Overall-level comparability: 1
+
+The WECA estimates herbivory level using a method akin to an ultra-lite Woodland Herbivore Impact Assessment[^exploring-old-condition-data-4]. The WCA gives a DAFOR for evidence of deer and "other animal" damage. 
+
+We made not attempt to value these and simply reported the max animal damage DAFOR.
+
+[^exploring-old-condition-data-4]: <https://www.forestry.gov.scot/publications/woodland-herbivore-impact-assessment-method-user-guide>
+
+```{r herbivory}
 ## 7.9 Herbivore impact ------
 # HIA survey info
 ## Animal.Damage.Deer, Animal.Damage.Other
+
+overall$herbivore_max <- pmax(
+  overall$Animal.Damage.Deer,
+  overall$Animal.Damage.Squirrels,
+  overall$Animal.Damage.Rabbits,
+  overall$Animal.Damage.Other,
+  na.rm = TRUE
+)
+
+long_plots$herbivore_max <- pmax(
+  long_plots$Animal.Damage.Deer,
+  long_plots$Animal.Damage.Squirrels,
+  long_plots$Animal.Damage.Rabbits,
+  long_plots$Animal.Damage.Other,
+  na.rm = TRUE
+)
+
 
 # extremes ok
 # A  all palitable
@@ -1197,8 +2005,49 @@ overall0$regeneration_score <- rowSums(
 # plot score 2
 # overall score 1
 
+```
+
+There was missing herbivory value for:
+- `r mean(is.na(long_plots$herbivore_max))*100` % of plots 
+- `r mean(is.na(overall$herbivore_max))*100` % of survey overall
+
+Frequency table - max herbivore damage DAFOR at overall level.
+
+```{r table_herbivory_overall}
+overall %>%
+  count(herbivore_max) %>%
+  mutate(density = n / sum(n) ) %>%
+  knitr::kable(col.names = c("Max herbivore damage DAFOR",
+                                 "Number of overall surveys", "Density"))
+```
+
+Frequency table - max herbivore damage DAFOR at plot level.
+
+```{r table_herbivory_plots}
+long_plots %>%
+  count(herbivore_max) %>%
+  mutate(density = n / sum(n) ) %>%
+  knitr::kable(col.names = c("Max herbivore damage DAFOR",
+                                 "Number of plots", "Density"))
+```
 
 
+## Tree health
+
+Plot-level comparability: 2
+
+Overall-level comparability: 1.5
+
+WECA records the presence of priority pests and diseases and estimates the % basal area of rapid morality and crown dieback. Where priority pests and diseases are present a value of 0 is given, otherwise value is assigned based on the maximum of crown dieback or rapid tree mortality. WCA reported a DAFOR cover value of notifiable pest and disease and of "other" pest or disease. Notably "priority pests and diseases" and "notifiable pest and diseases" are not the same.
+
+Similar to [Invasives], we:
+
+1.  Assigned plot values of 0 where a notifiable pest or disease was present
+2.  Assigned value to plots with no notifiable pest and diseases based on DAFOR of "other pests and diseases" , referencing the WECA value function (D or A = 0; F = 25; O = 50; R = 75; Absent = 100)
+3.  Assigned an "initial value" to overall surveys based on plot-presence rate derived from DAFOR of notifiable pests and diseases (see [Converting "overall"-level DAFOR to plot-presence rate].
+4.  Multiplied overall-level "initial value" by a factor based on DAFOR of "other pests and diseases" (as above for plot level)
+
+```{r tree_health}
 ## 7.10 tree health ------
 # Tree.Health.Notifiable.Pest.Or.Disease Tree.Health.Other.Disease.Or.Pest
 
@@ -1206,45 +2055,114 @@ overall0$regeneration_score <- rowSums(
 # Tree.Health.Notifiable.Pest.Or.Disease present = 0
 # Tree.Health.Other.Disease.Or.Pest DAF = 0, O = 10, R = 0.75
 
-long_plots0$tree_health_notifiable_multiplier <- ifelse(long_plots0$Tree.Health.Notifiable.Pest.Or.Disease == "Absent", 1, 0)
-long_plots0$tree_health_other_multiplier <- case_when(
-  long_plots0$Tree.Health.Other.Disease.Or.Pest == "Absent" ~ 1,
-  long_plots0$Tree.Health.Other.Disease.Or.Pest == "R" ~ 0.75,
-  long_plots0$Tree.Health.Other.Disease.Or.Pest == "O" ~ 0.5,
-  long_plots0$Tree.Health.Other.Disease.Or.Pest == "F" ~ 0.25,
-  long_plots0$Tree.Health.Other.Disease.Or.Pest %in% c("A", "D") ~ 0
+long_plots$tree_health_notifiable_multiplier <- ifelse(long_plots$Tree.Health.Notifiable.Pest.Or.Disease == "Absent", 1, 0)
+long_plots$tree_health_other_multiplier <- case_when(
+  long_plots$Tree.Health.Other.Disease.Or.Pest == "Absent" ~ 100,
+  long_plots$Tree.Health.Other.Disease.Or.Pest == "R" ~ 75,
+  long_plots$Tree.Health.Other.Disease.Or.Pest == "O" ~ 50,
+  long_plots$Tree.Health.Other.Disease.Or.Pest == "F" ~ 25,
+  long_plots$Tree.Health.Other.Disease.Or.Pest %in% c("A", "D") ~ 0
 )
-long_plots0$WECA_tree_health_score <- long_plots0$tree_health_notifiable_multiplier * long_plots0$tree_health_other_multiplier
+long_plots$WECA_tree_health_value <- long_plots$tree_health_notifiable_multiplier * long_plots$tree_health_other_multiplier
 
 # overall
 ## same logic as high threat invasive
-overall0$tree_health_notifiable_multiplier <- case_when(
-  overall0$Tree.Health.Notifiable.Pest.Or.Disease == "Absent" ~ 1,
-  overall0$Tree.Health.Notifiable.Pest.Or.Disease == "R" ~ 0.8,
-  overall0$Tree.Health.Notifiable.Pest.Or.Disease == "O" ~ 0.6,
-  overall0$Tree.Health.Notifiable.Pest.Or.Disease == "F" ~ 0.2,
-  overall0$Tree.Health.Notifiable.Pest.Or.Disease %in% c("A", "D") ~ 0
+overall$tree_health_notifiable_multiplier <- 1-(1*(overall_weighting_lookup[overall$Tree.Health.Notifiable.Pest.Or.Disease] %>% as.numeric()))
+  
+overall$tree_health_other_multiplier <- case_when(
+  overall$Tree.Health.Other.Disease.Or.Pest == "Absent" ~ 100,
+  overall$Tree.Health.Other.Disease.Or.Pest == "R" ~ 75,
+  overall$Tree.Health.Other.Disease.Or.Pest == "O" ~ 50,
+  overall$Tree.Health.Other.Disease.Or.Pest == "F" ~ 25,
+  overall$Tree.Health.Other.Disease.Or.Pest %in% c("A", "D") ~ 0
 )
-overall0$tree_health_other_multiplier <- case_when(
-  overall0$Tree.Health.Other.Disease.Or.Pest == "Absent" ~ 1,
-  overall0$Tree.Health.Other.Disease.Or.Pest == "R" ~ 0.75,
-  overall0$Tree.Health.Other.Disease.Or.Pest == "O" ~ 0.5,
-  overall0$Tree.Health.Other.Disease.Or.Pest == "F" ~ 0.25,
-  overall0$Tree.Health.Other.Disease.Or.Pest %in% c("A", "D") ~ 0
-)
-overall0$WECA_tree_health_score <- overall0$tree_health_notifiable_multiplier * overall0$tree_health_other_multiplier
+overall$WECA_tree_health_value_overall <- overall$tree_health_notifiable_multiplier * overall$tree_health_other_multiplier
+
+plot_av_bysurvey_tree_health <- long_plots %>%
+  group_by(id) %>%
+  summarise(
+    WECA_tree_health_value_plot_av = mean(WECA_tree_health_value, na.rm = TRUE)
+  )
+overall <- overall %>%
+  # if WECA_tree_health_value_plot_av exists, remove it
+  select(-any_of("WECA_tree_health_value_plot_av")) %>%
+  left_join(plot_av_bysurvey_tree_health, by = "id")
+
 
 # plot score 2
 # overall score 1.5
 
 
+
+```
+
+
+Plot of tree health value, comparing mean of plots to overall.
+
+```{r plot_tree_health_score_plot_av_overall}
+x_mean <- mean(overall$WECA_tree_health_value_plot_av, na.rm = TRUE)
+y_mean <- mean(overall$WECA_tree_health_value_overall, na.rm = TRUE)
+
+p <- ggplot(overall, aes(x = WECA_tree_health_value_plot_av, 
+                         y = WECA_tree_health_value_overall,
+               color = sr_changed_in_curation)) +
+  geom_jitter(width = 1, height = 1, alpha = 0.5) +
+  labs(
+       title = "Tree health score",
+       x = "Average plot-level score",
+       y = "Overall score",
+       color = "SR changed in curation") +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_vline(xintercept = x_mean, linetype = "dotted") +
+  geom_hline(yintercept = y_mean, linetype = "dotted") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+figure_plots$tree_health_score_plot_av_overall <- ggMarginal(
+  p,
+  type = "histogram",
+  bins = 20,
+  fill = "grey80",
+  col = "white"
+)
+figure_plots$tree_health_score_plot_av_overall
+```
+
+## Ground Flora
+
+Plot-level comparability: 0
+
+Overall-level comparability: 0
+
+WECA assesses the presence of ground flora within plots at the species level, determines the proportion of presence from a list of appropriate species specific to one of six habitat types, and uses the value function to score that "proportion of appropriate species present". WCA gave a DAFOR estimate for ancient woodland specialists plants, woodland generalist plants, other native plants, coarse vegetation, other plants and "no vegetation". These were deemed incomparable and no attempt was made to value them.
+
+```{r ground_flora}
 ## 7.11 ground flora ------
 # Flora.Ancient.Woodland.Plants..Specialists., Flora.Other.Woodland.Plants..Generalists., Flora.Other.Native.Plants, Flora.Coarse.Vegetation, Flora.Other.Plants, Flora.No.Vegitation
 
 # plot score 0
 # overall score 0
 
+```
 
+## Horizontal complexity
+
+Plot-level comparability: 0
+
+Overall-level comparability: 1
+
+WECA assesses top height every 10m along a 100 m transect from plots and values the number of different top height classes recorded. The WCA has no real comparable data, accepting that it does report the percentage cover of tree canopy, shrub canopy, semi natural open space, rides and temporary open space. 
+
+No attempt was made to value these.
+
+We calculated a diversity score from the percentage covers of:
+- tree canopy
+- shrub canopy
+- semi natural open space + rides + temporary open space + water
+
+This metric should give some indication of relative horizontal complexity, but is not directly relatable to WECA
+
+```{r horizontal_complexity}
 ## 7.12 Horizontal complexity ------
 # only at overall level
 ## TotalTreeCanopyCoverPercentCurrent 
@@ -1253,8 +2171,78 @@ overall0$WECA_tree_health_score <- overall0$tree_health_notifiable_multiplier * 
 # plot score 0
 # overall score 1
 
+overall$open_cover <- row_sum_na_if_all_na(
+  overall %>% select(
+     OpenSpaceSemiNaturalHabitatPercentCurrent,
+     OpenSpaceRidesPercentCurrent,
+     OpenSpaceTemporaryPercentCurrent,
+     OpenSpaceWaterFeaturesPercentCurrent) %>% 
+    #make numeric
+    mutate(across(everything(), as.numeric)))
 
+# shannon diversity of cover types
+overall <- overall %>%
+  mutate(
+    horizontal_complexity_alt_shannon = select(.,
+      TotalTreeCanopyCoverPercentCurrent,
+      ShrubCoverPercentCurrent,
+      open_cover
+    ) %>%
+      mutate(across(everything(), as.numeric)) %>%
+      apply(1, function(x) {
+        
+        p <- x / sum(x, na.rm = TRUE)
+        p <- p[p > 0]
+        
+        -sum(p * log(p))
+        
+      })
+    
+  )
 
+```
+
+Histogram of horizontal complexity (Shannon diversity of cover types) at overall level.
+
+```{r histogram_horizontal_complexity}
+mean_horizontal_complexity <- mean(overall$horizontal_complexity_alt_shannon, na.rm =
+  TRUE)
+ggplot(overall, aes(x = horizontal_complexity_alt_shannon)) +
+  
+  geom_histogram(
+    binwidth = 0.5,
+    boundary = 0,
+    fill = "grey80",
+    colour = "white"
+  ) +
+  
+  geom_vline(
+    xintercept = mean_horizontal_complexity,
+    linetype = "dashed"
+  ) +
+  
+  labs(
+    title = "Overall-level horizontal complexity (Shannon diversity of cover types)",
+    x = "Horizontal complexity",
+    y = "Number of survey areas"
+  ) +
+  
+  theme_minimal()
+```
+## Human impact
+
+Plot-level comparability: 2
+
+Overall-level comparability: 1.5
+
+WECA assesses the cover of human damage within plots and values that. WCA assesses the DAFOR cover of one off and continuous impacts.
+
+Here we:
+
+1.  Took the max of one off and continuous impacts
+2.  Valued that at plot and overall level, with reference to the value function
+
+```{r human_impact}
 ## 7.13 human impact ------
 # Human.Impacts.One.Off.Impacts Human.Impacts.Continuous.Impacts
 
@@ -1264,42 +2252,116 @@ overall0$WECA_tree_health_score <- overall0$tree_health_notifiable_multiplier * 
 # R  = 0.8
 # Absent = 1
 
-long_plots0$human_impact_cover <- pmax(
-  long_plots0$Human.Impacts.One.Off.Impacts,
-  long_plots0$Human.Impacts.Continuous.Impacts,
+long_plots$human_impact_cover <- pmax(
+  long_plots$Human.Impacts.One.Off.Impacts,
+  long_plots$Human.Impacts.Continuous.Impacts,
   na.rm = TRUE
 )
-long_plots0$WECA_human_impact_score <- case_when(
-  long_plots0$human_impact_cover == "Absent" ~ 1,
-  long_plots0$human_impact_cover == "R" ~ 0.8,
-  long_plots0$human_impact_cover == "O" ~ 0.4,
-  long_plots0$human_impact_cover %in% c("F", "A", "D") ~ 0
+long_plots$WECA_human_impact_value <- case_when(
+  long_plots$human_impact_cover == "Absent" ~ 1,
+  long_plots$human_impact_cover == "R" ~ 0.8,
+  long_plots$human_impact_cover == "O" ~ 0.4,
+  long_plots$human_impact_cover %in% c("F", "A", "D") ~ 0
 )
 
-overall0$human_impact_cover <- pmax(
-  overall0$Human.Impacts.One.Off.Impacts,
-  overall0$Human.Impacts.Continuous.Impacts,
+plot_av_bysurvey_human_impact <- long_plots %>%
+  group_by(id) %>%
+  summarise(
+    WECA_human_impact_value_plotav = mean(WECA_human_impact_value, na.rm = TRUE)
+  )
+
+overall$human_impact_cover <- pmax(
+  overall$Human.Impacts.One.Off.Impacts,
+  overall$Human.Impacts.Continuous.Impacts,
   na.rm = TRUE
 )
-overall0$WECA_human_impact_score <- case_when(
-  overall0$human_impact_cover == "Absent" ~ 1,
-  overall0$human_impact_cover == "R" ~ 0.8,
-  overall0$human_impact_cover == "O" ~ 0.4,
-  overall0$human_impact_cover %in% c("F", "A", "D") ~ 0
+overall$WECA_human_impact_value_overall <- case_when(
+  overall$human_impact_cover == "Absent" ~ 1,
+  overall$human_impact_cover == "R" ~ 0.8,
+  overall$human_impact_cover == "O" ~ 0.4,
+  overall$human_impact_cover %in% c("F", "A", "D") ~ 0
 )
+overall <- overall %>%
+  select(-any_of("WECA_human_impact_value_plotav")) %>%
+  left_join(plot_av_bysurvey_human_impact, by = "id")
 
 # plot score 2
 # overall score 1.5
 
 
+```
 
+Plot of human impact value, comparing mean of plots to overall. There is a strong and relatively 1:1 relationship.
+
+```{r plot_human_impact_score_plot_av_overall}
+x_mean <- mean(overall$WECA_human_impact_value_plotav, na.rm
+  = TRUE)
+y_mean <- mean(overall$WECA_human_impact_value_overall, na.rm
+  = TRUE)
+
+p <- ggplot(overall, aes(x = WECA_human_impact_value_plotav, 
+                         y = WECA_human_impact_value_overall,
+               color = sr_changed_in_curation)) +
+  geom_jitter(width = 0.01, height = 0.01, alpha = 0.5) +
+  labs(
+       title = "Human impact score",
+       x = "Average plot-level score",
+       y = "Overall score",
+       color = "SR changed in curation") +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_vline(xintercept = x_mean, linetype = "dotted") +
+  geom_hline(yintercept = y_mean, linetype = "dotted") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+figure_plots$human_impact_score_plot_av_overall <- ggMarginal(
+  p,
+  type = "histogram",
+  bins = 20,
+  fill = "grey80",
+  col = "white"
+)
+figure_plots$human_impact_score_plot_av_overall
+``` 
+
+Frequency table of max human impact DAFOR at overall level.
+
+```{r table_human_impact_overall}
+overall %>%
+  count(human_impact_cover) %>%
+  mutate(density = n / sum(n) ) %>%
+  knitr::kable(col.names = c("Max human impact DAFOR",
+                                 "Number of overall surveys", "Density"))
+```
+
+Frequency table of max human impact DAFOR at plot level.
+
+```{r table_human_impact_plots}
+long_plots %>%
+  count(human_impact_cover) %>%
+  mutate(density = n / sum(n) ) %>%
+  knitr::kable(col.names = c("Max human impact DAFOR",
+                                 "Number of plots", "Density"))
+  
+```
+
+## Micro-habitats
+
+Plot-level comparability: 0
+
+Overall-level comparability: 0
+
+The WECA approach values the richness of tree related microhabitats from a list with diagrams. Its a great indicator, the WCA cant touch it.
+
+```{r microhabitats}
 
 ## 7.14 Microhabitats ------
 #0
 
 # plot 0
-# overall0
+# overall
 # 
+
 ```
 
 # Thanks

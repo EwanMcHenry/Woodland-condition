@@ -8,11 +8,13 @@ extraction.location <- "Data\\Delphi round 1\\"
 load(paste0(extraction.location,"curated.RData"))
 ```
 
+```{=html}
 <style type="text/css">
 caption, .table-caption {
   text-align: left;
 }
 </style>
+```
 
 ```{r libraries_data, echo = F, include = F, eval = T }
 
@@ -51,7 +53,7 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 
 ```
 
-You will all have this doc and a revisedversion of your response excel sheet[^002_delphi_r2_instructions-1] . Open both, you'll be switching between them a fair amount (Alt + tab switches between windows).
+You will all have this doc and a revised version of your response excel sheet[^002_delphi_r2_instructions-1] . Open both, you'll be switching between them a fair amount (Alt + tab switches between windows).
 
 [^002_delphi_r2_instructions-1]: Revisions to your worksheet since round 1:
 
@@ -102,7 +104,7 @@ Have a quick practice with these example interactive figures:
 #### Continuous Value function
 
 ```{r vf Tree age size distribution - continuous, echo = F , results="asis"}
-continuous_vf_fig()
+continuous_vf_fig(filtered_data)
 
 ```
 

@@ -62,5 +62,6 @@ weca-report-template_files
 outputs/WECA reports/
 weca report template_files
 condition scratch.R
-
 **/*.quarto_ipynb
+Exploring-Old-Condition-Data_cache
+Exploring-Old-Condition-Data_files

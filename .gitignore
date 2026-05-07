@@ -65,3 +65,6 @@ condition scratch.R
 **/*.quarto_ipynb
 Exploring-Old-Condition-Data_cache
 Exploring-Old-Condition-Data_files
+04_Importance weightings_files
+test.qmd
+_site/

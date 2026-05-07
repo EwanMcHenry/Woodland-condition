@@ -50,9 +50,9 @@ source("Scripts\\curation of extracted data.R")
 load(paste0(extraction.location,"curated.RData"))
 ```
 
-A lot of the figures and tables in this book are interactive, you can often hover to get more info, click to filter/sort different data etc. Please get in touch if any sections need clarification, if you notice any bugs or errors, or have any other feedback that might improve the doc ([EwanMcHenry\@woodlandtrust.org.uk](mailto:EwanMchenry@woodlandtrust.org.uk)).
+A lot of the figures and tables in this serise are interactive, you can often hover to get more info, click to filter/sort different data etc. Please get in touch if any sections need clarification, if you notice any bugs or errors, or have any other feedback that might improve the doc ([EwanMcHenry\@woodlandtrust.org.uk](mailto:EwanMchenry@woodlandtrust.org.uk)).
 
-The book explores `r has_completed$indicator_name %>% unique() %>% length()` indicators of woodland ecological condition: how they can be measured and used to assess the ecological condition of woodland sites, based on a structured synthesis of evidence from the literature and the expert opinion of professional woodland conservationists.
+The series explores `r has_completed$indicator_name %>% unique() %>% length()` indicators of woodland ecological condition: how they can be measured and used to assess the ecological condition of woodland sites, based on a structured synthesis of evidence from the literature and the expert opinion of professional woodland conservationists.
 
 The proposed framework takes inspiration from many existing projects internationally that inform management and policy through an assessment of ecological condition at different scales, measured using structural indicators.
 
@@ -60,27 +60,42 @@ The proposed framework takes inspiration from many existing projects internation
 
 > **Woodland ecological condition (WEC)**: The potential for a woodland site - in its current structural state - to sustain biodiverse, dynamic and well-functioning species communities (i.e. ignoring time-lags in wildlife species colonisation).
 
-## Book structure
+## Series structure
 
 1.  [Introduction (this page)](index.qmd)
 
-2.  [Instructions to experts for round 2 of Delphi process](002_delphi_r2_instructions.qmd)
+2.  [Project background and scope](001_project%20background.qmd)
 
-3.  [Project background and scope](001_project%20background.qmd)
+3.  [An explanation of the general approach to estimate condition](01_general%20approach.qmd)
 
-4.  [An explanation of the general approach to estimate condition](01_general%20approach.qmd)
+4.  [The methods to gather and analyse evidence, particularly expert opinion](02_methods.qmd)
 
-5.  A series of pages for each indicator in turn exploring:
+5.  Expert opinion Delphi Process - with estimated value functions and weightings
+
+```         
+1.  [Instructions to experts for round 2 of Delphi process](002_delphi_r2_instructions.qmd)
+
+2.  A series of pages for each indicator in turn exploring:
 
     -   Justification of its inclusion
+
     -   A proposed measurement method
+
     -   An exploration of value functions and weightings
+
         -   Tabs can be used to switch view of value functions from continuous lines to classes (e.g. verticle structure, where only 5 options are possible), and explore importance weightings (compared to other indicators).
+
     -   Further considerations for indicator development
+
     -   Exceptions where a general approach may require adaptation.
+
         -   Indicatively categorised as "priority", "lower priority", and exceptions dealt with by already/with adaption/by other indicators. Some reasoning is typically given for categorisation.
+
     -   Approaches to this indicator from other organisations
 
-6.  An exploration of the [importance weightings](04_Importance%20weightings.qmd) for each indicator
+3.  An exploration of the [importance weightings](04_Importance%20weightings.qmd) for each indicator
+```
 
-7.  [The methods to gather and analyse evidence, particularly expert opinion](02_methods.qmd)
+6.  [An exploration of data from the previous Woodland Condition Assessment on the Woodland Trust Estate](Exploring Old Condition Data.qmd)
+
+    -   

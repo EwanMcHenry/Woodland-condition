@@ -6,7 +6,8 @@ tree_spp_lookup <- read.csv("outputs\\lookup_tables\\N tree & shrub spp._vf_look
   rename(per_spp = Proportion.of.appropriate.Tree...Shrub.Species) 
 antropogenic_damage_lookup <- read.csv("outputs\\lookup_tables\\Anthropogenic damage_vf_lookup_domin.csv")
 deadwood_lookup <- read.csv("outputs\\lookup_tables\\Deadwood_vf_lookup.csv")
-ground_flora_lookup <- read.csv("outputs\\lookup_tables\\Ground flora_vf_lookup.csv")
+ground_flora_lookup <- read.csv("outputs\\lookup_tables\\Ground flora_vf_lookup - EMcH MU edit01_2026-05-06_integerised.csv") %>% 
+  rename(per_spp = X..Appropraite.ground.flora.species)
 Horizontal_complexity_lookup <- read.csv("outputs\\lookup_tables\\Horizontal complexity_vf_lookup.csv")
 invasives_lookup <- read.csv("outputs\\lookup_tables\\Invasive plants % cover_vf_lookup_domin.csv")
 microhabitats_lookup <- read.csv("outputs\\lookup_tables\\Microhabitats_vf_lookup.csv")

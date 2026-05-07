@@ -1,13 +1,9 @@
 project:
-  type: book
-
+  type: website
+  
 website:
-  title: "Woodland Condition Assessment - Expert Opinion"
-  author: "Ewan McHenry, Martin Hügi, Saul Herbert and Christine Reid"
-  date: today
+  title: "Woodland Ecological Condition Assessment"
   search: true
-  date-format: "D MMM, YYYY"
-  downloads: [pdf, epub]
   navbar:
     left:
       - href: index.qmd
@@ -16,10 +12,11 @@ website:
     style: docked
     search: true
     contents:
-    - index.qmd
-    - 002_delphi_r2_instructions.qmd
-    - 001_project background.qmd
-    - 01_general approach.qmd
+      - index.qmd
+      - 002_delphi_r2_instructions.qmd
+      - 001_project background.qmd
+      - 01_general approach.qmd
+
       - section: "Indicators, Value Functions and Weightings"
         contents:
           - 05_ind_tree_age.qmd
@@ -37,16 +34,21 @@ website:
           - 17_horizontal-complexity.qmd
           - 18_anthro-damage.qmd
           - 04_Importance weightings.qmd
-    - 02_methods.qmd
-    - Exploring Old Condition Data.qmd
+
+      - 02_methods.qmd
+      - Exploring Old Condition Data.qmd
+      - test.qmd
     
 number-depth: 0
 
-bibliography: references.bib
 
 format:
   html:
-    theme: cosmo
+    toc: true
+    toc-location: right
+    toc-depth: 5
+    toc-float: true       # Optional: makes the table of contents float on the page
+    theme: sandstone # could go cosmo
     lightbox: true
     code-fold: true       # Enables folding
     code-summary: "Show code"  # Optional: custom label on the fold button
@@ -55,7 +57,6 @@ format:
     reference-location: margin
     anchor-sections: true
     embed-resources: FALSE
-    
 
 editor: visual
 

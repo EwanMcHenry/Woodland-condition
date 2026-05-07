@@ -24,10 +24,12 @@ source("Scripts\\functions_delphi_analysis.R") # also contains directorys for fo
 
 
 ```
+
 ```{r Select Delphi round, echo = F, include = F, eval = T }
 delphi.round <- 1
 config_for_delphi_round(delphi.round)
 ```
+
 ```{r data_extraction_from_excelsheets and curation - preliminary work, echo = F, include = F, eval = F }
 
 # extract from excel sheets ----

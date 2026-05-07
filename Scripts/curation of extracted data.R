@@ -92,8 +92,13 @@ just.one.df$mean_repond_cert_wt <- ave(just.one.df$cert_weight, just.one.df$resp
 # add reverce rank of wieghts by each respondant to just.one.df
 just.one.df <- just.one.df %>% 
   group_by(respondant_name) %>% 
-  mutate(rank_weight = rank(-weight, ties.method = "min")) %>% 
+  mutate(rank_weight = rank(-weight, ties.method = "min"),
+         #add  proportion of all of each respondents weight given to each indicator, and one of weights standardised by respondant
+         weight_share = weight/sum(weight, na.rm = T) * 100,
+         weight_standardised = (weight - mean(weight, na.rm = T))/sd(weight, na.rm = T)) %>%
   ungroup()
+
+
 
 
 #-----------------------------------------------------

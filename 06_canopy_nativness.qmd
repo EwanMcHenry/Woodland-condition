@@ -42,6 +42,7 @@ library(htmltools)
 source("Scripts\\functions_delphi_analysis.R")
 load(paste0(extraction.location,"curated.RData"))
 ```
+
 ```{r vf Canopy Nativness - init, echo = F , results="asis"}
 
 ind.num = 2
@@ -71,7 +72,7 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 
 ```{r vf Tree age size distribution - continuous, echo = F , results="asis"}
 
-continuous_vf_fig()
+continuous_vf_fig(filtered_data)
 
 ```
 

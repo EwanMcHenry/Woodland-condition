@@ -12,7 +12,7 @@ Many respondents provided weighting estimates that were very similar between ind
 
 There were [patterns](#sec-patterns) of disagreement between respondents in round 1, that might be used to inform the second round of deliberation.
 
-```{r libraries_data, echo = F, include = F, eval = T }
+```{r libraries_data, echo = F, include = F, eval = T, cache=FALSE}
 
 # LIBARIES ---------------------------------------------------------------
 # library(readxl)
@@ -30,7 +30,7 @@ library(DT)
 # library(ggiraph)
 # library(cowplot)
 # library(ggnewscale)
-# library(Polychrome)
+# library(Polychrome) 
 
 source("Scripts\\functions_delphi_analysis.R")
 load(paste0(extraction.location,"curated.RData"))
@@ -66,8 +66,10 @@ A lot of respondents did not vary much between indicators, rating them approxima
 
 ```{r raw weights ggiraph, fig.height= 1,echo = F , results="asis", caption = "Expert opnion indicator weights: estimates for all indicators for all respontants, with boxplots showing the median and inter-quartile range for each indicator."}
 
-weightings_box()
-
+weightings_box(
+  just.one.df = just.one.df,
+  respondant_colours = respondant_colours
+)
 
 ```
 
@@ -78,7 +80,10 @@ Here, weights were transformed so that all respondent's varied the same amount[^
 > This helps compare the importance of indicators, while ignoring the different amount of variation between respondents. However, those raw weights are still very important: there may be good reasons why some respondents thought their weightings should vary much more/less than others!
 
 ```{r standardised weights ggiraph, echo = F , results="asis", caption = "Standardised weights: weights given to each indicator by respondents, standardised so that all respondents varied the same amount, with boxplots showing the median and inter-quartile range for each indicator's weight."}
-  # Order the levels of sheet_name by the median of rank_weight
+ 
+
+
+ # Order the levels of sheet_name by the median of rank_weight
 ordered_levels <- just.one.df %>%
   group_by(sheet_name) %>%
   summarise(median_standard_weight = median(weight_standardised, na.rm = TRUE)) %>%

@@ -75,15 +75,18 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 #### Continuous Value function
 
 ```{r vf Tree age size distribution - continuous, echo = F , results="asis"}
-continuous_vf_fig()
-
+continuous_vf_fig(filtered_data)
 ```
 
 #### Categorised value function
 
 ```{r vf Tree age size distribution - categorical, echo = F , results="asis"}
 
-categorised_vf_fig()
+categorised_vf_fig(filtered_data,
+                   ind.num = ind.num,
+                   indicator_name = indicator_name,
+                   ind.axis.title = ind.axis.title
+                   )
 
 ## table
 filtered_data %>%

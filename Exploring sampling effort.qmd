@@ -1,20 +1,6 @@
 ---
 title: "Exploring survey effort"
 author: "Ewan McHenry"
-
-format:
-  html:
-    self-contained: true
-    embed-resources: true
-    theme: sandstone
-    code-fold: true       # Enables folding
-    code-summary: "Show code"  # Optional: custom label on the fold button
-    toc: true              # Optional: adds a table of contents
-    toc-depth: 2
-    toc-float: true       # Optional: makes the table of contents float on the page
-    css: report_styles.css
-lightbox: true
-params:
 ---
 
 ```{r libraries and scripts, warning=F, message=F}
@@ -447,11 +433,11 @@ I present:
 
 -   A plot of the **mean scores** for each zone-sampling effort combination across all simulated iterations, with quantile ranges representing uncertainty, to demonstrate the estimation of the WECA summary scores in different zones and how the uncertainty generally decreases with sampling effort.
 
--   A plot of the **sizes of the quantile ranges**[^exploring-sampling-effort-1], focusing more explicitly on how the amount of uncertainty varies with different sample sizes at different zones and on average (predicted using a GAM).
+-   A plot of the **sizes of the quantile ranges**[^1], focusing more explicitly on how the amount of uncertainty varies with different sample sizes at different zones and on average (predicted using a GAM).
 
 -   A plot of the marginal reduction in the quantile ranges, representing **the value added by each plot**: the amount that quantile ranges are reduced by adding each plot.
 
-[^exploring-sampling-effort-1]: **e.g. a 50% quantile range is the range of the most-central 50% of simulated results.**
+[^1]: **e.g. a 50% quantile range is the range of the most-central 50% of simulated results.**
 
 # Results
 

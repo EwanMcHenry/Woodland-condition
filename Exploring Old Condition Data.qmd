@@ -1,9 +1,13 @@
 ---
 title: "Exploring Old condition data"
+author: "Ewan McHenry and Martin Hügi"
+date: today
 cache: TRUE
 ---
 
-Prior to the WCA project, data was collected WT estate sites, prinicply to inform management decision making at the site or strata scale.
+# Introduction
+
+Prior to the WCA project, data was collected WT estate sites, principally to inform management decision making at the site or strata scale.
 
 -   Primarily survey data acted as a reference note for individual site managers.
 
@@ -17,9 +21,9 @@ With that in mind - and an appropriately large bowl of salt at hand to mask the 
 
 ## Caveat 1: Measurement of indicators was relatively subjective and assessed at zone level
 
-Using the old method, indicator estimation was primarily at the survey-zone (or "strata") level, rather than within sample plots[^exploring-old-condition-data-1], and that estimation was relatively subjective (as required by a large area covered non-systematically). The Sylva/FC method also typically uses zone-average measurements for many of the indicators.
+Using the old method, indicator estimation was primarily at the survey-zone (or "strata") level, rather than within sample plots[^1], and that estimation was relatively subjective (as required by a large area covered non-systematically). The Sylva/FC method also typically uses zone-average measurements for many of the indicators.
 
-[^exploring-old-condition-data-1]: Plots were used, but they were optional and not a structured sample or formal estimation process.
+[^1]: Plots were used, but they were optional and not a structured sample or formal estimation process.
 
 ## Caveat 2: Plots are not a reliable representation of the zone
 
@@ -47,9 +51,9 @@ Estimating indicators at a variable-scale will greatly impact measurements:
 
 -   Variation BETWEEN observations over larger areas is typically less
 
-    -   Measurments at larger scales (e.g. larger strata) lack the resolution to pick up smaller-scale variation, and measurements increasingly drift towards the "global-average"[^exploring-old-condition-data-2].
+    -   Measurments at larger scales (e.g. larger strata) lack the resolution to pick up smaller-scale variation, and measurements increasingly drift towards the "global-average"[^2].
 
-[^exploring-old-condition-data-2]: Known as "regression towards the mean"
+[^2]: Known as "regression towards the mean"
 
 ![Comparing across variably-sized survey areas can be challenging: Observations over larger areas typically capture more variation and record measurments closer to the "global mean" with less variation between them. This is particuarlly obvious in the example here, where one site is split into different survey sizes, but the same effect exists in comparisons between different sites with diffferent survey sizes](images/quadrat%20size%20effect%202026-02-27%2010.41.53.excalidraw.png){width="907"}
 
@@ -57,9 +61,9 @@ Estimating indicators at a variable-scale will greatly impact measurements:
 
 > *We are not aiming to assess the condition of an imagined "average" area of woodland. We are assessing the condition of actual locations, then aggregating those measures to the wider woodland*
 
-Our new WECA approach typically measures and scores[^exploring-old-condition-data-3] indicators at plots, and then averages those [scores]{.underline} across the survey-zone. This difference is important (averaging plot-level indicator value scores, rather than averaging their measurements then scoring that zone-wide average measurement). WECA aims to represent the ecological condition of actual real-life locations within a wood, not the condition of an imagined area of "average" woodland. The thought experiment below illustrates the potential implications of these different approaches for scoring one indicator.
+Our new WECA approach typically measures and scores[^3] indicators at plots, and then averages those [scores]{.underline} across the survey-zone. This difference is important (averaging plot-level indicator value scores, rather than averaging their measurements then scoring that zone-wide average measurement). WECA aims to represent the ecological condition of actual real-life locations within a wood, not the condition of an imagined area of "average" woodland. The thought experiment below illustrates the potential implications of these different approaches for scoring one indicator.
 
-[^exploring-old-condition-data-3]: using a value function
+[^3]: using a value function
 
 ![](images/a%20thought%20experiment%20on%20aggregation%20of%20scores%20vs%20measurements%202025-04-17%2012.02.58.excalidraw.png)
 
@@ -137,12 +141,14 @@ format_indicators <- function(df, indicator_types) {
 }
 
 ```
+
 ```{r constants}
 # Regex patterns to detect plot numbers and overall columns
 plot_regex <- "(\\.|_)?[Pp]lot\\.?([0-9]+)$"  # matches variants like Plot1, plot.2, _plot3
 overall_regex <- "\\.Overall$"                # matches columns ending in .Overall
 
 ```
+
 ```{r cnd_load}
 cnd <- read.csv("Data//old condition data//Condition Assessment Data 2025_01.csv") %>% 
 # format date cols currently like 22/06/2016
@@ -639,7 +645,7 @@ overall_weighting_lookup <- c(
 
 Here follows an initial draft of a method to transcribe the data collected during historic woodland condition assessment to something comparable to the methods used to measure and value the new WECA indicators.
 
-Each indicator's WECA-transcription methodolgy was scored in terms of the reliability (0-5 score, expert opinion of EMcH and MH) at plot and overall level.
+Each indicator's WECA-transcription methodology was scored in terms of the reliability (0-5 score, expert opinion of EMcH and MH) at plot and overall level.
 
 ## General approach
 
@@ -659,6 +665,27 @@ Where a WECA-analogous value was derivable at plot level, we took the mean acros
 Importantly, the WECA value functions were developed for plot level, so that is where they are most appropriate to use. Our approach to scoring "overall"-level DAFOR of features relating to indicators assumed that each DAFOR related to an expected proportion of plot-level presence for that features at a rate of: Absent = 0, R = 0.2, O = 0.4, F = 0.7 and A/D = 1. Note caveats mentioned above, especially [Caveat 4: Scaling up of indicator measurements, not indicator scores].
 
 -   Note this is very much non-ideal because it tells us nothing about the distribution of different features across plots e.g. for plot-level-presence of 0.5 for two different features, there is no way of knowing if 0.5 of plots have both, 0.5 have one and the other 0.5 the other, or anywhere in between those extremes. This is important because when the non-linear value functions are applied to measurements it will produce a very different average value if half of plots have 2 or 0, or if all have 1 of the features.
+
+## Derived indicator summaries
+
+| Indicator | Plot-level comparability (/5) | Overall-level comparability (/5) | Notes |
+|----|----|----|----|
+| Tree Age Structure | 4.5 | 3 | Analogous age class data in WCA. Derived count of four age classes and valued. Issues with overall plot-presence-rate |
+|  |  |  |  |
+|  |  |  |  |
+|  |  |  |  |
+|  |  |  |  |
+|  |  |  |  |
+|  |  |  |  |
+|  |  |  |  |
+|  |  |  |  |
+|  |  |  |  |
+|  |  |  |  |
+|  |  |  |  |
+|  |  |  |  |
+|  |  |  |  |
+
+: WECA-comparison derived indicator descriptions
 
 ## Tree Age Structure
 
@@ -702,7 +729,7 @@ overall$TA_count <- row_sum_na_if_all_na(
 
 ## valuing ---- 
 
-long_plots$WECA_tree_age_score <- approx(
+long_plots$WECA_tree_age_value <- approx(
   x = age_lookup$N_ages,
   y = age_lookup$value,
   xout = long_plots$TA_count
@@ -712,10 +739,10 @@ plot_av_bysurvey_tree_age <- long_plots %>%
   group_by(id) %>%
   summarise(
     plot_av_n_tree_ages = mean(TA_count, na.rm = TRUE),
-    plot_av_tree_age_score = mean(WECA_tree_age_score, na.rm = TRUE)
+    WECA_tree_age_value_plot_av = mean(WECA_tree_age_value, na.rm = TRUE)
   )
 
-overall$WECA_tree_age_score_overall <- approx(
+overall$WECA_tree_age_value_overall <- approx(
   x = age_lookup$N_ages,
   y = age_lookup$value,
   xout = overall$TA_count
@@ -723,17 +750,9 @@ overall$WECA_tree_age_score_overall <- approx(
 
 overall <- overall %>% 
   left_join(plot_av_bysurvey_tree_age, by = "id")                
-# cbind(overall$TA_count, overall$WECA_tree_age_score_overall, overall$plot_av_n_tree_ages, overall$plot_av_tree_age_score)  
+# cbind(overall$TA_count, overall$WECA_tree_age_value_overall, overall$plot_av_n_tree_ages, overall$WECA_tree_age_value_plot_av)  
                                                                 
                                                                   
-weca_faux_indicators <- weca_faux_indicators %>%
-  add_row(
-    indicator = "Age structure",
-    plot_comparibility = 4.5,
-    overall_comparibility = 3,
-    useful_weca_alternative = NA,
-    notes = "Not exactly same age classes. Ovearll scoring a little hacky."
-  )
 
 
 # how happy score
@@ -742,11 +761,11 @@ weca_faux_indicators <- weca_faux_indicators %>%
 
 ```
 
-Here I drew some plots exploring how the average value from plots against the overall value for TA, to see how well they align. 
+Here I drew some plots exploring how the average value from plots against the overall value for TA, to see how well they align.
 
-Generally it looks like plot-level averages have scored higher, and had higher average number of age classes. Its well possible that this might relate to the hack-job we have done trying to estiamte plot-level-presence rates from overall DAFOR... its the best we can do with that data.
+Generally it looks like plot-level averages have scored higher, and had higher average number of age classes. Its well possible that this might relate to the hack-job we have done trying to estimate plot-level-presence rates from overall DAFOR... its the best we can do with that data.
 
-Worryingly it looks like a fair few have 0 overall score and 100 plot-average! 
+Worryingly it looks like a fair few have 0 overall score and 100 plot-average!
 
 ```{r n_tree_ages_plot}
 
@@ -777,13 +796,14 @@ ggMarginal(
   col = "white"
 )
 ```
+
 ```{r age_structure_value_plot_marginal}
-x_mean <- mean(overall$plot_av_tree_age_score, na.rm = TRUE)
-y_mean <- mean(overall$WECA_tree_age_score_overall, na.rm = TRUE)
+x_mean <- mean(overall$WECA_tree_age_value_plot_av, na.rm = TRUE)
+y_mean <- mean(overall$WECA_tree_age_value_overall, na.rm = TRUE)
 
 p <- ggplot(overall, aes(
-  x = plot_av_tree_age_score,
-  y = WECA_tree_age_score_overall
+  x = WECA_tree_age_value_plot_av,
+  y = WECA_tree_age_value_overall
 )) +
   geom_jitter(width = 1, height = 1, alpha = 0.2) +
   geom_abline(slope = 1, intercept = 0,
@@ -809,7 +829,6 @@ p_marg
 
 
 ```
-
 
 ## Canopy nativness
 
@@ -908,7 +927,6 @@ long_plots %>%
   count(canopy_makeup) %>%
   knitr::kable(col.names = c("Canopy makeup", "Frequency"))
 ```
-
 
 ## Vertical structure
 
@@ -1046,10 +1064,11 @@ overall <- overall %>%
 
 ```
 
-This plot explores the lower layers measurement: plot-level average and overall level measurement. 
+This plot explores the lower layers measurement: plot-level average and overall level measurement.
 
-- Notably, there are many 0 measurements at the overall level, this could be an artifact from the curation process, where absence was assumed incorrectly, regardless, it casts some doubt on the reliability of those overall-level measures of this indicator. It might be worth removing those from further analysis (accepting that this will fail to represent those surveys that in truth had no lower canopy layers)  
-- Beyond that, there is a reasonable trend between the two versions of this measure: overall and plot-average (though not strictly 1:1)
+-   Notably, there are many 0 measurements at the overall level, this could be an artifact from the curation process, where absence was assumed incorrectly, regardless, it casts some doubt on the reliability of those overall-level measures of this indicator. It might be worth removing those from further analysis (accepting that this will fail to represent those surveys that in truth had no lower canopy layers)\
+-   Beyond that, there is a reasonable trend between the two versions of this measure: overall and plot-average (though not strictly 1:1)
+
 ```{r verticle_structure_plot}
 x_mean <- mean(overall$plot_av_verticle_structure_N, na.rm = TRUE)
 y_mean <- mean(overall$verticle_structure_N_overall, na.rm = TRUE)
@@ -1079,7 +1098,7 @@ p_marg <- ggMarginal(
 )
 p_marg
 ```
-  
+
 ## Tree and Shrub - Appropriate species
 
 Plot-level comparability: 3
@@ -1181,7 +1200,7 @@ overall_regional_90th_native_sr_trees_shrubs %>%
   knitr::kable(col.names = c("Region", "90th percentile of native tree and shrub SR in overall surveys"))
 ```
 
-Plot of value of tree and shrub species below, comparing mean of plots to overall. 
+Plot of value of tree and shrub species below, comparing mean of plots to overall.
 
 ```{r plot_tree_shrub_sr_value_plot_av_overall}
 
@@ -1438,7 +1457,6 @@ figure_plots$prop_native_sr_trees_shrubs.plotmax_nplot <-   ggplot(overall, aes(
 figure_plots$prop_native_sr_trees_shrubs.plotmax_nplot
 ```
 
-
 ## Invasives
 
 Plot-level comparability: 3.5
@@ -1568,6 +1586,7 @@ long_plots %>%
 ```
 
 Overall
+
 ```{r table_invasives_overall}
 overall %>%
   count(high_threat_invasive) %>%
@@ -1580,7 +1599,6 @@ overall %>%
   knitr::kable(col.names = c("DAFOR other invasives", "Number of overall surveys", "Density"))
   
 ```
-
 
 ## Deadwood
 
@@ -1744,14 +1762,13 @@ print(p2)
 
 ```
 
-
 ## AVTs
 
 Plot-level comparability: NA
 
 Overall-level comparability: 3
 
-WECA records the number of AVTs within 10 m of a 100m long transect from plots, uses that to estimate AVT density at each plot, and subsequently average density across the zone which is then valued using the value function. The WCA data includes DAFOR cover of "Veteran.Pollards.Ancient.Coppice.Stools". 
+WECA records the number of AVTs within 10 m of a 100m long transect from plots, uses that to estimate AVT density at each plot, and subsequently average density across the zone which is then valued using the value function. The WCA data includes DAFOR cover of "Veteran.Pollards.Ancient.Coppice.Stools".
 
 Here, we took the DAFOR of "Veteran.Pollards.Ancient.Coppice.Stools" at overall level and valued it, referring to the value function (D = 100; A = 75; F = 50; O = 25; R = 10; Absent = 0)
 
@@ -1825,7 +1842,6 @@ overall %>%
   knitr::kable(col.names = c("AVT DAFOR", "Number of overall surveys", "Density"))
 
 ```
-
 
 ## Regeneration
 
@@ -1915,16 +1931,11 @@ overall <- overall %>%
 
 ```
 
-There was missing regeneration value for:
-- `r mean(is.na(long_plots$WECA_regen_value_plot))*100` % of plots 
-- `r mean(is.na(overall$WECA_regen_value_overall))*100` % of survey overall
-- `r mean(is.na(overall$WECA_regen_value_plot_av))*100` % of survey plot-averages
+There was missing regeneration value for: - `r mean(is.na(long_plots$WECA_regen_value_plot))*100` % of plots - `r mean(is.na(overall$WECA_regen_value_overall))*100` % of survey overall - `r mean(is.na(overall$WECA_regen_value_plot_av))*100` % of survey plot-averages
 
 ### Plot of regeneration score, comparing mean of plots to overall.
 
-Generally, the plot-average regeneration score is higher than the overall score
-- probably partly due to the plot-rate-presence calculation.
-- The non-representative nature of plots likely to also play a role.
+Generally, the plot-average regeneration score is higher than the overall score - probably partly due to the plot-rate-presence calculation. - The non-representative nature of plots likely to also play a role.
 
 The large number of 0 Overall score (particularly where plot-average is high) is worrying, these data may be best removed from further analysis.
 
@@ -1958,8 +1969,7 @@ figure_plots$regeneration_score_plot_av_overall
   
 ```
 
-Plot of 
-               
+Plot of
 
 ## Herbivore impact
 
@@ -1967,11 +1977,11 @@ Plot-level comparability: 1.5
 
 Overall-level comparability: 1
 
-The WECA estimates herbivory level using a method akin to an ultra-lite Woodland Herbivore Impact Assessment[^exploring-old-condition-data-4]. The WCA gives a DAFOR for evidence of deer and "other animal" damage. 
+The WECA estimates herbivory level using a method akin to an ultra-lite Woodland Herbivore Impact Assessment[^4]. The WCA gives a DAFOR for evidence of deer and "other animal" damage.
+
+[^4]: <https://www.forestry.gov.scot/publications/woodland-herbivore-impact-assessment-method-user-guide>
 
 We made not attempt to value these and simply reported the max animal damage DAFOR.
-
-[^exploring-old-condition-data-4]: <https://www.forestry.gov.scot/publications/woodland-herbivore-impact-assessment-method-user-guide>
 
 ```{r herbivory}
 ## 7.9 Herbivore impact ------
@@ -2007,9 +2017,7 @@ long_plots$herbivore_max <- pmax(
 
 ```
 
-There was missing herbivory value for:
-- `r mean(is.na(long_plots$herbivore_max))*100` % of plots 
-- `r mean(is.na(overall$herbivore_max))*100` % of survey overall
+There was missing herbivory value for: - `r mean(is.na(long_plots$herbivore_max))*100` % of plots - `r mean(is.na(overall$herbivore_max))*100` % of survey overall
 
 Frequency table - max herbivore damage DAFOR at overall level.
 
@@ -2030,7 +2038,6 @@ long_plots %>%
   knitr::kable(col.names = c("Max herbivore damage DAFOR",
                                  "Number of plots", "Density"))
 ```
-
 
 ## Tree health
 
@@ -2096,7 +2103,6 @@ overall <- overall %>%
 
 ```
 
-
 Plot of tree health value, comparing mean of plots to overall.
 
 ```{r plot_tree_health_score_plot_av_overall}
@@ -2151,14 +2157,11 @@ Plot-level comparability: 0
 
 Overall-level comparability: 1
 
-WECA assesses top height every 10m along a 100 m transect from plots and values the number of different top height classes recorded. The WCA has no real comparable data, accepting that it does report the percentage cover of tree canopy, shrub canopy, semi natural open space, rides and temporary open space. 
+WECA assesses top height every 10m along a 100 m transect from plots and values the number of different top height classes recorded. The WCA has no real comparable data, accepting that it does report the percentage cover of tree canopy, shrub canopy, semi natural open space, rides and temporary open space.
 
 No attempt was made to value these.
 
-We calculated a diversity score from the percentage covers of:
-- tree canopy
-- shrub canopy
-- semi natural open space + rides + temporary open space + water
+We calculated a diversity score from the percentage covers of: - tree canopy - shrub canopy - semi natural open space + rides + temporary open space + water
 
 This metric should give some indication of relative horizontal complexity, but is not directly relatable to WECA
 
@@ -2229,6 +2232,7 @@ ggplot(overall, aes(x = horizontal_complexity_alt_shannon)) +
   
   theme_minimal()
 ```
+
 ## Human impact
 
 Plot-level comparability: 2
@@ -2322,7 +2326,7 @@ figure_plots$human_impact_score_plot_av_overall <- ggMarginal(
   col = "white"
 )
 figure_plots$human_impact_score_plot_av_overall
-``` 
+```
 
 Frequency table of max human impact DAFOR at overall level.
 

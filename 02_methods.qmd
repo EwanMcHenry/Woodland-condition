@@ -68,13 +68,13 @@ Toggle details of responses requiring scaling - value functions
 
 </p>
 
-::: {#Scaling_info_vf .collapse}
+:::: {#Scaling_info_vf .collapse}
 ::: {.card .card-body}
 **Value functions** scaled for:
 
 `r paste0("<br>", which.scaled$vf)`
 :::
-:::
+::::
 
 <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#Scaling_info_wts" aria-expanded="false" aria-controls="collapseExample">
 
@@ -84,13 +84,13 @@ Toggle details of responses requiring scaling - weights
 
 </p>
 
-::: {#Scaling_info_wts .collapse}
+:::: {#Scaling_info_wts .collapse}
 ::: {.card .card-body}
 **Weights** were scaled for:
 
 `r paste0("<br>- ", which.scaled$wt)`
 :::
-:::
+::::
 
 ### Reviewing results between rounds
 

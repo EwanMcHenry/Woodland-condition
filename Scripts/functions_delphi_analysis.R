@@ -7,6 +7,9 @@ library(dplyr)
 library(tidyr)
 library(ggrepel)
 
+delphi.round <- 2
+extraction.location <- paste0("Data\\Delphi round ", delphi.round, "\\")
+
 ## Configure for Delphi round ----
 config_for_delphi_round <- function(delphi.round = delphi.round) {
   #' Sets the paths for the specified Delphi round by creating the 
@@ -289,7 +292,8 @@ continuous_vf_fig <- function(
     indicator_name = indicator_name,
     x.lab = ind.axis.title,
     gam.col = line.col,
-    filtered_data
+    filtered_data = filtered_data
+    
   )
   
   ggsave(
@@ -311,76 +315,93 @@ continuous_vf_fig <- function(
     layout(yaxis = list(range = c(-5, 105)))
 }
 ## FUNCTION - PLOT RESPONDANTS' continuous INDICATOR VFs ------------
-ggplot_gam_resp_vf <- function(indicator_name, gam.col = "black", x.lab = ind.matcher.df$ind.axis.title[i], 
-                               pal = respondant_colours,
-                               filtered_data = filtered_data){
-
-  # PREDICT TREND ----
-  filtered_data$point.influence <- 1/(table(filtered_data$respondant_name)[as.factor(filtered_data$respondant_name)]) %>% 
-    as.numeric()
-  gam_model <- mgcv::gam(value.dec ~ s(measure, k = 4),
-                   data = filtered_data, family = binomial(), weights = point.influence)
-  # Create dummy data for prediction
-  dummy_data <- data.frame(measure = seq(min(filtered_data$measure), max(filtered_data$measure), length.out = 50))
-  # Predict using the GAM model
-  dummy_data$predicted_value <- predict(gam_model, newdata = dummy_data, type = "response")*100
-  # fix gam predictions to 0-100
-  dummy_data$predicted_value <- (dummy_data$predicted_value - min(dummy_data$predicted_value)) * 100 / (max(dummy_data$predicted_value) - min(dummy_data$predicted_value))
+ggplot_gam_resp_vf <- function(
+    indicator_name,
+    filtered_data,
+    gam.col = "black",
+    x.lab,
+    pal = respondant_colours
+){
   
-  # PLOT SPEC, LINES AND TREND ----
+  # PREDICT TREND ----
+  filtered_data$point.influence <- 1 / table(filtered_data$respondant_name)[as.factor(filtered_data$respondant_name)] %>%
+    as.numeric()
+  
+  gam_model <- mgcv::gam(
+    value.dec ~ s(measure, k = 4),
+    data = filtered_data,
+    family = binomial(),
+    weights = point.influence
+  )
+  
+  dummy_data <- data.frame(
+    measure = seq(min(filtered_data$measure),
+                  max(filtered_data$measure),
+                  length.out = 50)
+  )
+  
+  dummy_data$predicted_value <- predict(
+    gam_model,
+    newdata = dummy_data,
+    type = "response"
+  ) * 100
+  
+  dummy_data$predicted_value <-
+    (dummy_data$predicted_value - min(dummy_data$predicted_value)) * 100 /
+    (max(dummy_data$predicted_value) - min(dummy_data$predicted_value))
+  
   plot <- ggplot() +
-    geom_line(data = dummy_data, size = 2, aes(y = predicted_value, x = measure), colour = gam.col) + # gam prediction
-    geom_line(data = filtered_data, 
-              aes(x = measure, y = value, color = respondant_name,
-                  text = map(
-                    paste0("<b>", `respondant_name`, "</b>",
-                           "<br><b>Indicator:</b> ", measure, ", <b>Value:</b> ", value,"<br>",
-                           "<br><b>Certainty:</b> ", cert_val_funct, "<br>",
-                           "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"#,
-                           #"<b>Sentance: </b>", vf.sentance
-                    ),
-                    HTML),
-                  alpha = cert_val_funct),
-              size = 0.5) +
-    geom_point(data = filtered_data, 
-               size = 2, shape = 16,
-               aes(x = measure, y = value, color = respondant_name,
-                   text = map(
-                     paste0("<b>", `respondant_name`, "</b>",
-                            "<br><b>Indicator:</b> ", measure, ", <b>Value:</b> ", value,"<br>",
-                            "<br><b>Certainty:</b> ", cert_val_funct, "<br>",
-                            "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"#,
-                            #        "<b>Sentance: </b>", vf.sentance
-                     ),
-                     HTML),
-                   alpha = cert_val_funct)) +
+    geom_line(
+      data = dummy_data,
+      aes(y = predicted_value, x = measure),
+      size = 2,
+      colour = gam.col
+    ) +
+    geom_line(
+      data = filtered_data,
+      aes(x = measure, y = value, color = respondant_name),
+      size = 0.5
+    ) +
+    geom_point(
+      data = filtered_data,
+      aes(x = measure, y = value, color = respondant_name),
+      size = 2
+    ) +
     scale_colour_manual(values = pal) +
-    labs(title = indicator_name, x = x.lab, y = "Value Score",
-         colour = "Respondant") +
-    guides(alpha = F) +
-    theme_pubr()+
-    theme(plot.title = element_text(size = 12),
-          plot.subtitle = element_text(size = 12),
-          legend.title = element_text(size = 12 , face = "bold"),
-          legend.text =  element_text(size = 9),
-          axis.text.x = element_text(size = 12),
-          axis.text.y = element_text(size = 12),
-          axis.title =  element_text(size = 12),
-          legend.position = "right",
-          plot.margin = margin(0.5, 1, 0.5, 1, "cm")
-    ) 
+    labs(
+      title = indicator_name,
+      x = x.lab,
+      y = "Value Score",
+      colour = "Respondent"
+    ) +
+    theme_pubr()
   
   plot
 }
 
+
 ## FUNCTION - PLOT RESPONDANTS' CATEGORICAL INDICATOR VFs ----
-ggplot_resp_cat_vf <- function(indicator_name, x.lab = ind.matcher.df$ind.axis.title[i], data = vf_cat_data, pal = respondant_colours){
+ggplot_resp_cat_vf <- function(indicator_name, 
+                               x.lab = ind.matcher.df$ind.axis.title[i], 
+                               data = vf_cat_data, 
+                               pal = respondant_colours){
   # vf_cat_data is filtered_data, formatted to include categories - cat_measure
+  
+  
+  data$tooltip <- paste0(
+    "<b>", data$respondant_name, "</b>",
+    "<br><b>Measure:</b> ", data$cat_measure,
+    "<br><b>Value:</b> ", data$value,
+    "<br><b>Certainty:</b> ", data$cert_val_funct,
+    "<br><b>Weight:</b> ", data$weight,
+    " (certainty ", data$cert_weight, ")"
+  )
   
   # PLOT SPEC, LINES AND TREND ----
   plot <- ggplot() +
     geom_boxplot(data = data, 
-                 aes(x = cat_measure, y = value), text = NULL, outlier.shape = NA) +
+                 aes(x = cat_measure, 
+                     y = value), outlier.shape = NA) +
     stat_summary(data = data, aes(x = cat_measure, y = value),
                  geom = "point", fun = mean,
                  color = "red", shape = 3, size = 5,
@@ -389,14 +410,12 @@ ggplot_resp_cat_vf <- function(indicator_name, x.lab = ind.matcher.df$ind.axis.t
     geom_jitter(data = data,
                 size = 2, shape = 16,
                 position=position_jitter(width=.1, height=0),
-                aes(x = cat_measure, y = value, color = respondant_name,
-                    text = map(
-                      paste0("<b>", `respondant_name`, "</b>",
-                             "<br><b>Measure:</b> ", cat_measure, ", <b>Value:</b> ", value,"<br>",
-                             "<br><b>Certainty:</b> ", cert_val_funct, "<br>",
-                             "<b>Weight: </b>", weight, " (certainty ", cert_weight,")<br>"),
-                      HTML),
-                    alpha = cert_val_funct)) +
+                aes(
+                  x = cat_measure,
+                  y = value,
+                  color = respondant_name,
+                  alpha = as.numeric(cert_val_funct)
+                ))+
     scale_colour_manual(values = pal) +
     labs(title = indicator_name, x = x.lab, y = "Value Score",
          colour = "Respondant") +
@@ -493,7 +512,7 @@ ylim[2] <- max(weights_filtered_data[,weight_variable], na.rm = T)
                                 alpha = cert_weight), 
                             size = 4, shape = 16,
                             position=position_jitter(width=.1, height=0),
-                            show_guide = FALSE) +
+                            show.legend = FALSE) +
     scale_colour_manual(values = pal, name = "Respondant") +
     scale_y_continuous(limits = ylim) +
     labs(y = weight_variable,
@@ -583,10 +602,15 @@ ylim[2] <- max(weights_filtered_data[,weight_variable], na.rm = T)
 }
 
 ## FUNCTION - RUN PLOTTING OF CATEGORISED VF ----
-categorised_vf_fig <- function(){
+categorised_vf_fig <- function(filtered_data, 
+                               ind.num, 
+                               indicator_name, 
+                               ind.axis.title,
+                               plotly=F){
   # categorical plot
-  vf_cat_data = filtered_data %>% 
-    mutate(cat_measure = as.factor(measure))
+  vf_cat_data <- filtered_data %>% 
+    mutate(cat_measure = factor(measure))
+  #bookmark
   plot <- ggplot_resp_cat_vf(indicator_name = indicator_name,
                              x.lab = ind.axis.title,
                              data = vf_cat_data )
@@ -597,15 +621,14 @@ categorised_vf_fig <- function(){
          plot = plot,
          width = 300, height = 150, units = "mm")
   
-  ##ggplotly
-  plotly_p <- ggplotly(plot, tooltip = "text", dynamicTicks = F) %>% 
-    config(displayModeBar = F) %>% 
-    layout(yaxis = list(range = c(-5, 105)))
-  
-  # remove outliers from plotly
-  # for(i in 1:length(plotly_p)){
-  # plotly_p$x$data[[i]]$marker$opacity = 0 
-  # }
-  
-  plotly_p
+  if(!plotly){
+    return(plot)
+  } 
+  if(plotly){
+    ggplot <- ggplotly(plot, tooltip = "text", dynamicTicks = FALSE) %>% 
+             config(displayModeBar = FALSE) %>% 
+             layout(yaxis = list(range = c(-5, 105)))
+    return(ggplot)
+  }
+
 }

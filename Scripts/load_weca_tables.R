@@ -6,8 +6,7 @@ tree_spp_lookup <- read.csv("outputs\\lookup_tables\\N tree & shrub spp._vf_look
   rename(per_spp = Proportion.of.appropriate.Tree...Shrub.Species) 
 antropogenic_damage_lookup <- read.csv("outputs\\lookup_tables\\Anthropogenic damage_vf_lookup_domin.csv")
 deadwood_lookup <- read.csv("outputs\\lookup_tables\\Deadwood_vf_lookup.csv")
-ground_flora_lookup <- read.csv("outputs\\lookup_tables\\Ground flora_vf_lookup - EMcH MU edit01_2026-05-06_integerised.csv") %>% 
-  rename(per_spp = X..Appropraite.ground.flora.species)
+ground_flora_lookup <- read.csv("outputs\\lookup_tables\\Ground flora_vf_lookup - EMcH MU edit01_2026-05-06_integerised.csv") 
 Horizontal_complexity_lookup <- read.csv("outputs\\lookup_tables\\Horizontal complexity_vf_lookup.csv")
 invasives_lookup <- read.csv("outputs\\lookup_tables\\Invasive plants % cover_vf_lookup_domin.csv")
 microhabitats_lookup <- read.csv("outputs\\lookup_tables\\Microhabitats_vf_lookup.csv")
@@ -37,3 +36,9 @@ weights_lookup <- read.csv("outputs\\lookup_tables\\weights_lookup.csv")
 domin_transformer <- read.csv("Data\\domin transformer.csv") %>% 
   mutate(domin = as.character(antropogenic_damage_lookup$domin))
 domin_transformer$mid = domin_transformer$min + (domin_transformer$max - domin_transformer$min) / 2
+
+# appropraite species and microhabtiats lists
+approp_ground_flora_spp <- read.csv("Data\\Appropriate_groundflora_spp_list.csv") %>% 
+  rename(species = species.name)
+approp_tree_shrub_spp <- read.csv("Data\\Appropriate_tree_spp_list.csv") %>% 
+  rename(species = species.name)

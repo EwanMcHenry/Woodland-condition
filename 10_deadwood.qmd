@@ -67,7 +67,7 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 
 ```{r vf - continuous, echo = F , results="asis"}
 
-continuous_vf_fig()
+continuous_vf_fig(filtered_data)
 
 ```
 

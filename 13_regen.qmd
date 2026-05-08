@@ -78,7 +78,7 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 
 ```{r vf - continuous, echo = F , results="asis"}
 
-continuous_vf_fig()
+continuous_vf_fig(filtered_data)
 
 ```
 
@@ -86,8 +86,10 @@ continuous_vf_fig()
 
 ```{r vf - categorical, echo = F , results="asis"}
 
-categorised_vf_fig()
-
+categorised_vf_fig(filtered_data,
+                   ind.num = ind.num,
+                   indicator_name = indicator_name,
+                   ind.axis.title = ind.axis.title)
 ## table
 filtered_data %>%
   group_by(measure) %>%

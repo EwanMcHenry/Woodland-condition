@@ -7,6 +7,7 @@ caption, .table-caption {
 }
 </style>
 ```
+
 ```{r libraries_data, echo = F, include = F, eval = T }
 
 # LIBARIES ---------------------------------------------------------------
@@ -28,6 +29,8 @@ library(kableExtra)
 # library(ggnewscale)
 # library(Polychrome)
 source("Scripts\\functions_delphi_analysis.R")
+source("Scripts\\load_weca_tables.R")
+
 load(paste0(extraction.location,"curated.RData"))
 ```
 
@@ -87,39 +90,111 @@ These lists were intended to support the establishment of locally appropriate an
 #| tbl-cap: "Numbers of appropriate species for different habitat types and structures. **Interactive tooltip**: hover over number of species to show list. Local/additional species may be appropriate, depending on region and site."
 #| label: tbl-approp_spp
 
-# Extract relevant columns for the table
-table_data <- data.frame(habitat = map(tree_spp_list, "habitat") %>% unlist(),
-                         type =  map(tree_spp_list, "type") %>% unlist(),
-                         structure = map(tree_spp_list, "structure") %>% unlist()
-                         )
-for (i in 1:dim(table_data)[1]){
-  table_data$tree_spp_length[i] <- tree_spp_list[[i]]$tree_spp_length
-  table_data$local_tree_spp_length[i] <- tree_spp_list[[i]]$local_tree_spp_length
-  table_data$plant_spp_length[i] <- tree_spp_list[[i]]$plant_spp_length
-  table_data$moss_spp_length[i] <- tree_spp_list[[i]]$moss_spp_length
-  table_data$lichen_spp_length[i] <- tree_spp_list[[i]]$lichen_spp_length
+
+table_data <- approp_tree_shrub_spp %>%
   
-  table_data$tree_spp[i] <- paste(tree_spp_list[[i]]$tree_spp, collapse = ", ")
-  table_data$local_tree_spp[i] <- paste(tree_spp_list[[i]]$local_tree_spp, collapse = ", ")
-  table_data$plant_spp[i] <- paste(tree_spp_list[[i]]$plant_spp, collapse = ", ")
-  table_data$moss_spp[i] <- paste(tree_spp_list[[i]]$moss_spp, collapse = ", ")
-  table_data$lichen_spp[i] <- paste(tree_spp_list[[i]]$lichen_spp, collapse = ", ")
-}
+  # convert habitat columns into:
+  #   habitat_type
+  #   appropriate (TRUE/FALSE)
+  pivot_longer(
+    cols = c(
+      acidic_upland,
+      base_rich_upland,
+      wet_upland,
+      acidic_lowland,
+      base_rich_lowland,
+      wet_lowland
+    ),
+    names_to = "habitat_type",
+    values_to = "appropriate"
+  ) %>%
+  
+  # keep only species marked as appropriate
+  filter(appropriate) %>%
+  
+  # split habitat_type into:
+  #   soil_hydrology
+  #   habitat
+  #
+  # e.g.
+  # acidic_upland ->
+  #   soil_hydrology = acidic
+  #   habitat = upland
+  separate(
+    habitat_type,
+    into = c("soil_hydrology", "habitat"),
+    sep = "_(?=[^_]+$)"
+  ) %>%
+  
+    # convert names to sentence case
+  mutate(
+    habitat = habitat %>%
+      str_replace_all("_", " ") %>%
+      str_to_sentence(),
+    
+    soil_hydrology = soil_hydrology %>%
+      str_replace_all("_", " ") %>%
+      str_to_sentence()
+  ) %>%
+  
+  # group by habitat combination
+  group_by(habitat, soil_hydrology) %>%
+  
+  # calculate:
+  #   n_species = number of appropriate species
+  #   species_list = species names for tooltip
+  summarise(
+    n_species = n(),
+    
+    species_list = paste0(
+      species,
+      collapse = "\n"
+      ),
+    
+    .groups = "drop"
+  )
 
-# Create a table with kableExtra for interactivity
+
+#----------------------------------------------------------
+# Create interactive HTML table
+#----------------------------------------------------------
+
 table_data %>%
-  mutate(tree_spp_length = text_spec(tree_spp_length, "html", tooltip = tree_spp),
-         local_tree_spp_length = text_spec(local_tree_spp_length, "html", tooltip = local_tree_spp)) %>% 
-  select(habitat, type, structure, tree_spp_length, local_tree_spp_length) %>%
-  rename("Landscape" = habitat,
-         "Soil/hydrology" = type,
-         "Structure" = structure,
-         "Core native tree species" = tree_spp_length,
-         "Local/additional tree species" = local_tree_spp_length
-         ) %>% 
-  kable("html", escape=F) %>% 
-  kable_styling("striped", full_width = FALSE)
-
+  
+  # make species count show tooltip on hover
+  mutate(
+    n_species = text_spec(
+      n_species,
+      "html",
+      tooltip = species_list
+    )
+  ) %>%
+  
+  # select display columns
+  select(
+    habitat,
+    soil_hydrology,
+    n_species
+  ) %>%
+  
+  # rename for display
+  rename(
+    "Habitat type" = habitat,
+    "Soil/hydrology" = soil_hydrology,
+    "N appropriate species" = n_species
+  ) %>%
+  
+  # create HTML table
+  kable(
+    "html",
+    escape = FALSE
+  ) %>%
+  
+  # style table
+  kable_styling(
+    "striped",
+    full_width = FALSE
+  )
 
 ```
 
@@ -142,7 +217,7 @@ filtered_data <- df[df$indicator_name == indicator_name, ] %>%
 #### Continuous Value function
 
 ```{r vf - continuous, echo = F , results="asis"}
-continuous_vf_fig()
+continuous_vf_fig(filtered_data)
 
 ```
 

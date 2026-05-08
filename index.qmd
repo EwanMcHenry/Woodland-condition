@@ -96,6 +96,12 @@ The proposed framework takes inspiration from many existing projects internation
 3.  An exploration of the [importance weightings](04_Importance%20weightings.qmd) for each indicator
 ```
 
-6.  [An exploration of data from the previous Woodland Condition Assessment on the Woodland Trust Estate](Exploring Old Condition Data.qmd)
+6.  [An exploration of data from the previous Woodland Condition Assessment on the Woodland Trust Estate](Exploring%20Old%20Condition%20Data.qmd)
 
-    -   
+    -   Includes attempts to build scores comparable with WECA
+
+# Code map
+
+Hopefully this figure helps understand how the different scripts work together... for those with a geeky interest. I made it mainly for me to keep track of things.
+
+![](images/Condition code structure 2024-11-11 16.43.03.excalidraw.png)

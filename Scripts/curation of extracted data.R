@@ -98,6 +98,21 @@ just.one.df <- just.one.df %>%
          weight_standardised = (weight - mean(weight, na.rm = T))/sd(weight, na.rm = T)) %>%
   ungroup()
 
+# add weight tooltip text
+just.one.df$weight_tooltip <- paste0(
+  "<b>", just.one.df$respondant_name, "</b><br>",
+  "<b>Weight:</b> ", just.one.df$weight,
+  " (certainty ", just.one.df$cert_weight, ")"
+)
+
+# formatting
+just.one.df <- just.one.df %>%
+  ungroup() %>%
+  mutate(
+    sheet_name = as.character(sheet_name),
+    respondant_name = as.character(respondant_name),
+    weight = as.numeric(weight)
+  )
 
 
 

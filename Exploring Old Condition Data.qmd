@@ -51,7 +51,7 @@ Estimating indicators at a variable-scale will greatly impact measurements:
 
 -   Variation BETWEEN observations over larger areas is typically less
 
-    -   Measurments at larger scales (e.g. larger strata) lack the resolution to pick up smaller-scale variation, and measurements increasingly drift towards the "global-average"[^2].
+    -   Measurements at larger scales (e.g. larger strata) lack the resolution to pick up smaller-scale variation, and measurements increasingly drift towards the "global-average"[^2].
 
 [^2]: Known as "regression towards the mean"
 

@@ -9,11 +9,13 @@ author: "Ewan McHenry"
 library(tidyverse)
 library(ggplot2)
 library(ggpubr)
-source("Scripts\\load_weca_tables.R")
 library(ggnewscale)
 library(cowplot)
 library(mgcv)
 library(scales)
+
+source("Scripts\\load_weca_tables.R")
+
 
 
 ```
@@ -34,7 +36,11 @@ set.seed(2442)
 
 # load all the zone summary data in \outputs\survey data summaries
 # list all summary files
-summary_files <- list.files("outputs/survey data summaries", full.names = TRUE)
+summary_files <- list.files("outputs/survey data summaries", full.names = TRUE) %>% 
+# remove "outputs/survey data summaries/all_trial_zone_survey_data.RData"
+  .[!grepl("all_trial_zone_survey_data.RData", .)]
+
+
 # load all summary files into a list
 
 summary_df <- data.frame(
@@ -58,7 +64,7 @@ for (i in 1:length(summary_files)) {
   ## extract info for each indicator ----
   ### Tree age distribution ----
   ageclass <- data.frame(
-    plot_type = rep(all_summaries$age_summary$plot_type, 2),
+    # plot_type = rep(all_summaries$age_summary$plot_type, 2),
     plot_number = rep(all_summaries$age_summary$plot, 2),
     indicator_name = "Tree age distribution",
     var_type = c(rep("N", nrow(all_summaries$age_summary)),
@@ -68,31 +74,31 @@ for (i in 1:length(summary_files)) {
     )
   ### N tree & shrub spp. ----
   treespp <- data.frame(
-    plot_type = rep(all_summaries$tree_spp_summary$plot_type, 4),
-    plot_number = rep(all_summaries$tree_spp_summary$plot, 4),
+    # plot_type = rep(all_summaries$tree_spp_summary$plot_type, 4),
+    plot_number = rep(all_summaries$tree_spp_summary$combined_table$plot, 4),
     indicator_name = "N tree & shrub spp.",
-    var_type = c(rep("N", nrow(all_summaries$tree_spp_summary)),
-                 rep("N appropriate species", nrow(all_summaries$tree_spp_summary)),
-                 rep("Per of appropriate species", nrow(all_summaries$tree_spp_summary)),
-                 rep("Value", nrow(all_summaries$tree_spp_summary))),
-    var = c(all_summaries$tree_spp_summary$spp_n,
-            all_summaries$tree_spp_summary$N_appropriate_species,
-            all_summaries$tree_spp_summary$per_of_appropriate_species,
-            all_summaries$tree_spp_summary$value)
+    var_type = c(rep("N", nrow(all_summaries$tree_spp_summary$combined_table)),
+                 rep("N appropriate species", nrow(all_summaries$tree_spp_summary$combined_table)),
+                 rep("Per of appropriate species", nrow(all_summaries$tree_spp_summary$combined_table)),
+                 rep("Value", nrow(all_summaries$tree_spp_summary$combined_table))),
+    var = c(all_summaries$tree_spp_summary$combined_table$spp_n,
+            all_summaries$tree_spp_summary$combined_table$N_appropriate_species,
+            all_summaries$tree_spp_summary$combined_table$per_of_appropriate_species,
+            all_summaries$tree_spp_summary$combined_table$value)
   )
   ### regeneration classes ----
   regen <- data.frame(
-    plot_type = rep(all_summaries$regen_summary$plot_type, 2),
-    plot_number = rep(all_summaries$regen_summary$plot, 2),
+    # plot_type = rep(all_summaries$regen_summary$plot_type[all_summaries$regen_summary$plot_type== "main"], 2),
+    plot_number = rep(all_summaries$regen_summary$plot[all_summaries$regen_summary$plot_type== "main"], 2),
     indicator_name = "Regen",
-    var_type = c(rep("N", nrow(all_summaries$regen_summary)),
-                 rep("Value", nrow(all_summaries$regen_summary))),
-    var = c(all_summaries$regen_summary$regen_classes_n,
-            all_summaries$regen_summary$value)
+    var_type = c(rep("N", sum(all_summaries$regen_summary$plot_type== "main")),
+                 rep("Value", sum(all_summaries$regen_summary$plot_type== "main"))),
+    var = c(all_summaries$regen_summary$regen_classes_n[all_summaries$regen_summary$plot_type== "main"],
+            all_summaries$regen_summary$value[all_summaries$regen_summary$plot_type== "main"])
   )
   ### Native canopy percentage  ----
   nativeness <- data.frame(
-    plot_type = "main", 
+    # plot_type = "main", 
     plot_number = all_summaries$native_canopy_summary$plot,
     indicator_name = "Native canopy percentage ",
     var_type = rep(c("Per", "Value"), each = nrow(all_summaries$native_canopy_summary)),
@@ -101,7 +107,7 @@ for (i in 1:length(summary_files)) {
   )
   ### vertical structure ----
   vertical_structure <- data.frame(
-    plot_type = "main", 
+    # plot_type = "main", 
     plot_number = rep(all_summaries$vertical_structure_summary$plot, 2),
     indicator_name = "Vertical structure",
     var_type = rep(c("N", "Value"), each = nrow(all_summaries$vertical_structure_summary)),
@@ -110,7 +116,7 @@ for (i in 1:length(summary_files)) {
   )
   ### Invasive plants % cover ----
   invasive <- data.frame(
-    plot_type = "main",
+    # plot_type = "main",
     plot_number = rep(all_summaries$invasives_summary$plot, 3),
     indicator_name = "Invasive plants % cover",
     var_type = rep(c("Cover", "High threat", "Value"), each = nrow(all_summaries$invasives_summary)),
@@ -119,7 +125,7 @@ for (i in 1:length(summary_files)) {
             all_summaries$invasives_summary$value) )
   ### microhabitats ----
   microhabitats <- data.frame(
-    plot_type = "main",
+    # plot_type = "main",
     plot_number = rep(all_summaries$microhabitats_summary$plot, 3),
     indicator_name = "Microhabitats",
     var_type = rep(c("N", "Per", "Value"), each = nrow(all_summaries$microhabitats_summary)),
@@ -129,7 +135,7 @@ for (i in 1:length(summary_files)) {
   )
   ### horizontal complexity ----
   horizontal_topheight <- data.frame(
-    plot_type = "main",
+    # plot_type = "main",
     plot_number = rep(all_summaries$horizontal_complexity_summary$plot, 2),
     indicator_name = "Horizontal complexity",
     var_type = rep(c("N", "Value"), each = nrow(all_summaries$horizontal_complexity_summary)),
@@ -137,7 +143,7 @@ for (i in 1:length(summary_files)) {
             all_summaries$horizontal_complexity_summary$value))
   ### veteran trees ----
   veteran_trees <- data.frame(
-    plot_type = "main",
+    # plot_type = "main",
     plot_number = rep(all_summaries$veteran_trees_summary$plot, 2),
     indicator_name = "Veteran trees",
     var_type = rep(c("N", "Density"), each = nrow(all_summaries$veteran_trees_summary)),
@@ -146,7 +152,7 @@ for (i in 1:length(summary_files)) {
             ))
   ### deadwood ----
   deadwood <- data.frame(
-    plot_type = "main",
+    # plot_type = "main",
     plot_number = rep(all_summaries$dead_decaying_wood_summary$plot, 3),
     indicator_name = "Deadwood",
     var_type = rep(c("N", "Average N per plot quarter", "Value"), each = nrow(all_summaries$dead_decaying_wood_summary)),
@@ -155,7 +161,7 @@ for (i in 1:length(summary_files)) {
             all_summaries$dead_decaying_wood_summary$value))
   ### Herbivore damage ----
   herbivore_impact <- data.frame(
-    plot_type = "main",
+    # plot_type = "main",
     plot_number = rep(all_summaries$herbivore_impact_summary$plot, 2),
     indicator_name = "Herbivore damage",
     var_type = rep(c("Impact", "Value"), each = nrow(all_summaries$herbivore_impact_summary)),
@@ -163,7 +169,7 @@ for (i in 1:length(summary_files)) {
             all_summaries$herbivore_impact_summary$value))
   ### tree health ----
   tree_health <- data.frame(
-    plot_type = "main",
+    # plot_type = "main",
     plot_number = rep(all_summaries$tree_health_summary$plot, 2),
     indicator_name = "Tree health",
     var_type = rep(c("Per", "Value"), each = nrow(all_summaries$tree_health_summary)),
@@ -171,7 +177,7 @@ for (i in 1:length(summary_files)) {
             all_summaries$tree_health_summary$value))
   ### anthropogenic damage ----
   anthropogenic_damage <- data.frame(
-    plot_type = "main",
+    # plot_type = "main",
     plot_number = rep(all_summaries$anthropogenic_damage_summary$plot, 2),
     indicator_name = "Anthropogenic damage",
     var_type = rep(c("Cover", "Value"), each = nrow(all_summaries$anthropogenic_damage_summary)),
@@ -179,7 +185,7 @@ for (i in 1:length(summary_files)) {
             all_summaries$anthropogenic_damage_summary$value))
   ### ground flora ----
   ground_flora <- data.frame(
-    plot_type = "main",
+    # plot_type = "main",
     plot_number = rep(all_summaries$ground_flora_summary$plot, 4),
     indicator_name = "Ground flora",
     var_type = rep(c("N", "N appropriate species", "Per", "Value"), each = nrow(all_summaries$ground_flora_summary)),
@@ -208,7 +214,7 @@ for (i in 1:length(summary_files)) {
     mutate(site_name = all_summaries$site_info$wood_name,
            zone = all_summaries$site_info$zone,
            habitat_type = all_summaries$site_info$habitat_type) %>%
-    select(site_name, zone, habitat_type, plot_type, plot_number,
+    select(site_name, zone, habitat_type, plot_number,
            indicator_name, var_type, var)
   
   # add site info to the summary dataframes

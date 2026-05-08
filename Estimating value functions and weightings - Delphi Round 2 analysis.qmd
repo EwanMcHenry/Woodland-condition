@@ -1,16 +1,6 @@
 ---
 title: "Estimating value functions and weightings - Delphi Round 2 analysis"
 author: "Ewan McHenry"
-
-format:
-  html:
-    embed-resources: true
-    theme: cosmo
-    code-fold: true       # Enables folding
-    code-summary: "Show code"  # Optional: custom label on the fold button
-    toc: true              # Optional: adds a table of contents
-    toc-depth: 2
-    toc-float: true       # Optional: makes the table of contents float on the page
 ---
 
 ```{=html}

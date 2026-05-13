@@ -104,4 +104,4 @@ The proposed framework takes inspiration from many existing projects internation
 
 Hopefully this figure helps understand how the different scripts work together... for those with a geeky interest. I made it mainly for me to keep track of things.
 
-![](images/Condition code structure 2024-11-11 16.43.03.excalidraw.png)
+![](images/Condition%20code%20structure%202024-11-11%2016.43.03.excalidraw.png)

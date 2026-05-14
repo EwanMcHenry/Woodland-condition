@@ -12,14 +12,14 @@ extract_plot_survey_data <- function(
     excel_sheet_folderpath = "Data\\Field Test\\Ladypark Wood, Wye valley - Non-intervention 70yrs broadleaf SSSI ASNW\\",
     excel_sheet_filename = "WCA - Lady park wood - Field test - 12.06.2025.xlsx",
     write_plot.csv = F,
-    verticle_dont_contribute = c("Absent", "< 4%", "4 - 10%"),
+    verticle_dont_contribute = domin_transformer$domin[domin_transformer$max <= 10], # values of verticle structure categories that dont contribute to the score, used to check which verticle structure categories to count,
     n.deadwood_types = 4, # total number of deadwood categories - hard coded
     last.micohabitat.listed = "Heavy resinosis", # last microhabitat listed in the sheet, used to find the last row of microhabitats
-    sheet_appropriate_ground_flora = read.csv("Data\\Appropriate_groundflora_spp_list.csv") ,
-    sheet_appropriate_tree_spp = read.csv("Data\\Appropriate_tree_spp_list.csv") ,
-    list_high_threat_invasives = read.csv("Data\\high_threat_invasives_list.csv")$species, # list of high threat invasive species, used to check if any are present in the plot data
-    herbivory_category_names = c("Negligable damage", "Low damage", "Moderate damage", "High damage", "Very high damage"), # names of the herbivory categories, matching those in Herbivore_impact_lookup
-    domin.absent = "0% Absent", # value of absent domin, used to replace NAs in tree species counts
+    sheet_appropriate_ground_flora = approp_ground_flora_spp ,
+    sheet_appropriate_tree_spp = approp_tree_shrub_spp,
+    list_high_threat_invasives = high_threat_invasives_path$species, # list of high threat invasive species, used to check if any are present in the plot data
+    herbivory_category_names = Herbivore_impact_lookup$herbivore_impact_class[order(Herbivore_impact_lookup$value) %>% rev()] %>% as.character(), # names of the herbivory categories, matching those in Herbivore_impact_lookup
+    domin.absent = domin_transformer$domin[domin_transformer$max==0], # value of absent domin, used to replace NAs in tree species counts
     avt_search_radius_m = 10,
     transect_length = 100,
     habitat_type 
@@ -33,14 +33,14 @@ extract_plot_survey_data <- function(
   ## ground flora
   if(habitat_type %in% names(sheet_appropriate_ground_flora)){
     # if the habitat type is in the sheet, use that
-    list_appropriate_ground_flora <- sheet_appropriate_ground_flora$species.name[
+    list_appropriate_ground_flora <- sheet_appropriate_ground_flora$species[
       sheet_appropriate_ground_flora[,which(names(sheet_appropriate_ground_flora) == habitat_type)] == T] 
     list_appropriate_ground_flora <- list_appropriate_ground_flora[!is.na(list_appropriate_ground_flora)]
   }else{stop("Habitat type not found in the appropriate ground flora sheet. Please check the habitat_type argument.")}
   
   ## tree species
   if(habitat_type %in% names(sheet_appropriate_tree_spp)){
-    list_appropriate_tree_spp <- sheet_appropriate_tree_spp$species.name[
+    list_appropriate_tree_spp <- sheet_appropriate_tree_spp$species[
       sheet_appropriate_tree_spp[,which(names(sheet_appropriate_tree_spp) == habitat_type)] == T] %>% 
       #remove any containing willow that arent "willow sp." 
       .[!grepl("willow", ., ignore.case = TRUE) | . == "willow sp."] # remove any containing willow that arent "willow sp."

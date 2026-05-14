@@ -199,7 +199,7 @@ create_age_summary <- function(){
       )
   }) %>% 
     # add corresponding value from lookup table
-    left_join(age_lookup, by = c("age_classes_n" = "N.Tree.Age.Categories")) %>% 
+    left_join(age_lookup, by = c("age_classes_n" = "N_ages")) %>% 
     #reorder
     select(plot, plot_type, value, age_classes_n, shannon, everything()) %>% 
     mutate(plot_type = factor(plot_type, levels = c("main", "supp")),
@@ -230,7 +230,7 @@ create_tree_species_summary <- function(){
   }) %>%
     # Closest match join using fuzzyjoin
     fuzzyjoin::difference_inner_join(tree_spp_lookup,
-                                     by = c("per_of_appropriate_species" = "Proportion.of.appropriate.Tree...Shrub.Species"),
+                                     by = c("per_of_appropriate_species" = "per_spp"),
                                      max_dist = Inf,
                                      distance_col = "dist"
     ) %>%
@@ -239,7 +239,7 @@ create_tree_species_summary <- function(){
     ungroup()  %>% 
     # replace nas with 0 for everything
     mutate(across(where(is.numeric), ~ replace_na(.x, 0))) %>%
-    select(-dist, -Proportion.of.appropriate.Tree...Shrub.Species) %>%
+    select(-dist, -per_spp) %>%
     select(plot, value, per_of_appropriate_species,N_appropriate_species, spp_n, shannon_index_appropriate, everything())  %>%
     relocate(
       # Move alphabetically sorted species columns to the end, after metadata
@@ -287,7 +287,7 @@ create_tree_species_summary <- function(){
   }) %>% 
     # Closest match join using fuzzyjoin
     fuzzyjoin::difference_inner_join(tree_spp_lookup,
-                                     by = c("per_of_appropriate_species" = "Proportion.of.appropriate.Tree...Shrub.Species"),
+                                     by = c("per_of_appropriate_species" = "per_spp"),
                                      max_dist = Inf,
                                      distance_col = "dist"
     ) %>%
@@ -296,7 +296,7 @@ create_tree_species_summary <- function(){
     ungroup()  %>% 
     # replace nas with 0 for everything
     mutate(across(where(is.numeric), ~ replace_na(.x, 0))) %>%
-    select(-dist, -Proportion.of.appropriate.Tree...Shrub.Species) %>%
+    select(-dist, -per_spp) %>%
     select(plot, plot_type, value, per_of_appropriate_species,N_appropriate_species, spp_n, shannon_index_appropriate, everything())  %>%
     relocate(
       # Move alphabetically sorted species columns to the end, after metadata
@@ -352,7 +352,10 @@ create_regen_summary <- function(){
     #reorder
     select(plot, plot_type, value, regen_classes_n, everything()) %>% 
     mutate(plot_type = factor(plot_type, levels = c("main", "supp")),
-           plot = factor(plot)) 
+           plot = factor(plot)) %>% 
+    # only consider main - updating RE changes to WECA method
+    filter(plot_type == "main") %>% 
+    select(-plot_type)
   
 }
 
@@ -425,20 +428,26 @@ create_invasives_summary <- function(){
     
     result %>% 
       left_join(invasives_lookup, by = c("total_invasive_domin_cover" = "domin")) %>% 
-      fuzzyjoin::difference_left_join(
-        invasive_plants_predictions,
-        by = "value",
-        max_dist = Inf,
-        distance_col = "dist"
-      ) %>%
-      # Keep only the closest match per plot
-      group_by(plot) %>%  
-      slice_min(order_by = dist, n = 1, with_ties = FALSE) %>% 
-      ungroup()  %>%
-      # Keep only one value column, here we keep value.x and drop value.y
-      select(-value.y, -dist) %>%
-      rename(value = value.x,
-             dummy_measure = measure ) %>%
+
+      
+      
+      # no idea what this i about, seems totally redundant given a decent join already done
+            # fuzzyjoin::difference_left_join(
+      #   invasive_plants_predictions,
+      #   by = "value",
+      #   max_dist = Inf,
+      #   distance_col = "dist"
+      # ) %>%
+      # # Keep only the closest match per plot
+      # group_by(plot) %>%  
+      # slice_min(order_by = dist, n = 1, with_ties = FALSE) %>% 
+      # ungroup()  %>%
+      # # Keep only one value column, here we keep value.x and drop value.y
+      # select(-value.y, -dist) %>%
+      # rename(value = value.x,
+      #        dummy_measure = measure ) %>%
+      
+      
       # if high threat present, overwrite value with 0
       mutate(value = ifelse(high_threat_spp_present, 0, value)) %>%
       select(plot, value, total_invasive_domin_cover ,high_threat_spp_present , everything()) %>% 
@@ -596,9 +605,12 @@ create_tree_health_summary <- function(){
     tibble(
       plot = i,
       dieback_per = ind$ind.tree_health.dieback.measure*100,
-      suddenmortality_per = ind$ind.tree_health.mortality.measure*100,
-      worst_indicator = ind$ind.tree_health.max.dieback_mortality*100
+      suddenmortality_per = ind$ind.tree_health.mortality.measure*100
     ) %>%
+      # replace NA with 0
+      mutate(dieback_per = replace_na(dieback_per, 0),
+             suddenmortality_per = replace_na(suddenmortality_per, 0),
+             worst_indicator = ind$ind.tree_health.max.dieback_mortality*100) %>%
       fuzzyjoin::difference_left_join(
         tree_health_lookup,
         by = c("worst_indicator" = "Dieback.or.sudden.mortality...."),
@@ -676,14 +688,14 @@ create_ground_flora_summary <- function(){
     wide_cover %>%
       fuzzyjoin::difference_left_join(
         ground_flora_lookup,
-        by = c("perc_of_appropriate_ground_flora" = "X..Appropraite.ground.flora.species"),
+        by = c("perc_of_appropriate_ground_flora" = "per_spp"),
         max_dist = Inf,
         distance_col = "dist"
       ) %>%
       group_by(plot) %>%
       slice_min(order_by = dist, n = 1, with_ties = FALSE) %>%
       ungroup() %>%
-      select(-dist, -`X..Appropraite.ground.flora.species`) %>%
+      select(-dist, -`per_spp`) %>%
       
       # Fill NA values in species columns with "0% Absent"
       mutate(across(

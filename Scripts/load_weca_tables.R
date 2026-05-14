@@ -42,3 +42,16 @@ approp_ground_flora_spp <- read.csv("Data\\Appropriate_groundflora_spp_list.csv"
   rename(species = species.name)
 approp_tree_shrub_spp <- read.csv("Data\\Appropriate_tree_spp_list.csv") %>% 
   rename(species = species.name)
+microhabitats_list <- read.csv("Data\\microhabitats_list.csv")
+high_threat_invasives_path <- read.csv("Data\\high_threat_invasives_list.csv")
+
+
+vert_structure_categories <- data.frame(
+  index = 1:6,
+  strata = c("Ground layer (0 - 0.1m)",
+             "Field layer (0.1 - 1m)",
+             "Shrub (1 - 5m)",
+             "Lower (5 -12m)",
+             "Middle (12 -20m)",
+             "Upper (20m+)")
+)

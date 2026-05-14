@@ -59,7 +59,15 @@ sites <- list(
     site_survey_folderpath = "Data\\Field Test\\Inverliever, Argyll - Conifer clearfell FLS\\Z01\\",
     site_survey_filename = "WCA - Inverliever - Field test 06.06.25.xlsx",
     site_survey_habitat_type = "acidic_upland"
+  ),
+  list(
+    site_name = "Assynt",
+    zone_name = "1",
+    site_survey_folderpath = "Data\\Field Test\\Assynt\\Z01\\",
+    site_survey_filename = "WECA Assynt Form zone 1.xlsx",
+    site_survey_habitat_type = "acidic_upland"
   )
+  
   
   
 )

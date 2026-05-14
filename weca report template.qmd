@@ -15,10 +15,10 @@ format:
     css: report_styles.css
 lightbox: true
 params:
-  site_name: "Inverliever, Argyll"
+  site_name: "Assynt"
   zone_name: "1"
-  site_survey_folderpath: "Data\\Field Test\\Inverliever, Argyll - Conifer clearfell FLS\\Z01\\"
-  site_survey_filename: "WCA - Inverliever - Field test 06.06.25.xlsx"
+  site_survey_folderpath: "Data\\Field Test\\Assynt\\Z01\\"
+  site_survey_filename: "WECA Assynt Form zone 1.xlsx"
   site_survey_habitat_type: "acidic_upland"
   embed_photos: FALSE # Set to TRUE to embed photos as base64, or FALSE to link to local files
   include_photos: TRUE # Set to FALSE to exclude photos from the report
@@ -60,16 +60,12 @@ source("Scripts\\functions_surveyreport.R")
 source("Scripts\\load_weca_tables.R")
 
 # DATA --------------------------------------------------------------------
-appropriate_tree_path <- "Data\\Appropriate_tree_spp_list.csv"
-appropriate_flora_path <- "Data\\Appropriate_groundflora_spp_list.csv"
-high_threat_invasives_path <- "Data\\high_threat_invasives_list.csv"
 
-microhabitats_list <- read.csv("Data\\microhabitats_list.csv")
 
 
 # load value function predictions - created by "D:/Users/Ewan McHenry/OneDrive - the Woodland Trust/WEC/Woodland-condition/Estimating value functions and weightings - Delphi Round 2 analysis.qmd"
 ## run this script to generate the value function predictions
-load("outputs\\all_value_functions.RData")
+
 ```
 
 ```{r configuration, echo=FALSE}
@@ -78,22 +74,13 @@ site_survey_folderpath = params$site_survey_folderpath
 site_survey_filename = params$site_survey_filename 
 site_survey_habitat_type = params$site_survey_habitat_type
   
-vert_structure_categories <- data.frame(
-  index = 1:6,
-  strata = c("Ground layer (0 - 0.1m)",
-             "Field layer (0.1 - 1m)",
-             "Shrub (1 - 5m)",
-             "Lower (5 -12m)",
-             "Middle (12 -20m)",
-             "Upper (20m+)")
-  )
 
 
 # plot config ----
 vf_alpha = 0.6
 vf_size = 1
 point_alpha = 0.8
-point_size = 2
+point_size = 4
 ```
 
 This doc walks through the calculation of WECA score for each indicator at each plot, and zone level, focusing on `r params$site_name`, zone `r params$zone_name`.
@@ -104,9 +91,6 @@ This doc walks through the calculation of WECA score for each indicator at each 
 survey_data <- extract_plot_survey_data(
   excel_sheet_folderpath = site_survey_folderpath,
   excel_sheet_filename = site_survey_filename,
-  sheet_appropriate_ground_flora = read.csv(appropriate_flora_path),
-  sheet_appropriate_tree_spp = read.csv(appropriate_tree_path) ,
-  list_high_threat_invasives = read.csv(high_threat_invasives_path)$species, # list of high threat invasive species, used to check if any are present in the plot data
   habitat_type = site_survey_habitat_type
 
   )
@@ -137,7 +121,7 @@ zone_summary <- data.frame(
   ),
   value = c(
     mean(all_summaries$age_summary$value, na.rm = TRUE),
-    mean(all_summaries$tree_spp_summary$value, na.rm = TRUE),
+    mean(all_summaries$tree_spp_summary$combined_table$value, na.rm = TRUE),
     mean(all_summaries$regen_summary$value, na.rm = TRUE),
     mean(all_summaries$native_canopy_summary$value, na.rm = TRUE),
     mean(all_summaries$vertical_structure_summary$value, na.rm = TRUE),
@@ -458,8 +442,8 @@ A Shannon diversity index could be an alternative measure with which to infer va
 ```{r age_structure_plot, warnin=FALSE, message=FALSE}
 ggplot() +
   geom_line(
-    data = age_structure_predictions,
-    aes(x = measure, y = value),
+    data = age_lookup,
+    aes(x = N_ages, y = value),
     color = "black", linewidth = vf_size, alpha = vf_alpha
   ) +
   geom_point(
@@ -497,11 +481,11 @@ datatable(
     mutate(
       value = round(value, 2),
       shannon = round(shannon, 2),
-      plot = as.factor(plot),
-      plot_type = as.factor(plot_type)
+      plot = as.factor(plot)#,
+      # plot_type = as.factor(plot_type)
     ) %>% 
     rename(     Plot = plot,
-      'Plot type' = plot_type,
+      # 'Plot type' = plot_type,
       Value = value,
       'Age classes (N)' = age_classes_n,
       'Shannon diversity index' = shannon,
@@ -547,8 +531,8 @@ The appropriate tree and shrub species list for this habitat type (`r survey_dat
 ```{r tree_species_richness_plot, warning=FALSE, message=FALSE}
 ggplot() +
   geom_line(
-    data = n_tree_shrub_spp_predictions,
-    aes(x = measure, y = value),
+    data = tree_spp_lookup,
+    aes(x = per_spp, y = value),
     color = "black", size = vf_size, alpha = vf_alpha
   ) +
   geom_point(
@@ -582,7 +566,8 @@ ggplot() +
 appropriate_species <- survey_data[[1]]$indicators$tree_spp$list_appropriate_tree_spp
 
 species_cols <- setdiff(names(tree_species_summary$combined_table),
-                        c("plot", "plot_type", "value", 
+                        c("plot", #"plot_type",
+                          "value", 
                           "per_of_appropriate_species", "N_appropriate_species",
                           "spp_n", "shannon_index_appropriate"))
 # Reorder: appropriate species first, then the rest
@@ -694,8 +679,8 @@ Regen value is a function of the number of regen classes of trees or shrubs pres
 ```{r regen_plot, warning=FALSE, message=FALSE}
 ggplot() +
   geom_line(
-    data = regen_predictions,
-    aes(x = measure, y = value),
+    data = regen_lookup,
+    aes(x = N.Regen.classes.present, y = value),
     color = "black", size = vf_size, alpha = vf_alpha
   ) +
   geom_point(
@@ -703,8 +688,8 @@ ggplot() +
     aes(
       x = regen_classes_n,
       y = value,
-      fill = plot,
-      shape = plot_type
+      fill = plot#,
+   #   shape = plot_type
     ),
     alpha = point_alpha, 
     size = point_size,
@@ -717,8 +702,8 @@ ggplot() +
   labs(
     x = "Number of regen classes",
     y = "Value",
-    title = paste(this.sheet, "estimated value function"),
-    fill = "Plot type"
+    title = paste(this.sheet, "estimated value function")#,
+    # fill = "Plot type"
   ) +
   # Theme and tweaks
   theme_pubr() +
@@ -734,7 +719,7 @@ datatable(
     ) %>%
     rename(
       Plot = plot,
-      'Plot type' = plot_type,
+      # 'Plot type' = plot_type,
       Value = value,
       'Number of regen classes' = regen_classes_n
     ),
@@ -766,8 +751,8 @@ Native canopy cover value is a function of the proportion of each plots's total 
 ```{r native_canopy_cover_plot, warning=FALSE, message=FALSE}
 ggplot() +
   geom_line(
-    data = native_canopy_predictions,
-    aes(x = measure, y = value),
+    data = native_canopy_lookup,
+    aes(x = Native.Canopy.Percentage, y = value),
     color = "black", size = vf_size, alpha = vf_alpha
   ) +
   geom_point(
@@ -834,8 +819,8 @@ Vertical structure value is a function of the number of different vertical strat
 ```{r vertical_structure_plot, warning=FALSE, message=FALSE}
 ggplot() +
   geom_line(
-    data = vertical_structure_predictions,
-    aes(x = measure, y = value),
+    data = vertical_structure_lookup,
+    aes(x = N.Vertical.Structure.Categories, y = value),
     color = "black", size = vf_size, alpha = vf_alpha
   ) +
   geom_point(
@@ -903,34 +888,52 @@ Invasives value is a function of the total cover of invasive species in each plo
 ```{r invasives_plot, warning=FALSE, message=FALSE}
 
 ggplot() +
+
   geom_line(
-    data = invasive_plants_predictions,
-    aes(x = measure, y = value),
-    color = "black", size = vf_size, alpha = vf_alpha
+    data = invasives_lookup,
+    aes(
+      x = reorder(domin, value),
+      y = value,
+      group = 1
+    ),
+    color = "black",
+    size = vf_size,
+    alpha = vf_alpha
   ) +
+
   geom_point(
     data = invasives_summary,
     aes(
-      x = dummy_measure,
+      x = total_invasive_domin_cover,
       y = value,
       fill = plot
     ),
-    alpha = point_alpha, 
+    alpha = point_alpha,
     size = point_size,
-    shape = 21, colour = "black",
-    position = position_jitter(width = 0.1, height = 3)
+    shape = 21,
+    colour = "black",
+    position = position_jitter(width = 0.15, height = 3)
   ) +
-  scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
-  # Axes and titles
+
+  scale_fill_manual(values = wt_palette[-c(1,2,4)]) +
+
   labs(
-    x = "Total invasive cover (%)",
+    x = "Total invasive cover (DOMIN)",
     y = "Value",
     title = paste(this.sheet, "estimated value function"),
-    fill = "Plot type"
+    fill = "Plot"
   ) +
-  # Theme and tweaks
+
   theme_pubr() +
-  theme(legend.position = "none")
+
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(
+      angle = 45,
+      hjust = 1,
+      size = 8
+    )
+  )
 ```
 
 ```{r invasives_table, results='asis'}
@@ -941,7 +944,6 @@ datatable(
       total_invasive_domin_cover = total_invasive_domin_cover,
       high_threat_spp_present = ifelse(high_threat_spp_present, "Yes", "No")
     ) %>%
-    select(-dummy_measure) %>% # remove dummy measure column
     rename(
       Plot = plot,
       Value = value,
@@ -976,8 +978,8 @@ Microhabitats value is a function of the proportion of all possible microhabitat
 ```{r microhabitats_plot, warning=FALSE, message=FALSE}
 ggplot() +
   geom_line(
-    data = microhab_vf_predictions,
-    aes(x = measure, y = value),
+    data = microhabitats_lookup,
+    aes(x = Proportion.of.microhabitats.present, y = value),
     color = "black", size = vf_size, alpha = vf_alpha
   ) +
   geom_point(
@@ -1044,8 +1046,8 @@ The mean horizontal complexity value across the zone is `r round(mean(horizontal
 ```{r horizontal_complexity_plot, warning=FALSE, message=FALSE}
 ggplot() +
   geom_line(
-    data = horizontal_complexity_predictions,
-    aes(x = measure, y = value),
+    data = Horizontal_complexity_lookup,
+    aes(x = Horizontal.Complexity.Classes, y = value),
     color = "black", size = vf_size, alpha = vf_alpha
   ) +
   geom_point(
@@ -1128,7 +1130,7 @@ avt_value_95ci <- veteran_trees_lookup$value[
 
 The veteran trees value across the zone is `r round(avt_value, 2)` (`r round(avt_value_95ci[1], 2)` - `r round(avt_value_95ci[2], 2)` 95% CI), based on an estimated mean AVT density of `r round(avt_dens_mean, 2)` (`r round(avt_dens_ci_lower, 2)` - `r round(avt_dens_ci_upper, 2)` 95% CI) per ha.
 
-Note: value for the AVT indicator is calculated based on the mean AVT density across all plots, rather than the mean value across plots, as AVT condition opperates at too large a scale to be captured by individual plots.
+Note: value for the AVT indicator is calculated based on the mean AVT density across all plots, rather than the mean value across plots, as AVT condition operates at too large a scale to be captured by individual plots.
 
 ```{r veteran_trees_plot, warning=FALSE, message=FALSE, fig.cap= "Estimated value for AVTs with 95% confidence interval, based on estiamte of mean avt density across the survey area. The line represents the value function for AVT density. x axis rug marks show the avt density recorded at each plot (truncated to the x axis maximum)."}
 
@@ -1136,13 +1138,13 @@ Note: value for the AVT indicator is calculated based on the mean AVT density ac
 plotting.denses = data.frame(plot = veteran_trees_summary$plot,
                              dens.ests = veteran_trees_summary$dens_avt %>% 
                                jitter(0.1))
-plotting.denses$dens.ests[plotting.denses$dens.ests > max(veteran_trees_predictions$measure)] <- max(veteran_trees_predictions$measure)
+plotting.denses$dens.ests[plotting.denses$dens.ests > max(veteran_trees_lookup$N.Veteran.Trees.per.ha)] <- max(veteran_trees_lookup$N.Veteran.Trees.per.ha)
 
 
 ggplot() +
   geom_line(
-    data = veteran_trees_predictions,
-    aes(x = measure, y = value),
+    data = veteran_trees_lookup,
+    aes(x = N.Veteran.Trees.per.ha, y = value),
     color = "black", size = vf_size, alpha = vf_alpha
   ) +
   geom_point(
@@ -1221,8 +1223,8 @@ Dead and decaying wood value is a function of the mean number of deadwood types 
 ```{r dead_decaying_wood_plot, warning=FALSE, message=FALSE}
 ggplot() +
   geom_line(
-    data = deadwood_predictions,
-    aes(x = measure/4, y = value),
+    data = deadwood_lookup,
+    aes(x = N.Deadwood.Categories/4, y = value),
     color = "black", size = vf_size, alpha = vf_alpha
   ) +
   geom_point(
@@ -1371,8 +1373,8 @@ Tree health value is a function of the worst of: a) canopy dieback percentage or
 ```{r tree_health_plot, warning=FALSE, message=FALSE}
 ggplot() +
   geom_line(
-    data = tree_health_predictions,
-    aes(x = measure, y = value),
+    data = tree_health_lookup,
+    aes(x = Dieback.or.sudden.mortality...., y = value),
     color = "black", size = vf_size, alpha = vf_alpha
   ) +
   geom_point(
@@ -1449,43 +1451,76 @@ anthro_plots_forplot <- anthropogenic_damage_summary %>%
 
 antro_damage_domin_ranges <- anthro_plots_forplot[anthro_plots_forplot$max > anthro_plots_forplot$min, ] 
 
+domin_levels <- antropogenic_damage_lookup$domin
+
+antropogenic_damage_lookup <- antropogenic_damage_lookup %>%
+  mutate(
+    domin = factor(domin, levels = domin_levels)
+  )
+
+anthropogenic_damage_summary <- anthropogenic_damage_summary %>%
+  mutate(
+    damage_cover = factor(
+      damage_cover,
+      levels = domin_levels
+    )
+  )
+
 ggplot() +
-  # value function
+
   geom_line(
-    data = anthropogenic_damage_predictions,
-    aes(x = measure, y = value),
-    color = "black", size = 1, alpha = vf_alpha
-  ) +
-  # segment for domin class cover range
-  geom_segment( data = antro_damage_domin_ranges,
-  aes(x = min, xend = max + 0.1, y = value_jit, yend = value_jit, colour = factor(plot)),
-    size = 0.5, alpha = 0.7
-  ) +
-  # points for each plot at domin class mid point
-  geom_point(
-    data = anthro_plots_forplot ,
+    data = antropogenic_damage_lookup,
     aes(
-      x = mid,
-      y = value_jit,
+      x = domin,
+      y = value,
+      group = 1
+    ),
+    color = "black",
+    size = vf_size,
+    alpha = vf_alpha
+  ) +
+
+  geom_point(
+    data = anthropogenic_damage_summary,
+    aes(
+      x = damage_cover,
+      y = value,
       fill = plot
     ),
-    alpha = point_alpha, 
+    alpha = point_alpha,
     size = point_size,
-    shape = 21, colour = "black",
-    position = position_jitter(width = 2, height = 0)
+    shape = 21,
+    colour = "black",
+    position = position_jitter(
+      width = 0.15,
+      height = 3
+    )
   ) +
-  scale_fill_manual(values= wt_palette[-c(1,2,4)]) +
-  # Axes and titles
-  labs(
-    x = "Anthropogenic damage cover (%)",
-    y = "Value",
-    title = paste(this.sheet, "estimated value function"),
-    fill = "Plot type"
-  ) +
-  # Theme and tweaks
-  theme_pubr() +
-  theme(legend.position = "none")
 
+  scale_fill_manual(
+    values = wt_palette[-c(1,2,4)]
+  ) +
+
+  labs(
+    x = "Anthropogenic damage cover (DOMIN)",
+    y = "Value",
+    title = paste(
+      this.sheet,
+      "estimated value function"
+    ),
+    fill = "Plot"
+  ) +
+
+  theme_pubr() +
+
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(
+      angle = 45,
+      hjust = 1,
+      size = 8
+    )
+  )
 ```
 
 ```{r anthropogenic_damage_table, results='asis'}
@@ -1529,8 +1564,8 @@ For (`r survey_data[[1]]$survey_info$habiat_type`) there are `r length(survey_da
 ```{r ground_flora_plot, warning=FALSE, message=FALSE}
 ggplot() +
   geom_line(
-    data = ground_flora_predictions,
-    aes(x = measure, y = value),
+    data = ground_flora_lookup,
+    aes(x = per_spp, y = value),
     color = "black", size = vf_size, alpha = vf_alpha
   ) +
   geom_point(
